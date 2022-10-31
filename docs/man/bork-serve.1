@@ -1,0 +1,160 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "BORG-SERVE" 1 "2022-10-02" "" "bork backup tool"
+.SH NAME
+bork-serve \- Start in server mode. This command is usually not used manually.
+.SH SYNOPSIS
+.sp
+bork [common options] serve [options]
+.SH DESCRIPTION
+.sp
+This command starts a repository server process. This command is usually not used manually.
+.SH OPTIONS
+.sp
+See \fIbork\-common(1)\fP for common options of Bork commands.
+.SS optional arguments
+.INDENT 0.0
+.TP
+.BI \-\-restrict\-to\-path \ PATH
+restrict repository access to PATH. Can be specified multiple times to allow the client access to several directories. Access to all sub\-directories is granted implicitly; PATH doesn\(aqt need to directly point to a repository.
+.TP
+.BI \-\-restrict\-to\-repository \ PATH
+restrict repository access. Only the repository located at PATH (no sub\-directories are considered) is accessible. Can be specified multiple times to allow the client access to several repositories. Unlike \fB\-\-restrict\-to\-path\fP sub\-directories are not accessible; PATH needs to directly point at a repository location. PATH may be an empty directory or the last element of PATH may not exist, in which case the client may initialize a repository there.
+.TP
+.B  \-\-append\-only
+only allow appending to repository segment files. Note that this only affects the low level structure of the repository, and running \fIdelete\fP or \fIprune\fP will still be allowed. See \fIappend_only_mode\fP in Additional Notes for more details.
+.TP
+.BI \-\-storage\-quota \ QUOTA
+Override storage quota of the repository (e.g. 5G, 1.5T). When a new repository is initialized, sets the storage quota on the new repository as well. Default: no quota.
+.UNINDENT
+.SH EXAMPLES
+.sp
+\fBbork serve\fP has special support for ssh forced commands (see \fBauthorized_keys\fP
+example below): if the environment variable SSH_ORIGINAL_COMMAND is set it will
+ignore some options given on the command line and use the values from the
+variable instead. This only applies to a carefully controlled allowlist of safe
+options. This list currently contains:
+.INDENT 0.0
+.IP \(bu 2
+Options that control the log level and debug topics printed
+such as \fB\-\-verbose\fP, \fB\-\-info\fP, \fB\-\-debug\fP, \fB\-\-debug\-topic\fP, etc.
+.IP \(bu 2
+\fB\-\-lock\-wait\fP to allow the client to control how long to wait before
+giving up and aborting the operation when another process is holding a lock.
+.UNINDENT
+.sp
+Environment variables (such as BORG_XXX) contained in the original
+command sent by the client are \fInot\fP interpreted, but ignored. If BORG_XXX environment
+variables should be set on the \fBbork serve\fP side, then these must be set in system\-specific
+locations like \fB/etc/environment\fP or in the forced command itself (example below).
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# Allow an SSH keypair to only run bork, and only have access to /path/to/repo.
+# Use key options to disable unneeded and potentially dangerous SSH functionality.
+# This will help to secure an automated remote backup system.
+$ cat ~/.ssh/authorized_keys
+command=\(dqbork serve \-\-restrict\-to\-path /path/to/repo\(dq,restrict ssh\-rsa AAAAB3[...]
+
+# Set a BORG_XXX environment variable on the \(dqbork serve\(dq side
+$ cat ~/.ssh/authorized_keys
+command=\(dqexport BORG_XXX=value; bork serve [...]\(dq,restrict ssh\-rsa [...]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+\fBNOTE:\fP
+.INDENT 0.0
+.INDENT 3.5
+The examples above use the \fBrestrict\fP directive. This does automatically
+block potential dangerous ssh features, even when they are added in a future
+update. Thus, this option should be preferred.
+.sp
+If you\(aqre using openssh\-server < 7.2, however, you have to explicitly specify
+the ssh features to restrict and cannot simply use the restrict option as it
+has been introduced in v7.2. We recommend to use
+\fBno\-port\-forwarding,no\-X11\-forwarding,no\-pty,no\-agent\-forwarding,no\-user\-rc\fP
+in this case.
+.UNINDENT
+.UNINDENT
+.sp
+Details about sshd usage: \fI\%sshd(8)\fP
+.SS SSH Configuration
+.sp
+\fBbork serve\fP\(aqs pipes (\fBstdin\fP/\fBstdout\fP/\fBstderr\fP) are connected to the \fBsshd\fP process on the server side. In the event that the SSH connection between \fBbork serve\fP and the client is disconnected or stuck abnormally (for example, due to a network outage), it can take a long time for \fBsshd\fP to notice the client is disconnected. In the meantime, \fBsshd\fP continues running, and as a result so does the \fBbork serve\fP process holding the lock on the repository. This can cause subsequent \fBbork\fP operations on the remote repository to fail with the error: \fBFailed to create/acquire the lock\fP\&.
+.sp
+In order to avoid this, it is recommended to perform the following additional SSH configuration:
+.sp
+Either in the client side\(aqs \fB~/.ssh/config\fP file, or in the client\(aqs \fB/etc/ssh/ssh_config\fP file:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+Host backupserver
+        ServerAliveInterval 10
+        ServerAliveCountMax 30
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Replacing \fBbackupserver\fP with the hostname, FQDN or IP address of the bork server.
+.sp
+This will cause the client to send a keepalive to the server every 10 seconds. If 30 consecutive keepalives are sent without a response (a time of 300 seconds), the ssh client process will be terminated, causing the bork process to terminate gracefully.
+.sp
+On the server side\(aqs \fBsshd\fP configuration file (typically \fB/etc/ssh/sshd_config\fP):
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+ClientAliveInterval 10
+ClientAliveCountMax 30
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+This will cause the server to send a keep alive to the client every 10 seconds. If 30 consecutive keepalives are sent without a response (a time of 300 seconds), the server\(aqs sshd process will be terminated, causing the \fBbork serve\fP process to terminate gracefully and release the lock on the repository.
+.sp
+If you then run bork commands with \fB\-\-lock\-wait 600\fP, this gives sufficient time for the bork serve processes to terminate after the SSH connection is torn down after the 300 second wait for the keepalives to fail.
+.sp
+You may, of course, modify the timeout values demonstrated above to values that suit your environment and use case.
+.SH SEE ALSO
+.sp
+\fIbork\-common(1)\fP
+.SH AUTHOR
+The Bork Collective
+.\" Generated by docutils manpage writer.
+.

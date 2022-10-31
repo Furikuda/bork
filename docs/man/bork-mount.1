@@ -1,0 +1,164 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "BORG-MOUNT" 1 "2022-10-02" "" "bork backup tool"
+.SH NAME
+bork-mount \- Mount archive or an entire repository as a FUSE filesystem
+.SH SYNOPSIS
+.sp
+bork [common options] mount [options] MOUNTPOINT [PATH...]
+.SH DESCRIPTION
+.sp
+This command mounts an archive as a FUSE filesystem. This can be useful
+for browsing an archive or restoring individual files. When restoring,
+take into account that the current FUSE implementation does not support
+special fs flags and ACLs.
+.sp
+Unless the \fB\-\-foreground\fP option is given the command will run in the
+background until the filesystem is \fBumounted\fP\&.
+.sp
+The command \fBborkfs\fP provides a wrapper for \fBbork mount\fP\&. This can also be
+used in fstab entries:
+\fB/path/to/repo /mnt/point fuse.borkfs defaults,noauto 0 0\fP
+.sp
+To allow a regular user to use fstab entries, add the \fBuser\fP option:
+\fB/path/to/repo /mnt/point fuse.borkfs defaults,noauto,user 0 0\fP
+.sp
+For FUSE configuration and mount options, see the mount.fuse(8) manual page.
+.sp
+Bork\(aqs default behavior is to use the archived user and group names of each
+file and map them to the system\(aqs respective user and group ids.
+Alternatively, using \fBnumeric\-ids\fP will instead use the archived user and
+group ids without any mapping.
+.sp
+The \fBuid\fP and \fBgid\fP mount options (implemented by Bork) can be used to
+override the user and group ids of all files (i.e., \fBbork mount \-o
+uid=1000,gid=1000\fP).
+.sp
+The man page references \fBuser_id\fP and \fBgroup_id\fP mount options
+(implemented by fuse) which specify the user and group id of the mount owner
+(aka, the user who does the mounting). It is set automatically by libfuse (or
+the filesystem if libfuse is not used). However, you should not specify these
+manually. Unlike the \fBuid\fP and \fBgid\fP mount options which affect all files,
+\fBuser_id\fP and \fBgroup_id\fP affect the user and group id of the mounted
+(base) directory.
+.sp
+Additional mount options supported by bork:
+.INDENT 0.0
+.IP \(bu 2
+versions: when used with a repository mount, this gives a merged, versioned
+view of the files in the archives. EXPERIMENTAL, layout may change in future.
+.IP \(bu 2
+allow_damaged_files: by default damaged files (where missing chunks were
+replaced with runs of zeros by bork check \fB\-\-repair\fP) are not readable and
+return EIO (I/O error). Set this option to read such files.
+.IP \(bu 2
+ignore_permissions: for security reasons the \(dqdefault_permissions\(dq mount
+option is internally enforced by bork. \(dqignore_permissions\(dq can be given to
+not enforce \(dqdefault_permissions\(dq.
+.UNINDENT
+.sp
+The BORG_MOUNT_DATA_CACHE_ENTRIES environment variable is meant for advanced users
+to tweak the performance. It sets the number of cached data chunks; additional
+memory usage can be up to ~8 MiB times this number. The default is the number
+of CPU cores.
+.sp
+When the daemonized process receives a signal or crashes, it does not unmount.
+Unmounting in these cases could cause an active rsync or similar process
+to unintentionally delete data.
+.sp
+When running in the foreground ^C/SIGINT unmounts cleanly, but other
+signals or crashes do not.
+.SH OPTIONS
+.sp
+See \fIbork\-common(1)\fP for common options of Bork commands.
+.SS arguments
+.INDENT 0.0
+.TP
+.B MOUNTPOINT
+where to mount filesystem
+.TP
+.B PATH
+paths to extract; patterns are supported
+.UNINDENT
+.SS optional arguments
+.INDENT 0.0
+.TP
+.B  \-\-consider\-checkpoints
+Show checkpoint archives in the repository contents list (default: hidden).
+.TP
+.B  \-f\fP,\fB  \-\-foreground
+stay in foreground, do not daemonize
+.TP
+.B  \-o
+Extra mount options
+.TP
+.B  \-\-numeric\-ids
+use numeric user and group identifiers from archive(s)
+.UNINDENT
+.SS Archive filters
+.INDENT 0.0
+.TP
+.BI \-a \ PATTERN\fR,\fB \ \-\-match\-archives \ PATTERN
+only consider archive names matching the pattern. see \(dqbork help match\-archives\(dq.
+.TP
+.BI \-\-sort\-by \ KEYS
+Comma\-separated list of sorting keys; valid keys are: timestamp, name, id; default is: timestamp
+.TP
+.BI \-\-first \ N
+consider first N archives after other filters were applied
+.TP
+.BI \-\-last \ N
+consider last N archives after other filters were applied
+.UNINDENT
+.SS Exclusion options
+.INDENT 0.0
+.TP
+.BI \-e \ PATTERN\fR,\fB \ \-\-exclude \ PATTERN
+exclude paths matching PATTERN
+.TP
+.BI \-\-exclude\-from \ EXCLUDEFILE
+read exclude patterns from EXCLUDEFILE, one per line
+.TP
+.BI \-\-pattern \ PATTERN
+include/exclude paths matching PATTERN
+.TP
+.BI \-\-patterns\-from \ PATTERNFILE
+read include/exclude patterns from PATTERNFILE, one per line
+.TP
+.BI \-\-strip\-components \ NUMBER
+Remove the specified number of leading path elements. Paths with fewer elements will be silently skipped.
+.UNINDENT
+.SH SEE ALSO
+.sp
+\fIbork\-common(1)\fP, \fIbork\-umount(1)\fP, \fIbork\-extract(1)\fP
+.SH AUTHOR
+The Bork Collective
+.\" Generated by docutils manpage writer.
+.

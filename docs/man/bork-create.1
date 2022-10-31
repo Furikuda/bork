@@ -1,0 +1,484 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "BORG-CREATE" 1 "2022-10-02" "" "bork backup tool"
+.SH NAME
+bork-create \- Create new archive
+.SH SYNOPSIS
+.sp
+bork [common options] create [options] NAME [PATH...]
+.SH DESCRIPTION
+.sp
+This command creates a backup archive containing all files found while recursively
+traversing all paths specified. Paths are added to the archive as they are given,
+that means if relative paths are desired, the command has to be run from the correct
+directory.
+.sp
+When giving \(aq\-\(aq as path, bork will read data from standard input and create a
+file \(aqstdin\(aq in the created archive from that data. In some cases it\(aqs more
+appropriate to use \-\-content\-from\-command, however. See section \fIReading from
+stdin\fP below for details.
+.sp
+The archive will consume almost no disk space for files or parts of files that
+have already been stored in other archives.
+.sp
+The archive name needs to be unique. It must not end in \(aq.checkpoint\(aq or
+\(aq.checkpoint.N\(aq (with N being a number), because these names are used for
+checkpoints and treated in special ways.
+.sp
+In the archive name, you may use the following placeholders:
+{now}, {utcnow}, {fqdn}, {hostname}, {user} and some others.
+.sp
+Backup speed is increased by not reprocessing files that are already part of
+existing archives and weren\(aqt modified. The detection of unmodified files is
+done by comparing multiple file metadata values with previous values kept in
+the files cache.
+.sp
+This comparison can operate in different modes as given by \fB\-\-files\-cache\fP:
+.INDENT 0.0
+.IP \(bu 2
+ctime,size,inode (default)
+.IP \(bu 2
+mtime,size,inode (default behaviour of bork versions older than 1.1.0rc4)
+.IP \(bu 2
+ctime,size (ignore the inode number)
+.IP \(bu 2
+mtime,size (ignore the inode number)
+.IP \(bu 2
+rechunk,ctime (all files are considered modified \- rechunk, cache ctime)
+.IP \(bu 2
+rechunk,mtime (all files are considered modified \- rechunk, cache mtime)
+.IP \(bu 2
+disabled (disable the files cache, all files considered modified \- rechunk)
+.UNINDENT
+.sp
+inode number: better safety, but often unstable on network filesystems
+.sp
+Normally, detecting file modifications will take inode information into
+consideration to improve the reliability of file change detection.
+This is problematic for files located on sshfs and similar network file
+systems which do not provide stable inode numbers, such files will always
+be considered modified. You can use modes without \fIinode\fP in this case to
+improve performance, but reliability of change detection might be reduced.
+.sp
+ctime vs. mtime: safety vs. speed
+.INDENT 0.0
+.IP \(bu 2
+ctime is a rather safe way to detect changes to a file (metadata and contents)
+as it can not be set from userspace. But, a metadata\-only change will already
+update the ctime, so there might be some unnecessary chunking/hashing even
+without content changes. Some filesystems do not support ctime (change time).
+E.g. doing a chown or chmod to a file will change its ctime.
+.IP \(bu 2
+mtime usually works and only updates if file contents were changed. But mtime
+can be arbitrarily set from userspace, e.g. to set mtime back to the same value
+it had before a content change happened. This can be used maliciously as well as
+well\-meant, but in both cases mtime based cache modes can be problematic.
+.UNINDENT
+.sp
+The mount points of filesystems or filesystem snapshots should be the same for every
+creation of a new archive to ensure fast operation. This is because the file cache that
+is used to determine changed files quickly uses absolute filenames.
+If this is not possible, consider creating a bind mount to a stable location.
+.sp
+The \fB\-\-progress\fP option shows (from left to right) Original, Compressed and Deduplicated
+(O, C and D, respectively), then the Number of files (N) processed so far, followed by
+the currently processed path.
+.sp
+When using \fB\-\-stats\fP, you will get some statistics about how much data was
+added \- the \(dqThis Archive\(dq deduplicated size there is most interesting as that is
+how much your repository will grow. Please note that the \(dqAll archives\(dq stats refer to
+the state after creation. Also, the \fB\-\-stats\fP and \fB\-\-dry\-run\fP options are mutually
+exclusive because the data is not actually compressed and deduplicated during a dry run.
+.sp
+For more help on include/exclude patterns, see the \fIbork_patterns\fP command output.
+.sp
+For more help on placeholders, see the \fIbork_placeholders\fP command output.
+.SH OPTIONS
+.sp
+See \fIbork\-common(1)\fP for common options of Bork commands.
+.SS arguments
+.INDENT 0.0
+.TP
+.B NAME
+specify the archive name
+.TP
+.B PATH
+paths to archive
+.UNINDENT
+.SS optional arguments
+.INDENT 0.0
+.TP
+.B  \-n\fP,\fB  \-\-dry\-run
+do not create a backup archive
+.TP
+.B  \-s\fP,\fB  \-\-stats
+print statistics for the created archive
+.TP
+.B  \-\-list
+output verbose list of items (files, dirs, ...)
+.TP
+.BI \-\-filter \ STATUSCHARS
+only display items with the given status characters (see description)
+.TP
+.B  \-\-json
+output stats as JSON. Implies \fB\-\-stats\fP\&.
+.TP
+.B  \-\-no\-cache\-sync
+experimental: do not synchronize the cache. Implies not using the files cache.
+.TP
+.BI \-\-stdin\-name \ NAME
+use NAME in archive for stdin data (default: \(aqstdin\(aq)
+.TP
+.BI \-\-stdin\-user \ USER
+set user USER in archive for stdin data (default: \(aqroot\(aq)
+.TP
+.BI \-\-stdin\-group \ GROUP
+set group GROUP in archive for stdin data (default: \(aqroot\(aq)
+.TP
+.BI \-\-stdin\-mode \ M
+set mode to M in archive for stdin data (default: 0660)
+.TP
+.B  \-\-content\-from\-command
+interpret PATH as command and store its stdout. See also section Reading from stdin below.
+.TP
+.B  \-\-paths\-from\-stdin
+read DELIM\-separated list of paths to backup from stdin. Will not recurse into directories.
+.TP
+.B  \-\-paths\-from\-command
+interpret PATH as command and treat its output as \fB\-\-paths\-from\-stdin\fP
+.TP
+.BI \-\-paths\-delimiter \ DELIM
+set path delimiter for \fB\-\-paths\-from\-stdin\fP and \fB\-\-paths\-from\-command\fP (default: n)
+.UNINDENT
+.SS Exclusion options
+.INDENT 0.0
+.TP
+.BI \-e \ PATTERN\fR,\fB \ \-\-exclude \ PATTERN
+exclude paths matching PATTERN
+.TP
+.BI \-\-exclude\-from \ EXCLUDEFILE
+read exclude patterns from EXCLUDEFILE, one per line
+.TP
+.BI \-\-pattern \ PATTERN
+include/exclude paths matching PATTERN
+.TP
+.BI \-\-patterns\-from \ PATTERNFILE
+read include/exclude patterns from PATTERNFILE, one per line
+.TP
+.B  \-\-exclude\-caches
+exclude directories that contain a CACHEDIR.TAG file (\fI\%http://www.bford.info/cachedir/spec.html\fP)
+.TP
+.BI \-\-exclude\-if\-present \ NAME
+exclude directories that are tagged by containing a filesystem object with the given NAME
+.TP
+.B  \-\-keep\-exclude\-tags
+if tag objects are specified with \fB\-\-exclude\-if\-present\fP, don\(aqt omit the tag objects themselves from the backup archive
+.TP
+.B  \-\-exclude\-nodump
+exclude files flagged NODUMP
+.UNINDENT
+.SS Filesystem options
+.INDENT 0.0
+.TP
+.B  \-x\fP,\fB  \-\-one\-file\-system
+stay in the same file system and do not store mount points of other file systems.  This might behave different from your expectations, see the docs.
+.TP
+.B  \-\-numeric\-ids
+only store numeric user and group identifiers
+.TP
+.B  \-\-atime
+do store atime into archive
+.TP
+.B  \-\-noctime
+do not store ctime into archive
+.TP
+.B  \-\-nobirthtime
+do not store birthtime (creation date) into archive
+.TP
+.B  \-\-noflags
+do not read and store flags (e.g. NODUMP, IMMUTABLE) into archive
+.TP
+.B  \-\-noacls
+do not read and store ACLs into archive
+.TP
+.B  \-\-noxattrs
+do not read and store xattrs into archive
+.TP
+.B  \-\-sparse
+detect sparse holes in input (supported only by fixed chunker)
+.TP
+.BI \-\-files\-cache \ MODE
+operate files cache in MODE. default: ctime,size,inode
+.TP
+.B  \-\-read\-special
+open and read block and char device files as well as FIFOs as if they were regular files. Also follows symlinks pointing to these kinds of files.
+.UNINDENT
+.SS Archive options
+.INDENT 0.0
+.TP
+.BI \-\-comment \ COMMENT
+add a comment text to the archive
+.TP
+.BI \-\-timestamp \ TIMESTAMP
+manually specify the archive creation date/time (yyyy\-mm\-ddThh:mm:ss[(+|\-)HH:MM] format, (+|\-)HH:MM is the UTC offset, default: local time zone). Alternatively, give a reference file/directory.
+.TP
+.BI \-c \ SECONDS\fR,\fB \ \-\-checkpoint\-interval \ SECONDS
+write checkpoint every SECONDS seconds (Default: 1800)
+.TP
+.BI \-\-chunker\-params \ PARAMS
+specify the chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, HASH_MASK_BITS, HASH_WINDOW_SIZE). default: buzhash,19,23,21,4095
+.TP
+.BI \-C \ COMPRESSION\fR,\fB \ \-\-compression \ COMPRESSION
+select compression algorithm, see the output of the \(dqbork help compression\(dq command for details.
+.UNINDENT
+.SH EXAMPLES
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# Backup ~/Documents into an archive named \(dqmy\-documents\(dq
+$ bork create my\-documents ~/Documents
+
+# same, but list all files as we process them
+$ bork create \-\-list my\-documents ~/Documents
+
+# Backup ~/Documents and ~/src but exclude pyc files
+$ bork create my\-files                \e
+    ~/Documents                       \e
+    ~/src                             \e
+    \-\-exclude \(aq*.pyc\(aq
+
+# Backup home directories excluding image thumbnails (i.e. only
+# /home/<one directory>/.thumbnails is excluded, not /home/*/*/.thumbnails etc.)
+$ bork create my\-files /home \-\-exclude \(aqsh:home/*/.thumbnails\(aq
+
+# Backup the root filesystem into an archive named \(dqroot\-YYYY\-MM\-DD\(dq
+# use zlib compression (good, but slow) \- default is lz4 (fast, low compression ratio)
+$ bork create \-C zlib,6 \-\-one\-file\-system root\-{now:%Y\-%m\-%d} /
+
+# Backup into an archive name like FQDN\-root\-TIMESTAMP
+$ bork create \(aq{fqdn}\-root\-{now}\(aq /
+
+# Backup a remote host locally (\(dqpull\(dq style) using sshfs
+$ mkdir sshfs\-mount
+$ sshfs root@example.com:/ sshfs\-mount
+$ cd sshfs\-mount
+$ bork create example.com\-root\-{now:%Y\-%m\-%d} .
+$ cd ..
+$ fusermount \-u sshfs\-mount
+
+# Make a big effort in fine granular deduplication (big chunk management
+# overhead, needs a lot of RAM and disk space, see formula in internals
+# docs \- same parameters as bork < 1.0):
+$ bork create \-\-chunker\-params buzhash,10,23,16,4095 small /smallstuff
+
+# Backup a raw device (must not be active/in use/mounted at that time)
+$ bork create \-\-read\-special \-\-chunker\-params fixed,4194304 my\-sdx /dev/sdX
+
+# Backup a sparse disk image (must not be active/in use/mounted at that time)
+$ bork create \-\-sparse \-\-chunker\-params fixed,4194304 my\-disk my\-disk.raw
+
+# No compression (none)
+$ bork create \-\-compression none arch ~
+
+# Super fast, low compression (lz4, default)
+$ bork create arch ~
+
+# Less fast, higher compression (zlib, N = 0..9)
+$ bork create \-\-compression zlib,N arch ~
+
+# Even slower, even higher compression (lzma, N = 0..9)
+$ bork create \-\-compression lzma,N arch ~
+
+# Only compress compressible data with lzma,N (N = 0..9)
+$ bork create \-\-compression auto,lzma,N arch ~
+
+# Use short hostname, user name and current time in archive name
+$ bork create \(aq{hostname}\-{user}\-{now}\(aq ~
+# Similar, use the same datetime format that is default as of bork 1.1
+$ bork create \(aq{hostname}\-{user}\-{now:%Y\-%m\-%dT%H:%M:%S}\(aq ~
+# As above, but add nanoseconds
+$ bork create \(aq{hostname}\-{user}\-{now:%Y\-%m\-%dT%H:%M:%S.%f}\(aq ~
+
+# Backing up relative paths by moving into the correct directory first
+$ cd /home/user/Documents
+# The root directory of the archive will be \(dqprojectA\(dq
+$ bork create \(aqdaily\-projectA\-{now:%Y\-%m\-%d}\(aq projectA
+
+# Use external command to determine files to archive
+# Use \-\-paths\-from\-stdin with find to only backup files less than 1MB in size
+$ find ~ \-size \-1000k | bork create \-\-paths\-from\-stdin small\-files\-only
+# Use \-\-paths\-from\-command with find to only backup files from a given user
+$ bork create \-\-paths\-from\-command joes\-files \-\- find /srv/samba/shared \-user joe
+# Use \-\-paths\-from\-stdin with \-\-paths\-delimiter (for example, for filenames with newlines in them)
+$ find ~ \-size \-1000k \-print0 | bork create \e
+    \-\-paths\-from\-stdin \e
+    \-\-paths\-delimiter \(dq\e0\(dq \e
+    smallfiles\-handle\-newline
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH NOTES
+.sp
+The \fB\-\-exclude\fP patterns are not like tar. In tar \fB\-\-exclude\fP .bundler/gems will
+exclude foo/.bundler/gems. In bork it will not, you need to use \fB\-\-exclude\fP
+\(aq*/.bundler/gems\(aq to get the same effect.
+.sp
+In addition to using \fB\-\-exclude\fP patterns, it is possible to use
+\fB\-\-exclude\-if\-present\fP to specify the name of a filesystem object (e.g. a file
+or folder name) which, when contained within another folder, will prevent the
+containing folder from being backed up.  By default, the containing folder and
+all of its contents will be omitted from the backup.  If, however, you wish to
+only include the objects specified by \fB\-\-exclude\-if\-present\fP in your backup,
+and not include any other contents of the containing folder, this can be enabled
+through using the \fB\-\-keep\-exclude\-tags\fP option.
+.sp
+The \fB\-x\fP or \fB\-\-one\-file\-system\fP option excludes directories, that are mountpoints (and everything in them).
+It detects mountpoints by comparing the device number from the output of \fBstat()\fP of the directory and its
+parent directory. Specifically, it excludes directories for which \fBstat()\fP reports a device number different
+from the device number of their parent. Be aware that in Linux (and possibly elsewhere) there are directories
+with device number different from their parent, which the kernel does not consider a mountpoint and also the
+other way around. Examples are bind mounts (possibly same device number, but always a mountpoint) and ALL
+subvolumes of a btrfs (different device number from parent but not necessarily a mountpoint). Therefore when
+using \fB\-\-one\-file\-system\fP, one should make doubly sure that the backup works as intended especially when using
+btrfs. This is even more important, if the btrfs layout was created by someone else, e.g. a distribution
+installer.
+.SS Item flags
+.sp
+\fB\-\-list\fP outputs a list of all files, directories and other
+file system items it considered (no matter whether they had content changes
+or not). For each item, it prefixes a single\-letter flag that indicates type
+and/or status of the item.
+.sp
+If you are interested only in a subset of that output, you can give e.g.
+\fB\-\-filter=AME\fP and it will only show regular files with A, M or E status (see
+below).
+.sp
+A uppercase character represents the status of a regular file relative to the
+\(dqfiles\(dq cache (not relative to the repo \-\- this is an issue if the files cache
+is not used). Metadata is stored in any case and for \(aqA\(aq and \(aqM\(aq also new data
+chunks are stored. For \(aqU\(aq all data chunks refer to already existing chunks.
+.INDENT 0.0
+.IP \(bu 2
+\(aqA\(aq = regular file, added (see also \fIa_status_oddity\fP in the FAQ)
+.IP \(bu 2
+\(aqM\(aq = regular file, modified
+.IP \(bu 2
+\(aqU\(aq = regular file, unchanged
+.IP \(bu 2
+\(aqC\(aq = regular file, it changed while we backed it up
+.IP \(bu 2
+\(aqE\(aq = regular file, an error happened while accessing/reading \fIthis\fP file
+.UNINDENT
+.sp
+A lowercase character means a file type other than a regular file,
+bork usually just stores their metadata:
+.INDENT 0.0
+.IP \(bu 2
+\(aqd\(aq = directory
+.IP \(bu 2
+\(aqb\(aq = block device
+.IP \(bu 2
+\(aqc\(aq = char device
+.IP \(bu 2
+\(aqh\(aq = regular file, hardlink (to already seen inodes)
+.IP \(bu 2
+\(aqs\(aq = symlink
+.IP \(bu 2
+\(aqf\(aq = fifo
+.UNINDENT
+.sp
+Other flags used include:
+.INDENT 0.0
+.IP \(bu 2
+\(aqi\(aq = backup data was read from standard input (stdin)
+.IP \(bu 2
+\(aq\-\(aq = dry run, item was \fInot\fP backed up
+.IP \(bu 2
+\(aqx\(aq = excluded, item was \fInot\fP backed up
+.IP \(bu 2
+\(aq?\(aq = missing status code (if you see this, please file a bug report!)
+.UNINDENT
+.SS Reading from stdin
+.sp
+There are two methods to read from stdin. Either specify \fB\-\fP as path and
+pipe directly to bork:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+backup\-vm \-\-id myvm \-\-stdout | bork create REPO::ARCHIVE \-
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Or use \fB\-\-content\-from\-command\fP to have Bork manage the execution of the
+command and piping. If you do so, the first PATH argument is interpreted
+as command to execute and any further arguments are treated as arguments
+to the command:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+bork create \-\-content\-from\-command REPO::ARCHIVE \-\- backup\-vm \-\-id myvm \-\-stdout
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+\fB\-\-\fP is used to ensure \fB\-\-id\fP and \fB\-\-stdout\fP are \fBnot\fP considered
+arguments to \fBbork\fP but rather \fBbackup\-vm\fP\&.
+.sp
+The difference between the two approaches is that piping to bork creates an
+archive even if the command piping to bork exits with a failure. In this case,
+\fBone can end up with truncated output being backed up\fP\&. Using
+\fB\-\-content\-from\-command\fP, in contrast, bork is guaranteed to fail without
+creating an archive should the command fail. The command is considered failed
+when it returned a non\-zero exit code.
+.sp
+Reading from stdin yields just a stream of data without file metadata
+associated with it, and the files cache is not needed at all. So it is
+safe to disable it via \fB\-\-files\-cache disabled\fP and speed up backup
+creation a bit.
+.sp
+By default, the content read from stdin is stored in a file called \(aqstdin\(aq.
+Use \fB\-\-stdin\-name\fP to change the name.
+.SH SEE ALSO
+.sp
+\fIbork\-common(1)\fP, \fIbork\-delete(1)\fP, \fIbork\-prune(1)\fP, \fIbork\-check(1)\fP, \fIbork\-patterns(1)\fP, \fIbork\-placeholders(1)\fP, \fIbork\-compression(1)\fP
+.SH AUTHOR
+The Bork Collective
+.\" Generated by docutils manpage writer.
+.
