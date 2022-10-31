@@ -1,39 +1,39 @@
-This is borg2!
+This is bork2!
 --------------
 
-Please note that this is the README for borg2 / master branch.
+Please note that this is the README for bork2 / master branch.
 
-borg2 is currently in beta testing.
+bork2 is currently in beta testing.
 
 For the stable version's docs, please see there:
 
-https://borgbackup.readthedocs.io/en/stable/
+https://borkbackup.readthedocs.io/en/stable/
 
-TODO: the screencasts need a remake using borg2, see there:
+TODO: the screencasts need a remake using bork2, see there:
 
-https://github.com/borgbackup/borg/issues/6303
+https://github.com/furikuda/bork/issues/6303
 
 .. |screencast_basic|
 .. More screencasts: `installation`_, `advanced usage`_
 
-What is BorgBackup?
+What is BorkBackup?
 -------------------
 
-BorgBackup (short: Borg) is a deduplicating backup program.
+BorkBackup (short: Bork) is a deduplicating backup program.
 Optionally, it supports compression and authenticated encryption.
 
-The main goal of Borg is to provide an efficient and secure way to backup data.
-The data deduplication technique used makes Borg suitable for daily backups
+The main goal of Bork is to provide an efficient and secure way to backup data.
+The data deduplication technique used makes Bork suitable for daily backups
 since only changes are stored.
 The authenticated encryption technique makes it suitable for backups to not
 fully trusted targets.
 
 See the `installation manual`_ or, if you have already
-downloaded Borg, ``docs/installation.rst`` to get started with Borg.
+downloaded Bork, ``docs/installation.rst`` to get started with Bork.
 There is also an `offline documentation`_ available, in multiple formats.
 
-.. _installation manual: https://borgbackup.readthedocs.org/en/stable/installation.html
-.. _offline documentation: https://readthedocs.org/projects/borgbackup/downloads
+.. _installation manual: https://borkbackup.readthedocs.org/en/stable/installation.html
+.. _offline documentation: https://readthedocs.org/projects/borkbackup/downloads
 
 Main features
 ~~~~~~~~~~~~~
@@ -75,7 +75,7 @@ Main features
     authenticity.
 
 **Obfuscation**
-    Optionally, borg can actively obfuscate e.g. the size of files / chunks to
+    Optionally, bork can actively obfuscate e.g. the size of files / chunks to
     make fingerprinting attacks more difficult.
 
 **Compression**
@@ -88,7 +88,7 @@ Main features
     * lzma (low speed, high compression)
 
 **Off-site backups**
-    Borg can store data on any remote host accessible over SSH.  If Borg is
+    Bork can store data on any remote host accessible over SSH.  If Bork is
     installed on the remote host, big performance gains can be achieved
     compared to using a network filesystem (sshfs, nfs, ...).
 
@@ -119,17 +119,17 @@ For ease of use, set the BORG_REPO environment variable::
 
     $ export BORG_REPO=/path/to/repo
 
-Create a new backup repository (see ``borg rcreate --help`` for encryption options)::
+Create a new backup repository (see ``bork rcreate --help`` for encryption options)::
 
-    $ borg rcreate -e repokey-aes-ocb
+    $ bork rcreate -e repokey-aes-ocb
 
 Create a new backup archive::
 
-    $ borg create Monday1 ~/Documents
+    $ bork create Monday1 ~/Documents
 
 Now doing another backup, just to show off the great deduplication::
 
-    $ borg create -v --stats Monday2 ~/Documents
+    $ bork create -v --stats Monday2 ~/Documents
     Repository: /path/to/repo
     Archive name: Monday2
     Archive fingerprint: 7714aef97c1a24539cc3dc73f79b060f14af04e2541da33d54c7ee8e81a00089
@@ -150,22 +150,22 @@ Spread the word, give feedback, help with documentation, testing or development.
 
 You can also give monetary support to the project, see there for details:
 
-https://www.borgbackup.org/support/fund.html
+https://www.borkbackup.org/support/fund.html
 
 Links
 -----
 
-* `Main Web Site <https://borgbackup.readthedocs.org/>`_
-* `Releases <https://github.com/borgbackup/borg/releases>`_,
-  `PyPI packages <https://pypi.python.org/pypi/borgbackup>`_ and
-  `ChangeLog <https://github.com/borgbackup/borg/blob/master/docs/changes.rst>`_
-* `Offline Documentation <https://readthedocs.org/projects/borgbackup/downloads>`_
-* `GitHub <https://github.com/borgbackup/borg>`_ and
-  `Issue Tracker <https://github.com/borgbackup/borg/issues>`_.
-* `Web-Chat (IRC) <https://web.libera.chat/#borgbackup>`_ and
-  `Mailing List <https://mail.python.org/mailman/listinfo/borgbackup>`_
-* `License <https://borgbackup.readthedocs.org/en/stable/authors.html#license>`_
-* `Security contact <https://borgbackup.readthedocs.io/en/latest/support.html#security-contact>`_
+* `Main Web Site <https://borkbackup.readthedocs.org/>`_
+* `Releases <https://github.com/furikuda/bork/releases>`_,
+  `PyPI packages <https://pypi.python.org/pypi/borkbackup>`_ and
+  `ChangeLog <https://github.com/furikuda/bork/blob/master/docs/changes.rst>`_
+* `Offline Documentation <https://readthedocs.org/projects/borkbackup/downloads>`_
+* `GitHub <https://github.com/furikuda/bork>`_ and
+  `Issue Tracker <https://github.com/furikuda/bork/issues>`_.
+* `Web-Chat (IRC) <https://web.libera.chat/#borkbackup>`_ and
+  `Mailing List <https://mail.python.org/mailman/listinfo/borkbackup>`_
+* `License <https://borkbackup.readthedocs.org/en/stable/authors.html#license>`_
+* `Security contact <https://borkbackup.readthedocs.io/en/latest/support.html#security-contact>`_
 
 Compatibility notes
 -------------------
@@ -186,22 +186,22 @@ see ``docs/support.rst`` in the source distribution).
 
 .. |bounties| image:: https://api.bountysource.com/badge/team?team_id=78284&style=bounties_posted
         :alt: Bounty Source
-        :target: https://www.bountysource.com/teams/borgbackup
+        :target: https://www.bountysource.com/teams/borkbackup
 
-.. |doc| image:: https://readthedocs.org/projects/borgbackup/badge/?version=stable
+.. |doc| image:: https://readthedocs.org/projects/borkbackup/badge/?version=stable
         :alt: Documentation
-        :target: https://borgbackup.readthedocs.org/en/stable/
+        :target: https://borkbackup.readthedocs.org/en/stable/
 
-.. |build| image:: https://github.com/borgbackup/borg/workflows/CI/badge.svg?branch=master
+.. |build| image:: https://github.com/furikuda/bork/workflows/CI/badge.svg?branch=master
         :alt: Build Status (master)
-        :target: https://github.com/borgbackup/borg/actions
+        :target: https://github.com/furikuda/bork/actions
 
-.. |coverage| image:: https://codecov.io/github/borgbackup/borg/coverage.svg?branch=master
+.. |coverage| image:: https://codecov.io/github/furikuda/bork/coverage.svg?branch=master
         :alt: Test Coverage
-        :target: https://codecov.io/github/borgbackup/borg?branch=master
+        :target: https://codecov.io/github/furikuda/bork?branch=master
 
 .. |screencast_basic| image:: https://asciinema.org/a/133292.png
-        :alt: BorgBackup Basic Usage
+        :alt: BorkBackup Basic Usage
         :target: https://asciinema.org/a/133292?autoplay=1&speed=1
         :width: 100%
 

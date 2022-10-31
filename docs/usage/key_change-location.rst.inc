@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_key_change-location:
+.. _bork_key_change-location:
 
-borg key change-location
+bork key change-location
 ------------------------
 .. code-block:: none
 
-    borg [common options] key change-location [options] KEY_LOCATION
+    bork [common options] key change-location [options] KEY_LOCATION
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+------------------+----------------------------------------------------------------+
     | **positional arguments**                                                                                                                  |
@@ -21,7 +21,7 @@ borg key change-location
     +-------------------------------------------------------+------------------+----------------------------------------------------------------+
     |                                                       | ``--keep``       | keep the key also at the current location (default: remove it) |
     +-------------------------------------------------------+------------------+----------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                            |
+    | .. class:: bork-common-opt-ref                                                                                                            |
     |                                                                                                                                           |
     | :ref:`common_options`                                                                                                                     |
     +-------------------------------------------------------+------------------+----------------------------------------------------------------+
@@ -30,7 +30,7 @@ borg key change-location
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -50,7 +50,7 @@ borg key change-location
 Description
 ~~~~~~~~~~~
 
-Change the location of a borg key. The key can be stored at different locations:
+Change the location of a bork key. The key can be stored at different locations:
 
 - keyfile: locally, usually in the home directory
 - repokey: inside the repo (in the repo config)

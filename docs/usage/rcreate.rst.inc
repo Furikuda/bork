@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_rcreate:
+.. _bork_rcreate:
 
-borg rcreate
+bork rcreate
 ------------
 .. code-block:: none
 
-    borg [common options] rcreate [options]
+    bork [common options] rcreate [options]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | **optional arguments**                                                                                                                                                                                                                                                                                                              |
@@ -27,7 +27,7 @@ borg rcreate
     +-------------------------------------------------------+------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--copy-crypt-key``               | copy the crypt_key (used for authenticated encryption) from the key of the other repo (default: new random key).                                                                                                                       |
     +-------------------------------------------------------+------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                                                                                                                                                                      |
+    | .. class:: bork-common-opt-ref                                                                                                                                                                                                                                                                                                      |
     |                                                                                                                                                                                                                                                                                                                                     |
     | :ref:`common_options`                                                                                                                                                                                                                                                                                                               |
     +-------------------------------------------------------+------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -36,7 +36,7 @@ borg rcreate
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -72,20 +72,20 @@ tips will come below):
 
 ::
 
-    borg rcreate --encryption repokey-aes-ocb
+    bork rcreate --encryption repokey-aes-ocb
 
-Borg will:
+Bork will:
 
 1. Ask you to come up with a passphrase.
-2. Create a borg key (which contains some random secrets. See :ref:`key_files`).
+2. Create a bork key (which contains some random secrets. See :ref:`key_files`).
 3. Derive a "key encryption key" from your passphrase
 4. Encrypt and sign the key with the key encryption key
-5. Store the encrypted borg key inside the repository directory (in the repo config).
+5. Store the encrypted bork key inside the repository directory (in the repo config).
    This is why it is essential to use a secure passphrase.
 6. Encrypt and sign your backups to prevent anyone from reading or forging them unless they
    have the key and know the passphrase. Make sure to keep a backup of
    your key **outside** the repository - do not lock yourself out by
-   "leaving your keys inside your car" (see :ref:`borg_key_export`).
+   "leaving your keys inside your car" (see :ref:`bork_key_export`).
    The encryption is done locally - if you use a remote repository, the remote machine
    never sees your passphrase, your unencrypted key or your unencrypted files.
    Chunking and id generation are also based on your key to improve
@@ -103,7 +103,7 @@ passphrase.
 
 Be careful with special or non-ascii characters in your passphrase:
 
-- Borg processes the passphrase as unicode (and encodes it as utf-8),
+- Bork processes the passphrase as unicode (and encodes it as utf-8),
   so it does not have problems dealing with even the strangest characters.
 - BUT: that does not necessarily apply to your OS / VM / keyboard configuration.
 
@@ -118,13 +118,13 @@ Choosing an encryption mode
 +++++++++++++++++++++++++++
 
 Depending on your hardware, hashing and crypto performance may vary widely.
-The easiest way to find out about what's fastest is to run ``borg benchmark cpu``.
+The easiest way to find out about what's fastest is to run ``bork benchmark cpu``.
 
 `repokey` modes: if you want ease-of-use and "passphrase" security is good enough -
 the key will be stored in the repository (in ``repo_dir/config``).
 
 `keyfile` modes: if you rather want "passphrase and having-the-key" security -
-the key will be stored in your home directory (in ``~/.config/borg/keys``).
+the key will be stored in your home directory (in ``~/.config/bork/keys``).
 
 The following table is roughly sorted in order of preference, the better ones are
 in the upper part of the table, in the lower part is the old and/or unsafe(r) stuff:
@@ -170,4 +170,4 @@ Optionally, if you use ``--copy-crypt-key`` you can also keep the same crypt_key
 (used for authenticated encryption). Might be desired e.g. if you want to have less
 keys to manage.
 
-Creating related repositories is useful e.g. if you want to use ``borg transfer`` later.
+Creating related repositories is useful e.g. if you want to use ``bork transfer`` later.

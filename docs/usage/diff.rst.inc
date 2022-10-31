@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_diff:
+.. _bork_diff:
 
-borg diff
+bork diff
 ---------
 .. code-block:: none
 
-    borg [common options] diff [options] ARCHIVE1 ARCHIVE2 [PATH...]
+    bork [common options] diff [options] ARCHIVE1 ARCHIVE2 [PATH...]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+---------------------------------------+-----------------------------------------------------------------------+
     | **positional arguments**                                                                                                                                              |
@@ -31,7 +31,7 @@ borg diff
     +-------------------------------------------------------+---------------------------------------+-----------------------------------------------------------------------+
     |                                                       | ``--json-lines``                      | Format output as JSON Lines.                                          |
     +-------------------------------------------------------+---------------------------------------+-----------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                        |
+    | .. class:: bork-common-opt-ref                                                                                                                                        |
     |                                                                                                                                                                       |
     | :ref:`common_options`                                                                                                                                                 |
     +-------------------------------------------------------+---------------------------------------+-----------------------------------------------------------------------+
@@ -50,7 +50,7 @@ borg diff
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -90,13 +90,13 @@ A repository location and an archive name must be specified for REPO::ARCHIVE1.
 ARCHIVE2 is just another archive name in same repository (no repository location
 allowed).
 
-For archives created with Borg 1.1 or newer diff automatically detects whether
+For archives created with Bork 1.1 or newer diff automatically detects whether
 the archives are created with the same chunker params. If so, only chunk IDs
 are compared, which is very fast.
 
-For archives prior to Borg 1.1 chunk contents are compared by default.
+For archives prior to Bork 1.1 chunk contents are compared by default.
 If you did not create the archives with different chunker params,
 pass ``--same-chunker-params``.
-Note that the chunker params changed from Borg 0.xx to 1.0.
+Note that the chunker params changed from Bork 0.xx to 1.0.
 
-For more help on include/exclude patterns, see the :ref:`borg_patterns` command output.
+For more help on include/exclude patterns, see the :ref:`bork_patterns` command output.

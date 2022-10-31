@@ -2,17 +2,17 @@
 # note: put developer specific settings into ~/.coarc (e.g. editor = ...)
 max_line_length = 255
 use_spaces = True
-ignore = src/borg/(checksums.c|chunker.c|compress.c|hashindex.c|item.c),
-         src/borg/crypto/low_level.c,
-         src/borg/platform/*.c
+ignore = src/bork/(checksums.c|chunker.c|compress.c|hashindex.c|item.c),
+         src/bork/crypto/low_level.c,
+         src/bork/platform/*.c
 
 [all.general]
-files = src/borg/**/*.(py|pyx|c)
+files = src/bork/**/*.(py|pyx|c)
 bears = SpaceConsistencyBear, FilenameBear, InvalidLinkBear, LineLengthBear
 file_naming_convention = snake
 
 [all.python]
-files = src/borg/**/*.py
+files = src/bork/**/*.py
 bears = PEP8Bear, PyDocStyleBear, PyLintBear
 pep_ignore = E123,E125,E126,E127,E128,E226,E301,E309,E402,F401,F405,F811,W690
 pylint_disable = C0103, C0111, C0112, C0122, C0123, C0301, C0302, C0325, C0330, C0411, C0412, C0413, C1801,
@@ -27,10 +27,10 @@ pydocstyle_ignore = D100, D101, D102, D103, D104, D105, D200, D201, D202, D203, 
                     D212, D213, D300, D301, D400, D401, D402, D403, D404
 
 [all.c]
-files = src/borg/**/*.c
+files = src/bork/**/*.c
 bears = CPPCheckBear
 
 [all.html]
-files = src/borg/**/*.html
+files = src/bork/**/*.html
 bears = HTMLLintBear
 htmllint_ignore = *

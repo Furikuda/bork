@@ -5,7 +5,7 @@
 Quick Start
 ===========
 
-This chapter will get you started with Borg and covers various use cases.
+This chapter will get you started with Bork and covers various use cases.
 
 A step by step example
 ----------------------
@@ -15,14 +15,14 @@ A step by step example
 Archives and repositories
 -------------------------
 
-A *Borg archive* is the result of a single backup (``borg create``). An archive
+A *Bork archive* is the result of a single backup (``bork create``). An archive
 stores a snapshot of the data of the files "inside" it. One can later extract or
 mount an archive to restore from a backup.
 
 *Repositories* are filesystem directories acting as self-contained stores of archives.
 Repositories can be accessed locally via path or remotely via ssh. Under the hood,
 repositories contain data blocks and a manifest tracking which blocks are in each
-archive. If some data hasn't changed from one backup to another, Borg can simply
+archive. If some data hasn't changed from one backup to another, Bork can simply
 reference an already uploaded data chunk (deduplication).
 
 .. _about_free_space:
@@ -35,20 +35,20 @@ a good amount of free space on the filesystem that has your backup repository
 (and also on ~/.cache). A few GB should suffice for most hard-drive sized
 repositories. See also :ref:`cache-memory-usage`.
 
-Borg doesn't use space reserved for root on repository disks (even when run as root),
+Bork doesn't use space reserved for root on repository disks (even when run as root),
 on file systems which do not support this mechanism (e.g. XFS) we recommend to reserve
-some space in Borg itself just to be safe by adjusting the ``additional_free_space``
+some space in Bork itself just to be safe by adjusting the ``additional_free_space``
 setting (a good starting point is ``2G``)::
 
-    borg config additional_free_space 2G
+    bork config additional_free_space 2G
 
-If Borg runs out of disk space, it tries to free as much space as it
+If Bork runs out of disk space, it tries to free as much space as it
 can while aborting the current operation safely, which allows the user to free more space
 by deleting/pruning archives. This mechanism is not bullet-proof in some
 circumstances [1]_.
 
 If you *really* run out of disk space, it can be hard or impossible to free space,
-because Borg needs free space to operate - even to delete backup archives.
+because Bork needs free space to operate - even to delete backup archives.
 
 You can use some monitoring process or just include the free space information
 in your backup log files (you check them regularly anyway, right?).
@@ -71,34 +71,34 @@ Also helpful:
 Important note about permissions
 --------------------------------
 
-To avoid permissions issues (in your borg repository or borg cache), **always
+To avoid permissions issues (in your bork repository or bork cache), **always
 access the repository using the same user account**.
 
 If you want to backup files of other users or the operating system, running
-borg as root likely will be required (otherwise you'ld get `Permission denied`
+bork as root likely will be required (otherwise you'ld get `Permission denied`
 errors).
-If you only back up your own files, you neither need nor want to run borg as
+If you only back up your own files, you neither need nor want to run bork as
 root, just run it as your normal user.
 
-For a local repository just always use the same user to invoke borg.
+For a local repository just always use the same user to invoke bork.
 
-For a remote repository: always use e.g. ssh://borg@remote_host. You can use this
-from different local users, the remote user running borg and accessing the
-repo will always be `borg`.
+For a remote repository: always use e.g. ssh://bork@remote_host. You can use this
+from different local users, the remote user running bork and accessing the
+repo will always be `bork`.
 
 If you need to access a local repository from different users, you can use the
-same method by using ssh to borg@localhost.
+same method by using ssh to bork@localhost.
 
 Important note about files changing during the backup process
 -------------------------------------------------------------
 
-Borg does not do anything about the internal consistency of the data
+Bork does not do anything about the internal consistency of the data
 it backs up.  It just reads and backs up each file in whatever state
-that file is when Borg gets to it.  On an active system, this can lead
+that file is when Bork gets to it.  On an active system, this can lead
 to two kinds of inconsistency:
 
-- By the time Borg backs up a file, it might have changed since the backup process was initiated
-- A file could change while Borg is backing it up, making the file internally inconsistent
+- By the time Bork backs up a file, it might have changed since the backup process was initiated
+- A file could change while Bork is backing it up, making the file internally inconsistent
 
 If you have a set of files and want to ensure that they are backed up
 in a specific or consistent state, you must take steps to prevent
@@ -116,14 +116,14 @@ common techniques to achieve this.
 
 - Shut down containers before backing up their storage volumes.
 
-For some systems Borg might work well enough without these
+For some systems Bork might work well enough without these
 precautions.  If you are simply backing up the files on a system that
-isn't very active (e.g. in a typical home directory), Borg usually
+isn't very active (e.g. in a typical home directory), Bork usually
 works well enough without further care for consistency.  Log files and
 caches might not be in a perfect state, but this is rarely a problem.
 
 For databases, virtual machines, and containers, there are specific
-techniques for backing them up that do not simply use Borg to backup
+techniques for backing them up that do not simply use Bork to backup
 the underlying filesystem.  For databases, check your database
 documentation for techniques that will save the database state between
 transactions.  For virtual machines, consider running the backup on
@@ -137,12 +137,12 @@ The following example script is meant to be run daily by the ``root`` user on
 different local machines. It backs up a machine's important files (but not the
 complete operating system) to a repository ``~/backup/main``  on a remote server.
 Some files which aren't necessarily needed in this backup are excluded. See
-:ref:`borg_patterns` on how to add more exclude options.
+:ref:`bork_patterns` on how to add more exclude options.
 
-After the backup this script also uses the :ref:`borg_prune` subcommand to keep
+After the backup this script also uses the :ref:`bork_prune` subcommand to keep
 only a certain number of old archives and deletes the others.
 
-Finally, it uses the :ref:`borg_compact` subcommand to remove deleted objects
+Finally, it uses the :ref:`bork_compact` subcommand to remove deleted objects
 from the segment files in the repository to free disk space.
 
 Before running, make sure that the repository is initialized as documented in
@@ -174,7 +174,7 @@ backed up and that the ``prune`` command is keeping and deleting the correct bac
     # Backup the most important directories into an archive named after
     # the machine this script is currently running on:
 
-    borg create                         \
+    bork create                         \
         --verbose                       \
         --filter AME                    \
         --list                          \
@@ -200,7 +200,7 @@ backed up and that the ``prune`` command is keeping and deleting the correct bac
     # limit prune's operation to this machine's archives and not apply to
     # other machines' archives also:
 
-    borg prune                              \
+    bork prune                              \
         --list                              \
         --match-archives 'sh:{hostname}-*'  \
         --show-rc                           \
@@ -214,7 +214,7 @@ backed up and that the ``prune`` command is keeping and deleting the correct bac
 
     info "Compacting repository"
 
-    borg compact
+    bork compact
 
     compact_exit=$?
 
@@ -235,14 +235,14 @@ backed up and that the ``prune`` command is keeping and deleting the correct bac
 Pitfalls with shell variables and environment variables
 -------------------------------------------------------
 
-This applies to all environment variables you want Borg to see, not just
+This applies to all environment variables you want Bork to see, not just
 ``BORG_PASSPHRASE``. The short explanation is: always ``export`` your variable,
 and use single quotes if you're unsure of the details of your shell's expansion
 behavior. E.g.::
 
     export BORG_PASSPHRASE='complicated & long'
 
-This is because ``export`` exposes variables to subprocesses, which Borg may be
+This is because ``export`` exposes variables to subprocesses, which Bork may be
 one of. More on ``export`` can be found in the "ENVIRONMENT" section of the
 bash(1) man page.
 
@@ -250,21 +250,21 @@ Beware of how ``sudo`` interacts with environment variables. For example, you
 may be surprised that the following ``export`` has no effect on your command::
 
    export BORG_PASSPHRASE='complicated & long'
-   sudo ./yourborgwrapper.sh  # still prompts for password
+   sudo ./yourborkwrapper.sh  # still prompts for password
 
 For more information, refer to the sudo(8) man page and ``env_keep`` in
 the sudoers(5) man page.
 
 .. Tip::
-    To debug what your borg process is actually seeing, find its PID
-    (``ps aux|grep borg``) and then look into ``/proc/<PID>/environ``.
+    To debug what your bork process is actually seeing, find its PID
+    (``ps aux|grep bork``) and then look into ``/proc/<PID>/environ``.
 
 .. passphrase_notes:
 
 Passphrase notes
 ----------------
 
-If you use encryption (or authentication), Borg will interactively ask you
+If you use encryption (or authentication), Bork will interactively ask you
 for a passphrase to encrypt/decrypt the keyfile / repokey.
 
 A passphrase should be a single line of text, a trailing linefeed will be
@@ -274,7 +274,7 @@ For your own safety, you maybe want to avoid empty passphrases as well
 extremely long passphrase (much more than 256 bits of entropy).
 
 Also avoid passphrases containing non-ASCII characters.
-Borg is technically able to process all unicode text, but you might get into
+Bork is technically able to process all unicode text, but you might get into
 trouble reproducing the same encoded utf-8 bytes or with keyboard layouts,
 so better just avoid non-ASCII stuff.
 
@@ -292,15 +292,15 @@ Or ask an external program to supply the passphrase::
     export BORG_PASSCOMMAND='pass show backup'
 
     # use GPG to get the passphrase contained in a gpg-encrypted file:
-    export BORG_PASSCOMMAND='gpg --decrypt borg-passphrase.gpg'
+    export BORG_PASSCOMMAND='gpg --decrypt bork-passphrase.gpg'
 
 Or read the passphrase from an open file descriptor::
 
     export BORG_PASSPHRASE_FD=42
 
 Using hardware crypto devices (like Nitrokey, Yubikey and others) is not
-directly supported by borg, but you can use these indirectly.
-E.g. if your crypto device supports GPG and borg calls ``gpg`` via
+directly supported by bork, but you can use these indirectly.
+E.g. if your crypto device supports GPG and bork calls ``gpg`` via
 ``BORG_PASSCOMMAND``, it should just work.
 
 .. backup_compression:
@@ -317,27 +317,27 @@ compression) using N=1 to high compression (and lower speed) using N=22.
 zstd is a modern compression algorithm and might be preferable over zlib and
 lzma.::
 
-    $ borg create --compression zstd,N arch ~
+    $ bork create --compression zstd,N arch ~
 
 Other options are:
 
 If you have a fast repo storage and you want minimum CPU usage, no compression::
 
-    $ borg create --compression none arch ~
+    $ bork create --compression none arch ~
 
 If you have a less fast repo storage and you want a bit more compression (N=0..9,
 0 means no compression, 9 means high compression):
 
 ::
 
-    $ borg create --compression zlib,N arch ~
+    $ bork create --compression zlib,N arch ~
 
 If you have a very slow repo storage and you want high compression (N=0..9, 0 means
 low compression, 9 means high compression):
 
 ::
 
-    $ borg create --compression lzma,N arch ~
+    $ bork create --compression lzma,N arch ~
 
 You'll need to experiment a bit to find the best compression for your use case.
 Keep an eye on CPU load and throughput.
@@ -349,10 +349,10 @@ Repository encryption
 
 You can choose the repository encryption mode at repository creation time::
 
-    $ borg rcreate --encryption=MODE
+    $ bork rcreate --encryption=MODE
 
 For a list of available encryption MODEs and their descriptions, please refer
-to :ref:`borg_rcreate`.
+to :ref:`bork_rcreate`.
 
 If you use encryption, all data is encrypted on the client before being written
 to the repository.
@@ -376,7 +376,7 @@ For automated backups the passphrase can be specified using the
     Make a backup copy of the key file (``keyfile`` mode) or repo config
     file (``repokey`` mode) and keep it at a safe place, so you still have
     the key in case it gets corrupted or lost. Also keep your passphrase
-    at a safe place. You can make backups using :ref:`borg_key_export`
+    at a safe place. You can make backups using :ref:`bork_key_export`
     subcommand.
 
     If you want to print a backup of your key to paper use the ``--paper``
@@ -393,27 +393,27 @@ For automated backups the passphrase can be specified using the
 Remote repositories
 -------------------
 
-Borg can initialize and access repositories on remote hosts if the
-host is accessible using SSH.  This is fastest and easiest when Borg
+Bork can initialize and access repositories on remote hosts if the
+host is accessible using SSH.  This is fastest and easiest when Bork
 is installed on the remote host, in which case the following syntax is used::
 
-  $ borg -r ssh://user@hostname:port/path/to/repo rcreate ...
+  $ bork -r ssh://user@hostname:port/path/to/repo rcreate ...
 
 Note: please see the usage chapter for a full documentation of repo URLs.
 
 Remote operations over SSH can be automated with SSH keys. You can restrict the
 use of the SSH keypair by prepending a forced command to the SSH public key in
-the remote server's `authorized_keys` file. This example will start Borg
+the remote server's `authorized_keys` file. This example will start Bork
 in server mode and limit it to a specific filesystem path::
 
-  command="borg serve --restrict-to-path /path/to/repo",restrict ssh-rsa AAAAB3[...]
+  command="bork serve --restrict-to-path /path/to/repo",restrict ssh-rsa AAAAB3[...]
 
-If it is not possible to install Borg on the remote host,
+If it is not possible to install Bork on the remote host,
 it is still possible to use the remote host to store a repository by
 mounting the remote filesystem, for example, using sshfs::
 
   $ sshfs user@hostname:/path/to /path/to
-  $ borg -r /path/to/repo rcreate ...
+  $ bork -r /path/to/repo rcreate ...
   $ fusermount -u /path/to
 
 You can also use other remote filesystems in a similar way. Just be careful,
@@ -434,21 +434,21 @@ that avoids quite some issues:
 - no confusion relating to paths
 - same mapping of user/group names to user/group IDs
 - no permission issues
-- you likely already have a working borg setup there,
+- you likely already have a working bork setup there,
 
   - maybe including a environment variable for the key passphrase (for encrypted repos),
   - maybe including a keyfile for the repo (not needed for repokey mode),
   - maybe including a ssh key for the repo server (not needed for locally mounted repos),
-  - maybe including a valid borg cache for that repo (quicker than cache rebuild).
+  - maybe including a valid bork cache for that repo (quicker than cache rebuild).
 
 The **user** might be:
 
 - root (if full backups, backups including system stuff or multiple
   users' files were made)
-- some specific user using sudo to execute borg as root
+- some specific user using sudo to execute bork as root
 - some specific user (if backups of that user's files were made)
 
-A borg **backup repository** can be either:
+A bork **backup repository** can be either:
 
 - in a local directory (like e.g. a locally mounted USB disk)
 - on a remote backup server machine that is reachable via ssh (client/server)
@@ -466,10 +466,10 @@ The **key** can be located:
   This may cause a bit more effort:
 
   - if you have just lost that home directory and you first need to restore the
-    borg key (e.g. from the separate backup you have made of it or from another
+    bork key (e.g. from the separate backup you have made of it or from another
     user or machine accessing the same repository).
   - if you first must find out the correct machine / user / home directory
-    (where the borg client was run to make the backups).
+    (where the bork client was run to make the backups).
 
 The **passphrase** for the key has been either:
 
@@ -479,9 +479,9 @@ The **passphrase** for the key has been either:
   (look there for BORG_PASSPHRASE, BORG_PASSCOMMAND, etc. and just do it like
   that).
 
-There are **2 ways to restore** files from a borg backup repository:
+There are **2 ways to restore** files from a bork backup repository:
 
-- **borg mount** - use this if:
+- **bork mount** - use this if:
 
   - you don't precisely know what files you want to restore
   - you don't know which archive contains the files (in the state) you want
@@ -490,10 +490,10 @@ There are **2 ways to restore** files from a borg backup repository:
   - you don't care for restoring stuff that the FUSE mount is not implementing yet
     (like special fs flags, ACLs)
   - you have a client with good resources (RAM, CPU, temp. disk space)
-  - you want to rather use some filemanager to restore (copy) files than borg
+  - you want to rather use some filemanager to restore (copy) files than bork
     extract shell commands
 
-- **borg extract** - use this if:
+- **bork extract** - use this if:
 
   - you precisely know what you want (repo, archive, path)
   - you need a high volume of files restored (best speed)
@@ -502,60 +502,60 @@ There are **2 ways to restore** files from a borg backup repository:
   - you have a client with low resources (RAM, CPU, temp. disk space)
 
 
-Example with **borg mount**:
+Example with **bork mount**:
 
 ::
 
     # open a new, separate terminal (this terminal will be blocked until umount)
 
     # now we find out the archive names we have in the repo:
-    borg rlist
+    bork rlist
 
-    # mount one archive from a borg repo:
-    borg mount -a myserver-system-2019-08-11 /mnt/borg
+    # mount one archive from a bork repo:
+    bork mount -a myserver-system-2019-08-11 /mnt/bork
 
-    # alternatively, mount all archives from a borg repo (slower):
-    borg mount /mnt/borg
+    # alternatively, mount all archives from a bork repo (slower):
+    bork mount /mnt/bork
 
-    # it may take a while until you will see stuff in /mnt/borg.
+    # it may take a while until you will see stuff in /mnt/bork.
 
-    # now use another terminal or file browser and look into /mnt/borg.
+    # now use another terminal or file browser and look into /mnt/bork.
     # when finished, umount to unlock the repo and unblock the terminal:
-    borg umount /mnt/borg
+    bork umount /mnt/bork
 
 
-Example with **borg extract**:
+Example with **bork extract**:
 
 ::
 
-    # borg extract always extracts into current directory and that directory
-    # should be empty (borg does not support transforming a non-empty dir to
+    # bork extract always extracts into current directory and that directory
+    # should be empty (bork does not support transforming a non-empty dir to
     # the state as present in your backup archive).
-    mkdir borg_restore
-    cd borg_restore
+    mkdir bork_restore
+    cd bork_restore
 
     # now we find out the archive names we have in the repo:
-    borg rlist
+    bork rlist
 
     # we could find out the archive contents, esp. the path layout:
-    borg list myserver-system-2019-08-11
+    bork list myserver-system-2019-08-11
 
     # we extract only some specific path (note: no leading / !):
-    borg extract myserver-system-2019-08-11 path/to/extract
+    bork extract myserver-system-2019-08-11 path/to/extract
 
     # alternatively, we could fully extract the archive:
-    borg extract myserver-system-2019-08-11
+    bork extract myserver-system-2019-08-11
 
     # now move the files to the correct place...
 
 
-Difference when using a **remote borg backup server**:
+Difference when using a **remote bork backup server**:
 
 It is basically all the same as with the local repository, but you need to
 refer to the repo using a ``ssh://`` URL.
 
-In the given example, ``borg`` is the user name used to log into the machine
-``backup.example.org`` which runs ssh on port ``2222`` and has the borg repo
+In the given example, ``bork`` is the user name used to log into the machine
+``backup.example.org`` which runs ssh on port ``2222`` and has the bork repo
 in ``/path/to/repo``.
 
 Instead of giving a FQDN or a hostname, you can also give an IP address.
@@ -566,6 +566,6 @@ case if unattended, automated backups were done).
 
 ::
 
-    borg -r ssh://borg@backup.example.org:2222/path/to/repo mount /mnt/borg
+    bork -r ssh://bork@backup.example.org:2222/path/to/repo mount /mnt/bork
     # or
-    borg -r ssh://borg@backup.example.org:2222/path/to/repo extract archive
+    bork -r ssh://bork@backup.example.org:2222/path/to/repo extract archive

@@ -15,7 +15,7 @@ def long_desc_from_readme():
     with open("README.rst") as fd:
         long_description = fd.read()
         # remove header, but have one \n before first headline
-        start = long_description.find("What is BorgBackup?")
+        start = long_description.find("What is BorkBackup?")
         assert start >= 0
         long_description = "\n" + long_description[start:]
         # remove badges
@@ -49,18 +49,18 @@ class build_usage(Command):
 
     def run(self):
         print("generating usage docs")
-        import borg
+        import bork
 
-        borg.doc_mode = "build_man"
+        bork.doc_mode = "build_man"
         if not os.path.exists("docs/usage"):
             os.mkdir("docs/usage")
         # allows us to build docs without the C modules fully loaded during help generation
-        from borg.archiver import Archiver
+        from bork.archiver import Archiver
 
-        parser = Archiver(prog="borg").build_parser()
-        # borgfs has a separate man page to satisfy debian's "every program from a package
+        parser = Archiver(prog="bork").build_parser()
+        # borkfs has a separate man page to satisfy debian's "every program from a package
         # must have a man page" requirement, but it doesn't need a separate HTML docs page
-        # borgfs_parser = Archiver(prog='borgfs').build_parser()
+        # borkfs_parser = Archiver(prog='borkfs').build_parser()
 
         self.generate_level("", parser, Archiver)
 
@@ -88,22 +88,22 @@ class build_usage(Command):
                 continue
 
             with open("docs/usage/%s.rst.inc" % command.replace(" ", "_"), "w") as doc:
-                doc.write(".. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!\n\n")
+                doc.write(".. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!\n\n")
                 if command == "help":
                     for topic in Archiver.helptext:
-                        params = {"topic": topic, "underline": "~" * len("borg help " + topic)}
-                        doc.write(".. _borg_{topic}:\n\n".format(**params))
-                        doc.write("borg help {topic}\n{underline}\n\n".format(**params))
+                        params = {"topic": topic, "underline": "~" * len("bork help " + topic)}
+                        doc.write(".. _bork_{topic}:\n\n".format(**params))
+                        doc.write("bork help {topic}\n{underline}\n\n".format(**params))
                         doc.write(Archiver.helptext[topic])
                 else:
                     params = {
                         "command": command,
                         "command_": command.replace(" ", "_"),
-                        "underline": "-" * len("borg " + command),
+                        "underline": "-" * len("bork " + command),
                     }
-                    doc.write(".. _borg_{command_}:\n\n".format(**params))
+                    doc.write(".. _bork_{command_}:\n\n".format(**params))
                     doc.write(
-                        "borg {command}\n{underline}\n.. code-block:: none\n\n    borg [common options] {command}".format(
+                        "bork {command}\n{underline}\n.. code-block:: none\n\n    bork [common options] {command}".format(
                             **params
                         )
                     )
@@ -145,7 +145,7 @@ class build_usage(Command):
         for group in parser._action_groups:
             if group.title == "Common options":
                 # (no of columns used, columns, ...)
-                rows.append((1, ".. class:: borg-common-opt-ref\n\n:ref:`common_options`"))
+                rows.append((1, ".. class:: bork-common-opt-ref\n\n:ref:`common_options`"))
             else:
                 if not group._group_actions:
                     continue
@@ -168,7 +168,7 @@ class build_usage(Command):
 
         fp.write(".. only:: html\n\n")
         table = io.StringIO()
-        table.write(".. class:: borg-options-table\n\n")
+        table.write(".. class:: bork-options-table\n\n")
         self.rows_to_table(rows, table.write)
         fp.write(textwrap.indent(table.getvalue(), " " * 4))
 
@@ -236,7 +236,7 @@ class build_usage(Command):
 
             <script type='text/javascript'>
             $(document).ready(function () {
-                $('.borg-options-table colgroup').remove();
+                $('.bork-options-table colgroup').remove();
             })
             </script>
         """
@@ -303,7 +303,7 @@ class build_man(Command):
         """
     .. role:: ref(title)
 
-    .. |project_name| replace:: Borg
+    .. |project_name| replace:: Bork
 
     """
     )
@@ -330,17 +330,17 @@ class build_man(Command):
 
     def run(self):
         print("building man pages (in docs/man)", file=sys.stderr)
-        import borg
+        import bork
 
-        borg.doc_mode = "build_man"
+        bork.doc_mode = "build_man"
         os.makedirs("docs/man", exist_ok=True)
         # allows us to build docs without the C modules fully loaded during help generation
-        from borg.archiver import Archiver
+        from bork.archiver import Archiver
 
-        parser = Archiver(prog="borg").build_parser()
-        borgfs_parser = Archiver(prog="borgfs").build_parser()
+        parser = Archiver(prog="bork").build_parser()
+        borkfs_parser = Archiver(prog="borkfs").build_parser()
 
-        self.generate_level("", parser, Archiver, {"borgfs": borgfs_parser})
+        self.generate_level("", parser, Archiver, {"borkfs": borkfs_parser})
         self.build_topic_pages(Archiver)
         self.build_intro_page()
 
@@ -361,10 +361,10 @@ class build_man(Command):
             if command.startswith("debug") or command == "help":
                 continue
 
-            if command == "borgfs":
+            if command == "borkfs":
                 man_title = command
             else:
-                man_title = "borg-" + command.replace(" ", "-")
+                man_title = "bork-" + command.replace(" ", "-")
             print("building man page", man_title + "(1)", file=sys.stderr)
 
             is_intermediary = self.generate_level(command + " ", parser, Archiver)
@@ -376,13 +376,13 @@ class build_man(Command):
             if is_intermediary:
                 subparsers = [action for action in parser._actions if "SubParsersAction" in str(action.__class__)][0]
                 for subcommand in subparsers.choices:
-                    write("| borg", "[common options]", command, subcommand, "...")
+                    write("| bork", "[common options]", command, subcommand, "...")
                     self.see_also.setdefault(command, []).append(f"{command}-{subcommand}")
             else:
-                if command == "borgfs":
+                if command == "borkfs":
                     write(command, end="")
                 else:
-                    write("borg", "[common options]", command, end="")
+                    write("bork", "[common options]", command, end="")
                 self.write_usage(write, parser)
             write("\n")
 
@@ -394,7 +394,7 @@ class build_man(Command):
 
             if not is_intermediary:
                 self.write_heading(write, "OPTIONS")
-                write("See `borg-common(1)` for common options of Borg commands.")
+                write("See `bork-common(1)` for common options of Bork commands.")
                 write()
                 self.write_options(write, parser)
 
@@ -408,11 +408,11 @@ class build_man(Command):
 
             self.gen_man_page(man_title, doc.getvalue())
 
-        # Generate the borg-common(1) man page with the common options.
+        # Generate the bork-common(1) man page with the common options.
         if "create" in choices:
             doc, write = self.new_doc()
-            man_title = "borg-common"
-            self.write_man_header(write, man_title, "Common options of Borg commands")
+            man_title = "bork-common"
+            self.write_man_header(write, man_title, "Common options of Bork commands")
 
             common_options = [group for group in choices["create"]._action_groups if group.title == "Common options"][0]
 
@@ -426,7 +426,7 @@ class build_man(Command):
     def build_topic_pages(self, Archiver):
         for topic, text in Archiver.helptext.items():
             doc, write = self.new_doc()
-            man_title = "borg-" + topic
+            man_title = "bork-" + topic
             print("building man page", man_title + "(1)", file=sys.stderr)
 
             self.write_man_header(write, man_title, "Details regarding " + topic)
@@ -436,8 +436,8 @@ class build_man(Command):
 
     def build_intro_page(self):
         doc, write = self.new_doc()
-        man_title = "borg"
-        print("building man page borg(1)", file=sys.stderr)
+        man_title = "bork"
+        print("building man page bork(1)", file=sys.stderr)
 
         with open("docs/man_intro.rst") as fd:
             man_intro = fd.read()
@@ -469,10 +469,10 @@ class build_man(Command):
         self.write_heading(write, title, "=", double_sided=True)
         self.write_heading(write, description, double_sided=True)
         # man page metadata
-        write(":Author: The Borg Collective")
+        write(":Author: The Bork Collective")
         write(":Date:", datetime.utcnow().date().isoformat())
         write(":Manual section: 1")
-        write(":Manual group: borg backup tool")
+        write(":Manual group: bork backup tool")
         write()
 
     def write_examples(self, write, command):
@@ -498,9 +498,9 @@ class build_man(Command):
             write(examples)
 
     def write_see_also(self, write, man_title):
-        see_also = self.see_also.get(man_title.replace("borg-", ""), ())
-        see_also = ["`borg-%s(1)`" % s for s in see_also]
-        see_also.insert(0, "`borg-common(1)`")
+        see_also = self.see_also.get(man_title.replace("bork-", ""), ())
+        see_also = ["`bork-%s(1)`" % s for s in see_also]
+        see_also.insert(0, "`bork-common(1)`")
         self.write_heading(write, "SEE ALSO")
         write(", ".join(see_also))
 

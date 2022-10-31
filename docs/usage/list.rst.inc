@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_list:
+.. _bork_list:
 
-borg list
+bork list
 ---------
 .. code-block:: none
 
-    borg [common options] list [options] NAME [PATH...]
+    bork [common options] list [options] NAME [PATH...]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+---------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | **positional arguments**                                                                                                                                                                                                                                                                                                        |
@@ -27,7 +27,7 @@ borg list
     +-------------------------------------------------------+---------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--json-lines``                      | Format output as JSON Lines. The form of ``--format`` is ignored, but keys used in it are added to the JSON output. Some keys are always present. Note: JSON can only represent text. A "bpath" key is therefore not available. |
     +-------------------------------------------------------+---------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                                                                                                                                                                  |
+    | .. class:: bork-common-opt-ref                                                                                                                                                                                                                                                                                                  |
     |                                                                                                                                                                                                                                                                                                                                 |
     | :ref:`common_options`                                                                                                                                                                                                                                                                                                           |
     +-------------------------------------------------------+---------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -46,7 +46,7 @@ borg list
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -79,7 +79,7 @@ Description
 
 This command lists the contents of an archive.
 
-For more help on include/exclude patterns, see the :ref:`borg_patterns` command output.
+For more help on include/exclude patterns, see the :ref:`bork_patterns` command output.
 
 .. man NOTES
 
@@ -92,13 +92,13 @@ The ``--format`` option uses python's `format string syntax
 Examples:
 ::
 
-    $ borg list --format '{mode} {user:6} {group:6} {size:8} {mtime} {path}{extra}{NL}' ArchiveFoo
+    $ bork list --format '{mode} {user:6} {group:6} {size:8} {mtime} {path}{extra}{NL}' ArchiveFoo
     -rw-rw-r-- user   user       1024 Thu, 2021-12-09 10:22:17 file-foo
     ...
 
     # {VAR:<NUMBER} - pad to NUMBER columns left-aligned.
     # {VAR:>NUMBER} - pad to NUMBER columns right-aligned.
-    $ borg list --format '{mode} {user:>6} {group:>6} {size:<8} {mtime} {path}{extra}{NL}' ArchiveFoo
+    $ bork list --format '{mode} {user:>6} {group:>6} {size:<8} {mtime} {path}{extra}{NL}' ArchiveFoo
     -rw-rw-r--   user   user 1024     Thu, 2021-12-09 10:22:17 file-foo
     ...
 

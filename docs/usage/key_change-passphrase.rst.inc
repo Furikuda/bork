@@ -1,19 +1,19 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_key_change-passphrase:
+.. _bork_key_change-passphrase:
 
-borg key change-passphrase
+bork key change-passphrase
 --------------------------
 .. code-block:: none
 
-    borg [common options] key change-passphrase [options]
+    bork [common options] key change-passphrase [options]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                        |
+    | .. class:: bork-common-opt-ref                        |
     |                                                       |
     | :ref:`common_options`                                 |
     +-------------------------------------------------------+
@@ -22,7 +22,7 @@ borg key change-passphrase
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -41,5 +41,5 @@ protected. This command can be used to change this passphrase.
 
 Please note that this command only changes the passphrase, but not any
 secret protected by it (like e.g. encryption/MAC keys or chunker seed).
-Thus, changing the passphrase after passphrase and borg key got compromised
+Thus, changing the passphrase after passphrase and bork key got compromised
 does not protect future (nor past) backups to the same repository.

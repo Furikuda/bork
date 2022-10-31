@@ -11,14 +11,14 @@ Compatibility notes:
 - you may need to use -v (or --info) more often to actually see output emitted
   at INFO log level (because it is suppressed at the default WARNING log level).
   See the "general" section in the usage docs.
-- for borg create, you need --list (additionally to -v) to see the long file
+- for bork create, you need --list (additionally to -v) to see the long file
   list (was needed so you can have e.g. --stats alone without the long list)
 - see below about BORG_DELETE_I_KNOW_WHAT_I_AM_DOING (was:
   BORG_CHECK_I_KNOW_WHAT_I_AM_DOING)
 
 Bug fixes:
 
-- fix crash when using borg create --dry-run --keep-tag-files, #570
+- fix crash when using bork create --dry-run --keep-tag-files, #570
 - make sure teardown with cleanup happens for Cache and RepositoryCache,
   avoiding leftover locks and TEMP dir contents, #285 (partially), #548
 - fix locking KeyError, partial fix for #502
@@ -26,31 +26,31 @@ Bug fixes:
 - add abbreviated weekday to timestamp format, fixes #496
 - strip whitespace when loading exclusions from file
 - unset LD_LIBRARY_PATH before invoking ssh, fixes strange OpenSSL library
-  version warning when using the borg binary, #514
+  version warning when using the bork binary, #514
 - add some error handling/fallback for C library loading, #494
-- added BORG_DELETE_I_KNOW_WHAT_I_AM_DOING for check in "borg delete", #503
+- added BORG_DELETE_I_KNOW_WHAT_I_AM_DOING for check in "bork delete", #503
 - remove unused "repair" rpc method name
 
 New features:
 
-- borg create: implement exclusions using regular expression patterns.
-- borg create: implement inclusions using patterns.
-- borg extract: support patterns, #361
+- bork create: implement exclusions using regular expression patterns.
+- bork create: implement inclusions using patterns.
+- bork extract: support patterns, #361
 - support different styles for patterns:
 
-  - fnmatch (`fm:` prefix, default when omitted), like borg <= 0.29.
+  - fnmatch (`fm:` prefix, default when omitted), like bork <= 0.29.
   - shell (`sh:` prefix) with `*` not matching directory separators and
     `**/` matching 0..n directories
-  - path prefix (`pp:` prefix, for unifying borg create pp1 pp2 into the
-    patterns system), semantics like in borg <= 0.29
+  - path prefix (`pp:` prefix, for unifying bork create pp1 pp2 into the
+    patterns system), semantics like in bork <= 0.29
   - regular expression (`re:`), new!
-- --progress option for borg upgrade (#291) and borg delete <archive>
-- update progress indication more often (e.g. for borg create within big
-  files or for borg check repo), #500
+- --progress option for bork upgrade (#291) and bork delete <archive>
+- update progress indication more often (e.g. for bork create within big
+  files or for bork check repo), #500
 - finer chunker granularity for items metadata stream, #547, #487
-- borg create --list now used (additionally to -v) to enable the verbose
+- bork create --list now used (additionally to -v) to enable the verbose
   file list output
-- display borg version below tracebacks, #532
+- display bork version below tracebacks, #532
 
 Other changes:
 
@@ -69,10 +69,10 @@ Other changes:
   - sphinx configuration: create a simple man page from usage docs
   - add a repo server setup example
   - disable unneeded SSH features in authorized_keys examples for security.
-  - borg prune only knows "--keep-within" and not "--within"
+  - bork prune only knows "--keep-within" and not "--within"
   - add gource video to resources docs, #507
   - add netbsd install instructions
-  - authors: make it more clear what refers to borg and what to attic
+  - authors: make it more clear what refers to bork and what to attic
   - document standalone binary requirements, #499
   - rephrase the mailing list section
   - development docs: run build_api and build_usage before tagging release
@@ -91,11 +91,11 @@ Compatibility notes:
   you'll get an error msg about a RPC protocol mismatch or a wrong commandline
   option.
   if you run a server that needs to support both old and new clients, it is
-  suggested that you have a "borg-0.28.2" and a "borg-0.29.0" command.
-  clients then can choose via e.g. "borg --remote-path=borg-0.29.0 ...".
+  suggested that you have a "bork-0.28.2" and a "bork-0.29.0" command.
+  clients then can choose via e.g. "bork --remote-path=bork-0.29.0 ...".
 - the default waiting time for a lock changed from infinity to 1 second for a
   better interactive user experience. if the repo you want to access is
-  currently locked, borg will now terminate after 1s with an error message.
+  currently locked, bork will now terminate after 1s with an error message.
   if you have scripts that shall wait for the lock for a longer time, use
   --lock-wait N (with N being the maximum wait time in seconds).
 
@@ -105,15 +105,15 @@ Bug fixes:
   size of 1031 gave ~1000x speedup in some scenarios)
 - avoid creation of an orphan lock for one case, #285
 - --keep-tag-files: fix file mode and multiple tag files in one directory, #432
-- fixes for "borg upgrade" (attic repo converter), #466
+- fixes for "bork upgrade" (attic repo converter), #466
 - remove --progress isatty magic (and also --no-progress option) again, #476
-- borg init: display proper repo URL
+- bork init: display proper repo URL
 - fix format of umask in help pages, #463
 
 New features:
 
 - implement --lock-wait, support timeout for UpgradableLock, #210
-- implement borg break-lock command, #157
+- implement bork break-lock command, #157
 - include system info below traceback, #324
 - sane remote logging, remote stderr, #461:
 
@@ -125,10 +125,10 @@ New features:
   note: there are few messages emitted at DEBUG level currently.
 - optionally configure logging via env var BORG_LOGGING_CONF
 - add --filter option for status characters: e.g. to show only the added
-  or modified files (and also errors), use "borg create -v --filter=AME ...".
+  or modified files (and also errors), use "bork create -v --filter=AME ...".
 - more progress indicators, #394
 - use ISO-8601 date and time format, #375
-- "borg check --prefix" to restrict archive checking to that name prefix, #206
+- "bork check --prefix" to restrict archive checking to that name prefix, #206
 
 Other changes:
 
@@ -136,24 +136,24 @@ Other changes:
 - increase FUSE read_size to 1024 (speed up metadata operations)
 - check/delete/prune --save-space: free unused segments quickly, #239
 - increase rpc protocol version to 2 (see also Compatibility notes), #458
-- silence borg by default (via default log level WARNING)
+- silence bork by default (via default log level WARNING)
 - get rid of C compiler warnings, #391
 - upgrade OS X FUSE to 3.0.9 on the OS X binary build system
 - use python 3.5.1 to build binaries
 - docs:
 
-  - new mailing list borgbackup@python.org, #468
+  - new mailing list borkbackup@python.org, #468
   - readthedocs: color and logo improvements
   - load coverage icons over SSL (avoids mixed content)
   - more precise binary installation steps
   - update release procedure docs about OS X FUSE
   - FAQ entry about unexpected 'A' status for unchanged file(s), #403
   - add docs about 'E' file status
-  - add "borg upgrade" docs, #464
+  - add "bork upgrade" docs, #464
   - add developer docs about output and logging
   - clarify encryption, add note about client-side encryption
   - add resources section, with videos, talks, presentations, #149
-  - Borg moved to Arch Linux [community]
+  - Bork moved to Arch Linux [community]
   - fix wrong installation instructions for archlinux
 
 
@@ -162,7 +162,7 @@ Version 0.28.2 (2015-11-15)
 
 New features:
 
-- borg create --exclude-if-present TAGFILE - exclude directories that have the
+- bork create --exclude-if-present TAGFILE - exclude directories that have the
   given file from the backup. You can additionally give --keep-tag-files to
   preserve just the directory roots and the tag-files (but not backup other
   directory contents), #395, attic #128, attic #142
@@ -208,12 +208,12 @@ New features:
 
 - refactor return codes (exit codes), fixes #61
 - add --show-rc option enable "terminating with X status, rc N" output, fixes 58, #351
-- borg create backups atime and ctime additionally to mtime, fixes #317
+- bork create backups atime and ctime additionally to mtime, fixes #317
   - extract: support atime additionally to mtime
   - FUSE: support ctime and atime additionally to mtime
-- support borg --version
+- support bork --version
 - emit a warning if we have a slow msgpack installed
-- borg list --prefix=thishostname- REPO, fixes #205
+- bork list --prefix=thishostname- REPO, fixes #205
 - Debug commands (do not use except if you know what you do: debug-get-obj,
   debug-put-obj, debug-delete-obj, debug-dump-archive-items.
 
@@ -221,13 +221,13 @@ Bug fixes:
 
 - setup.py: fix bug related to BORG_LZ4_PREFIX processing
 - fix "check" for repos that have incomplete chunks, fixes #364
-- borg mount: fix unlocking of repository at umount time, fixes #331
+- bork mount: fix unlocking of repository at umount time, fixes #331
 - fix reading files without touching their atime, #334
 - non-ascii ACL fixes for Linux, FreeBSD and OS X, #277
 - fix acl_use_local_uid_gid() and add a test for it, attic #359
-- borg upgrade: do not upgrade repositories in place by default, #299
+- bork upgrade: do not upgrade repositories in place by default, #299
 - fix cascading failure with the index conversion code, #269
-- borg check: implement 'cmdline' archive metadata value decoding, #311
+- bork check: implement 'cmdline' archive metadata value decoding, #311
 - fix RobustUnpacker, it missed some metadata keys (new atime and ctime keys
   were missing, but also bsdflags). add check for unknown metadata keys.
 - create from stdin: also save atime, ctime (cosmetic)
@@ -251,7 +251,7 @@ Other changes:
   maybe fixes #309
 - move away from RawConfigParser to ConfigParser
 - archive checker: better error logging, give chunk_id and sequence numbers
-  (can be used together with borg debug-dump-archive-items).
+  (can be used together with bork debug-dump-archive-items).
 - do not mention the deprecated passphrase mode
 - emit a deprecation warning for --compression N (giving a just a number)
 - misc .coverragerc fixes (and coverage measurement improvements), fixes #319
@@ -273,11 +273,11 @@ Other changes:
   - make basic test more robust
 - docs:
 
-  - moved docs to borgbackup.readthedocs.org, #155
+  - moved docs to borkbackup.readthedocs.org, #155
   - a lot of fixes and improvements, use mobile-friendly RTD standard theme
   - use zlib,6 compression in some examples, fixes #275
   - add missing rename usage to docs, closes #279
-  - include the help offered by borg help <topic> in the usage docs, fixes #293
+  - include the help offered by bork help <topic> in the usage docs, fixes #293
   - include a list of major changes compared to attic into README, fixes #224
   - add OS X install instructions, #197
   - more details about the release process, #260
@@ -285,7 +285,7 @@ Other changes:
   - build: move usage and API generation to setup.py
   - update docs about return codes, #61
   - remove api docs (too much breakage on rtd)
-  - borgbackup install + basics presentation (asciinema)
+  - borkbackup install + basics presentation (asciinema)
   - describe the current style guide in documentation
   - add section about debug commands
   - warn about not running out of space
@@ -299,17 +299,17 @@ Version 0.27.0 (2015-10-07)
 
 New features:
 
-- "borg upgrade" command - attic -> borg one time converter / migration, #21
+- "bork upgrade" command - attic -> bork one time converter / migration, #21
 - temporary hack to avoid using lots of disk space for chunks.archive.d, #235:
   To use it: rm -rf chunks.archive.d ; touch chunks.archive.d
 - respect XDG_CACHE_HOME, attic #181
 - add support for arbitrary SSH commands, attic #99
-- borg delete --cache-only REPO (only delete cache, not REPO), attic #123
+- bork delete --cache-only REPO (only delete cache, not REPO), attic #123
 
 
 Bug fixes:
 
-- use Debian 7 (wheezy) to build pyinstaller borgbackup binaries, fixes slow
+- use Debian 7 (wheezy) to build pyinstaller borkbackup binaries, fixes slow
   down observed when running the Centos6-built binary on Ubuntu, #222
 - do not crash on empty lock.roster, fixes #232
 - fix multiple issues with the cache config version check, #234
@@ -350,14 +350,14 @@ New features:
 - Faster cache sync (do all in one pass, remove tar/compression stuff), #163
 - BORG_REPO env var to specify the default repo, #168
 - read special files as if they were regular files, #79
-- implement borg create --dry-run, attic issue #267
+- implement bork create --dry-run, attic issue #267
 - Normalize paths before pattern matching on OS X, #143
 - support OpenBSD and NetBSD (except xattrs/ACLs)
 - support / run tests on Python 3.5
 
 Bug fixes:
 
-- borg mount repo: use absolute path, attic #200, attic #137
+- bork mount repo: use absolute path, attic #200, attic #137
 - chunker: use off_t to get 64bit on 32bit platform, #178
 - initialize chunker fd to -1, so it's not equal to STDIN_FILENO (0)
 - fix reaction to "no" answer at delete repo prompt, #182
@@ -410,11 +410,11 @@ Compatibility notes:
 
 - lz4 compression library (liblz4) is a new requirement (#156)
 - the new compression code is very compatible: as long as you stay with zlib
-  compression, older borg releases will still be able to read data from a
+  compression, older bork releases will still be able to read data from a
   repo/archive made with the new code (note: this is not the case for the
   default "none" compression, use "zlib,0" if you want a "no compression" mode
-  that can be read by older borg). Also the new code is able to read repos and
-  archives made with older borg versions (for all zlib levels  0..9).
+  that can be read by older bork). Also the new code is able to read repos and
+  archives made with older bork versions (for all zlib levels  0..9).
 
 Deprecations:
 
@@ -430,7 +430,7 @@ Deprecations:
 New features:
 
 - create --compression none (default, means: do not compress, just pass through
-  data "as is". this is more efficient than zlib level 0 as used in borg 0.24)
+  data "as is". this is more efficient than zlib level 0 as used in bork 0.24)
 - create --compression lz4 (super-fast, but not very high compression)
 - create --compression zlib,N (slower, higher compression, default for N is 6)
 - create --compression lzma,N (slowest, highest compression, default N is 6)
@@ -475,14 +475,14 @@ Version 0.24.0 (2015-08-09)
 
 Incompatible changes (compared to 0.23):
 
-- borg now always issues --umask NNN option when invoking another borg via ssh
+- bork now always issues --umask NNN option when invoking another bork via ssh
   on the repository server. By that, it's making sure it uses the same umask
   for remote repos as for local ones. Because of this, you must upgrade both
   server and client(s) to 0.24.
 - the default umask is 077 now (if you do not specify via --umask) which might
   be a different one as you used previously. The default umask avoids that
   you accidentally give access permissions for group and/or others to files
-  created by borg (e.g. the repository).
+  created by bork (e.g. the repository).
 
 Deprecations:
 
@@ -491,22 +491,22 @@ Deprecations:
 
 New features:
 
-- borg create --chunker-params ... to configure the chunker, fixes #16
+- bork create --chunker-params ... to configure the chunker, fixes #16
   (attic #302, attic #300, and somehow also #41).
   This can be used to reduce memory usage caused by chunk management overhead,
-  so borg does not create a huge chunks index/repo index and eats all your RAM
+  so bork does not create a huge chunks index/repo index and eats all your RAM
   if you back up lots of data in huge files (like VM disk images).
   See docs/misc/create_chunker-params.txt for more information.
-- borg info now reports chunk counts in the chunk index.
-- borg create --compression 0..9 to select zlib compression level, fixes #66
+- bork info now reports chunk counts in the chunk index.
+- bork create --compression 0..9 to select zlib compression level, fixes #66
   (attic #295).
-- borg init --encryption repokey (to store the encryption key into the repo),
+- bork init --encryption repokey (to store the encryption key into the repo),
   fixes #85
 - improve at-end error logging, always log exceptions and set exit_code=1
 - LoggedIO: better error checks / exceptions / exception handling
-- implement --remote-path to allow non-default-path borg locations, #125
+- implement --remote-path to allow non-default-path bork locations, #125
 - implement --umask M and use 077 as default umask for better security, #117
-- borg check: give a named single archive to it, fixes #139
+- bork check: give a named single archive to it, fixes #139
 - cache sync: show progress indication
 - cache sync: reimplement the chunk index merging in C
 
@@ -518,7 +518,7 @@ Bug fixes:
 - repo delete: add destroy to allowed rpc methods, fixes issue #114
 - more compatible repository locking code (based on mkdir), maybe fixes #92
   (attic #317, attic #201).
-- better Exception msg if no Borg is installed on the remote repo server, #56
+- better Exception msg if no Bork is installed on the remote repo server, #56
 - create a RepositoryCache implementation that can cope with >2GiB,
   fixes attic #326.
 - fix Traceback when running check --repair, attic #232
@@ -532,23 +532,23 @@ Other changes:
   - added docs/misc directory for misc. writeups that won't be included
     "as is" into the html docs.
   - document environment variables and return codes (attic #324, attic #52)
-  - web site: add related projects, fix web site url, IRC #borgbackup
+  - web site: add related projects, fix web site url, IRC #borkbackup
   - Fedora/Fedora-based install instructions added to docs
   - Cygwin-based install instructions added to docs
   - updated AUTHORS
   - add FAQ entries about redundancy / integrity
-  - clarify that borg extract uses the cwd as extraction target
+  - clarify that bork extract uses the cwd as extraction target
   - update internals doc about chunker params, memory usage and compression
   - added docs about development
   - add some words about resource usage in general
   - document how to backup a raw disk
-  - add note about how to run borg from virtual env
+  - add note about how to run bork from virtual env
   - add solutions for (ll)fuse installation problems
-  - document what borg check does, fixes #138
-  - reorganize borgbackup.github.io sidebar, prev/next at top
+  - document what bork check does, fixes #138
+  - reorganize borkbackup.github.io sidebar, prev/next at top
   - deduplicate and refactor the docs / README.rst
 
-- use borg-tmp as prefix for temporary files / directories
+- use bork-tmp as prefix for temporary files / directories
 - short prune options without "keep-" are deprecated, do not suggest them
 - improved tox configuration
 - remove usage of unittest.mock, always use mock from pypi
@@ -579,10 +579,10 @@ Version 0.23.0 (2015-06-11)
 
 Incompatible changes (compared to attic, fork related):
 
-- changed sw name and cli command to "borg", updated docs
-- package name (and name in urls) uses "borgbackup" to have fewer collisions
+- changed sw name and cli command to "bork", updated docs
+- package name (and name in urls) uses "borkbackup" to have fewer collisions
 - changed repo / cache internal magic strings from ATTIC* to BORG*,
-  changed cache location to .cache/borg/ - this means that it currently won't
+  changed cache location to .cache/bork/ - this means that it currently won't
   accept attic repos (see issue #21 about improving that)
 
 Bug fixes:
@@ -640,7 +640,7 @@ Other changes:
 Attic Changelog
 ---------------
 
-Here you can see the full list of changes between each Attic release until Borg
+Here you can see the full list of changes between each Attic release until Bork
 forked from Attic:
 
 Version 0.17

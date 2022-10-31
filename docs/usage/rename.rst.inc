@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_rename:
+.. _bork_rename:
 
-borg rename
+bork rename
 -----------
 .. code-block:: none
 
-    borg [common options] rename [options] OLDNAME NEWNAME
+    bork [common options] rename [options] OLDNAME NEWNAME
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+-------------+------------------------------+
     | **positional arguments**                                                                           |
@@ -19,7 +19,7 @@ borg rename
     +-------------------------------------------------------+-------------+------------------------------+
     |                                                       | ``NEWNAME`` | specify the new archive name |
     +-------------------------------------------------------+-------------+------------------------------+
-    | .. class:: borg-common-opt-ref                                                                     |
+    | .. class:: bork-common-opt-ref                                                                     |
     |                                                                                                    |
     | :ref:`common_options`                                                                              |
     +-------------------------------------------------------+-------------+------------------------------+
@@ -28,7 +28,7 @@ borg rename
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 

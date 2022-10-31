@@ -1,23 +1,23 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_umount:
+.. _bork_umount:
 
-borg umount
+bork umount
 -----------
 .. code-block:: none
 
-    borg [common options] umount [options] MOUNTPOINT
+    bork [common options] umount [options] MOUNTPOINT
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+----------------+----------------------------------------+
     | **positional arguments**                                                                                        |
     +-------------------------------------------------------+----------------+----------------------------------------+
     |                                                       | ``MOUNTPOINT`` | mountpoint of the filesystem to umount |
     +-------------------------------------------------------+----------------+----------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                  |
+    | .. class:: bork-common-opt-ref                                                                                  |
     |                                                                                                                 |
     | :ref:`common_options`                                                                                           |
     +-------------------------------------------------------+----------------+----------------------------------------+
@@ -26,7 +26,7 @@ borg umount
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -42,7 +42,7 @@ borg umount
 Description
 ~~~~~~~~~~~
 
-This command un-mounts a FUSE filesystem that was mounted with ``borg mount``.
+This command un-mounts a FUSE filesystem that was mounted with ``bork mount``.
 
 This is a convenience wrapper that just calls the platform-specific shell
 command - usually this is either umount or fusermount -u.

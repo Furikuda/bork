@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_create:
+.. _bork_create:
 
-borg create
+bork create
 -----------
 .. code-block:: none
 
-    borg [common options] create [options] NAME [PATH...]
+    bork [common options] create [options] NAME [PATH...]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | **positional arguments**                                                                                                                                                                                                                                                                                      |
@@ -49,7 +49,7 @@ borg create
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--paths-delimiter DELIM``                       | set path delimiter for ``--paths-from-stdin`` and ``--paths-from-command`` (default: \n)                                                                                                          |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                                                                                                                                                |
+    | .. class:: bork-common-opt-ref                                                                                                                                                                                                                                                                                |
     |                                                                                                                                                                                                                                                                                                               |
     | :ref:`common_options`                                                                                                                                                                                                                                                                                         |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -105,14 +105,14 @@ borg create
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--chunker-params PARAMS``                       | specify the chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, HASH_MASK_BITS, HASH_WINDOW_SIZE). default: buzhash,19,23,21,4095                                                             |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    |                                                       | ``-C COMPRESSION``, ``--compression COMPRESSION`` | select compression algorithm, see the output of the "borg help compression" command for details.                                                                                                  |
+    |                                                       | ``-C COMPRESSION``, ``--compression COMPRESSION`` | select compression algorithm, see the output of the "bork help compression" command for details.                                                                                                  |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
     .. raw:: html
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -174,7 +174,7 @@ borg create
         --timestamp TIMESTAMP                         manually specify the archive creation date/time (yyyy-mm-ddThh:mm:ss[(+|-)HH:MM] format, (+|-)HH:MM is the UTC offset, default: local time zone). Alternatively, give a reference file/directory.
         -c SECONDS, --checkpoint-interval SECONDS     write checkpoint every SECONDS seconds (Default: 1800)
         --chunker-params PARAMS                       specify the chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, HASH_MASK_BITS, HASH_WINDOW_SIZE). default: buzhash,19,23,21,4095
-        -C COMPRESSION, --compression COMPRESSION     select compression algorithm, see the output of the "borg help compression" command for details.
+        -C COMPRESSION, --compression COMPRESSION     select compression algorithm, see the output of the "bork help compression" command for details.
 
 
 Description
@@ -185,7 +185,7 @@ traversing all paths specified. Paths are added to the archive as they are given
 that means if relative paths are desired, the command has to be run from the correct
 directory.
 
-When giving '-' as path, borg will read data from standard input and create a
+When giving '-' as path, bork will read data from standard input and create a
 file 'stdin' in the created archive from that data. In some cases it's more
 appropriate to use --content-from-command, however. See section *Reading from
 stdin* below for details.
@@ -208,7 +208,7 @@ the files cache.
 This comparison can operate in different modes as given by ``--files-cache``:
 
 - ctime,size,inode (default)
-- mtime,size,inode (default behaviour of borg versions older than 1.1.0rc4)
+- mtime,size,inode (default behaviour of bork versions older than 1.1.0rc4)
 - ctime,size (ignore the inode number)
 - mtime,size (ignore the inode number)
 - rechunk,ctime (all files are considered modified - rechunk, cache ctime)
@@ -251,14 +251,14 @@ how much your repository will grow. Please note that the "All archives" stats re
 the state after creation. Also, the ``--stats`` and ``--dry-run`` options are mutually
 exclusive because the data is not actually compressed and deduplicated during a dry run.
 
-For more help on include/exclude patterns, see the :ref:`borg_patterns` command output.
+For more help on include/exclude patterns, see the :ref:`bork_patterns` command output.
 
-For more help on placeholders, see the :ref:`borg_placeholders` command output.
+For more help on placeholders, see the :ref:`bork_placeholders` command output.
 
 .. man NOTES
 
 The ``--exclude`` patterns are not like tar. In tar ``--exclude`` .bundler/gems will
-exclude foo/.bundler/gems. In borg it will not, you need to use ``--exclude``
+exclude foo/.bundler/gems. In bork it will not, you need to use ``--exclude``
 '\*/.bundler/gems' to get the same effect.
 
 In addition to using ``--exclude`` patterns, it is possible to use
@@ -308,7 +308,7 @@ chunks are stored. For 'U' all data chunks refer to already existing chunks.
 - 'E' = regular file, an error happened while accessing/reading *this* file
 
 A lowercase character means a file type other than a regular file,
-borg usually just stores their metadata:
+bork usually just stores their metadata:
 
 - 'd' = directory
 - 'b' = block device
@@ -328,24 +328,24 @@ Reading from stdin
 ++++++++++++++++++
 
 There are two methods to read from stdin. Either specify ``-`` as path and
-pipe directly to borg::
+pipe directly to bork::
 
-    backup-vm --id myvm --stdout | borg create REPO::ARCHIVE -
+    backup-vm --id myvm --stdout | bork create REPO::ARCHIVE -
 
-Or use ``--content-from-command`` to have Borg manage the execution of the
+Or use ``--content-from-command`` to have Bork manage the execution of the
 command and piping. If you do so, the first PATH argument is interpreted
 as command to execute and any further arguments are treated as arguments
 to the command::
 
-    borg create --content-from-command REPO::ARCHIVE -- backup-vm --id myvm --stdout
+    bork create --content-from-command REPO::ARCHIVE -- backup-vm --id myvm --stdout
 
 ``--`` is used to ensure ``--id`` and ``--stdout`` are **not** considered
-arguments to ``borg`` but rather ``backup-vm``.
+arguments to ``bork`` but rather ``backup-vm``.
 
-The difference between the two approaches is that piping to borg creates an
-archive even if the command piping to borg exits with a failure. In this case,
+The difference between the two approaches is that piping to bork creates an
+archive even if the command piping to bork exits with a failure. In this case,
 **one can end up with truncated output being backed up**. Using
-``--content-from-command``, in contrast, borg is guaranteed to fail without
+``--content-from-command``, in contrast, bork is guaranteed to fail without
 creating an archive should the command fail. The command is considered failed
 when it returned a non-zero exit code.
 

@@ -63,7 +63,7 @@ For more details, see :ref:`chunker_details`.
 ``--noatime / --noctime``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use these ``borg create`` options to not store the respective timestamp
+You can use these ``bork create`` options to not store the respective timestamp
 into the archive, in case you do not really need it.
 
 Besides saving a little space for the not archived timestamp, it might also
@@ -84,19 +84,19 @@ use this option also for speeding up operations.
 ``--umask``
 ~~~~~~~~~~~
 
-borg uses a safe default umask of 077 (that means the files borg creates have
+bork uses a safe default umask of 077 (that means the files bork creates have
 only permissions for owner, but no permissions for group and others) - so there
 should rarely be a need to change the default behaviour.
 
 This option only affects the process to which it is given. Thus, when you run
-borg in client/server mode and you want to change the behaviour on the server
-side, you need to use ``borg serve --umask=XXX ...`` as a ssh forced command
+bork in client/server mode and you want to change the behaviour on the server
+side, you need to use ``bork serve --umask=XXX ...`` as a ssh forced command
 in ``authorized_keys``. The ``--umask`` value given on the client side is
 **not** transferred to the server side.
 
 Also, if you choose to use the ``--umask`` option, always be consistent and use
-the same umask value so you do not create a mixup of permissions in a borg
-repository or with other files borg creates.
+the same umask value so you do not create a mixup of permissions in a bork
+repository or with other files bork creates.
 
 ``--read-special``
 ~~~~~~~~~~~~~~~~~~
@@ -125,7 +125,7 @@ maybe directly into an existing device file of your choice or indirectly via
 ``dd``).
 
 To some extent, mounting a backup archive with the backups of special files
-via ``borg mount`` and then loop-mounting the image files from inside the mount
+via ``bork mount`` and then loop-mounting the image files from inside the mount
 point will work. If you plan to access a lot of data in there, it likely will
 scale and perform better if you do not work via the FUSE mount.
 
@@ -155,18 +155,18 @@ After the backup has completed, you remove the snapshots again.
 
     $ # create snapshots here
     $ lvdisplay > lvdisplay.txt
-    $ borg create --read-special arch lvdisplay.txt /dev/vg0/*-snapshot
+    $ bork create --read-special arch lvdisplay.txt /dev/vg0/*-snapshot
     $ # remove snapshots here
 
 Now, let's see how to restore some LVs from such a backup.
 
 ::
 
-    $ borg extract arch lvdisplay.txt
+    $ bork extract arch lvdisplay.txt
     $ # create empty LVs with correct sizes here (look into lvdisplay.txt).
     $ # we assume that you created an empty root and home LV and overwrite it now:
-    $ borg extract --stdout arch dev/vg0/root-snapshot > /dev/vg0/root
-    $ borg extract --stdout arch dev/vg0/home-snapshot > /dev/vg0/home
+    $ bork extract --stdout arch dev/vg0/root-snapshot > /dev/vg0/root
+    $ bork extract --stdout arch dev/vg0/home-snapshot > /dev/vg0/home
 
 
 .. _separate_compaction:
@@ -174,13 +174,13 @@ Now, let's see how to restore some LVs from such a backup.
 Separate compaction
 ~~~~~~~~~~~~~~~~~~~
 
-Borg does not auto-compact the segment files in the repository at commit time
+Bork does not auto-compact the segment files in the repository at commit time
 (at the end of each repository-writing command) any more.
 
-This is new since borg 1.2.0 and requires borg >= 1.2.0 on client and server.
+This is new since bork 1.2.0 and requires bork >= 1.2.0 on client and server.
 
 This causes a similar behaviour of the repository as if it was in append-only
-mode (see below) most of the time (until ``borg compact`` is invoked or an
+mode (see below) most of the time (until ``bork compact`` is invoked or an
 old client triggers auto-compaction).
 
 This has some notable consequences:
@@ -189,55 +189,55 @@ This has some notable consequences:
 - commands finish quicker
 - repository is more robust and might be easier to recover after damages (as
   it contains data in a more sequential manner, historic manifests, multiple
-  commits - until you run ``borg compact``)
+  commits - until you run ``bork compact``)
 - user can choose when to run compaction (it should be done regularly, but not
-  necessarily after each single borg command)
-- user can choose from where to invoke ``borg compact`` to do the compaction
+  necessarily after each single bork command)
+- user can choose from where to invoke ``bork compact`` to do the compaction
   (from client or from server, it does not need a key)
 - less repo sync data traffic in case you create a copy of your repository by
   using a sync tool (like rsync, rclone, ...)
 
-You can manually run compaction by invoking the ``borg compact`` command.
+You can manually run compaction by invoking the ``bork compact`` command.
 
 .. _append_only_mode:
 
 Append-only mode (forbid compaction)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A repository can be made "append-only", which means that Borg will never
+A repository can be made "append-only", which means that Bork will never
 overwrite or delete committed data (append-only refers to the segment files,
-but borg will also reject to delete the repository completely).
+but bork will also reject to delete the repository completely).
 
-If ``borg compact`` command is used on a repo in append-only mode, there
+If ``bork compact`` command is used on a repo in append-only mode, there
 will be no warning or error, but no compaction will happen.
 
 append-only is useful for scenarios where a backup client machine backups
-remotely to a backup server using ``borg serve``, since a hacked client machine
+remotely to a backup server using ``bork serve``, since a hacked client machine
 cannot delete backups on the server permanently.
 
 To activate append-only mode, set ``append_only`` to 1 in the repository config:
 
 ::
 
-    borg config append_only 1
+    bork config append_only 1
 
 Note that you can go back-and-forth between normal and append-only operation with
-``borg config``; it's not a "one way trip."
+``bork config``; it's not a "one way trip."
 
-In append-only mode Borg will create a transaction log in the ``transactions`` file,
+In append-only mode Bork will create a transaction log in the ``transactions`` file,
 where each line is a transaction and a UTC timestamp.
 
-In addition, ``borg serve`` can act as if a repository is in append-only mode with
+In addition, ``bork serve`` can act as if a repository is in append-only mode with
 its option ``--append-only``. This can be very useful for fine-tuning access control
 in ``.ssh/authorized_keys``:
 
 ::
 
-    command="borg serve --append-only ..." ssh-rsa <key used for not-always-trustable backup clients>
-    command="borg serve ..." ssh-rsa <key used for backup management>
+    command="bork serve --append-only ..." ssh-rsa <key used for not-always-trustable backup clients>
+    command="bork serve ..." ssh-rsa <key used for backup management>
 
-Running ``borg init`` via a ``borg serve --append-only`` server will *not* create
-an append-only repository. Running ``borg rcreate --append-only`` creates an append-only
+Running ``bork init`` via a ``bork serve --append-only`` server will *not* create
+an append-only repository. Running ``bork rcreate --append-only`` creates an append-only
 repository regardless of server settings.
 
 Example
@@ -282,12 +282,12 @@ than what you actually have in the repository now, after the rollback.
 
 Thus, you need to clear the cache::
 
-    borg rdelete --cache-only
+    bork rdelete --cache-only
 
 The cache will get rebuilt automatically. Depending on repo size and archive
 count, it may take a while.
 
-You also will need to remove ~/.config/borg/security/REPOID/manifest-timestamp.
+You also will need to remove ~/.config/bork/security/REPOID/manifest-timestamp.
 
 Drawbacks
 +++++++++
@@ -299,15 +299,15 @@ Be aware that as soon as you write to the repo in non-append-only mode (e.g. pru
 delete or create archives from an admin machine), it will remove the deleted objects
 permanently (including the ones that were already marked as deleted, but not removed,
 in append-only mode). Automated edits to the repository (such as a cron job running
-``borg prune``) will render append-only mode moot if data is deleted.
+``bork prune``) will render append-only mode moot if data is deleted.
 
 Even if an archive appears to be available, it is possible an attacker could delete
 just a few chunks from an archive and silently corrupt its data. While in append-only
-mode, this is reversible, but ``borg check`` should be run before a writing/pruning
+mode, this is reversible, but ``bork check`` should be run before a writing/pruning
 operation on an append-only repository to catch accidental or malicious corruption::
 
     # run without append-only mode
-    borg check --verify-data && borg compact
+    bork check --verify-data && bork compact
 
 Aside from checking repository & archive integrity you may want to also manually check
 backups to ensure their content seems correct.
@@ -315,21 +315,21 @@ backups to ensure their content seems correct.
 Further considerations
 ++++++++++++++++++++++
 
-Append-only mode is not respected by tools other than Borg. ``rm`` still works on the
+Append-only mode is not respected by tools other than Bork. ``rm`` still works on the
 repository. Make sure that backup client machines only get to access the repository via
-``borg serve``.
+``bork serve``.
 
 Ensure that no remote access is possible if the repository is temporarily set to normal mode
 for e.g. regular pruning.
 
-Further protections can be implemented, but are outside of Borg's scope. For example,
-file system snapshots or wrapping ``borg serve`` to set special permissions or ACLs on
+Further protections can be implemented, but are outside of Bork's scope. For example,
+file system snapshots or wrapping ``bork serve`` to set special permissions or ACLs on
 new data files.
 
 SSH batch mode
 ~~~~~~~~~~~~~~
 
-When running Borg using an automated script, ``ssh`` might still ask for a password,
+When running Bork using an automated script, ``ssh`` might still ask for a password,
 even if there is an SSH key for the target server. Use this to make scripts more robust::
 
     export BORG_RSH='ssh -oBatchMode=yes'

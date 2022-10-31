@@ -82,8 +82,8 @@ modify it to suit your needs (e.g. more backup sets, dumping databases etc.).
     # The backup partition is mounted there
     MOUNTPOINT=/mnt/backup
 
-    # This is the location of the Borg repository
-    TARGET=$MOUNTPOINT/borg-backups/backup.borg
+    # This is the location of the Bork repository
+    TARGET=$MOUNTPOINT/bork-backups/backup.bork
 
     # Archive name schema
     DATE=$(date --iso-8601)-$(hostname)
@@ -118,24 +118,24 @@ modify it to suit your needs (e.g. more backup sets, dumping databases etc.).
     # Create backups
     #
 
-    # Options for borg create
+    # Options for bork create
     BORG_OPTS="--stats --one-file-system --compression lz4 --checkpoint-interval 86400"
 
     # Set BORG_PASSPHRASE or BORG_PASSCOMMAND somewhere around here, using export,
     # if encryption is used.
 
-    # No one can answer if Borg asks these questions, it is better to just fail quickly
+    # No one can answer if Bork asks these questions, it is better to just fail quickly
     # instead of hanging.
     export BORG_RELOCATED_REPO_ACCESS_IS_OK=no
     export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=no
 
-    # Log Borg version
-    borg --version
+    # Log Bork version
+    bork --version
 
     echo "Starting backup for $DATE"
 
     # This is just an example, change it however you see fit
-    borg create $BORG_OPTS \
+    bork create $BORG_OPTS \
       --exclude root/.cache \
       --exclude var/lib/docker/devicemapper \
       $TARGET::$DATE-$$-system \
@@ -144,7 +144,7 @@ modify it to suit your needs (e.g. more backup sets, dumping databases etc.).
     # /home is often a separate partition / file system.
     # Even if it isn't (add --exclude /home above), it probably makes sense
     # to have /home in a separate archive.
-    borg create $BORG_OPTS \
+    bork create $BORG_OPTS \
       --exclude 'sh:home/*/.cache' \
       $TARGET::$DATE-$$-home \
       /home/
@@ -195,9 +195,9 @@ Note the UUID into the ``/etc/backup/backup.disks`` file.
 
 Mount the drive to /mnt/backup.
 
-Initialize a Borg repository at the location indicated by ``TARGET``::
+Initialize a Bork repository at the location indicated by ``TARGET``::
 
-    borg init --encryption ... /mnt/backup/borg-backups/backup.borg
+    bork init --encryption ... /mnt/backup/bork-backups/backup.bork
 
 Unmount and reconnect the drive, or manually start the ``automatic-backup`` service
 to start the first backup::
@@ -216,15 +216,15 @@ The script as shown above will mount any file system with an UUID listed in
 mechanism to keep the script from blowing up whenever a random USB thumb drive is connected.
 It is not meant as a security mechanism. Mounting file systems and reading repository
 data exposes additional attack surfaces (kernel file system drivers,
-possibly user space services and Borg itself). On the other hand, someone
+possibly user space services and Bork itself). On the other hand, someone
 standing right next to your computer can attempt a lot of attacks, most of which
 are easier to do than e.g. exploiting file systems (installing a physical key logger,
 DMA attacks, stealing the machine, ...).
 
-Borg ensures that backups are not created on random drives that "just happen"
-to contain a Borg repository. If an unknown unencrypted repository is encountered,
+Bork ensures that backups are not created on random drives that "just happen"
+to contain a Bork repository. If an unknown unencrypted repository is encountered,
 then the script aborts (BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=no).
 
-Backups are only created on hard drives that contain a Borg repository that is
+Backups are only created on hard drives that contain a Bork repository that is
 either known (by ID) to your machine or you are using encryption and the
-passphrase of the repository has to match the passphrase supplied to Borg.
+passphrase of the repository has to match the passphrase supplied to Bork.

@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_mount:
+.. _bork_mount:
 
-borg mount
+bork mount
 ----------
 .. code-block:: none
 
-    borg [common options] mount [options] MOUNTPOINT [PATH...]
+    bork [common options] mount [options] MOUNTPOINT [PATH...]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
     | **positional arguments**                                                                                                                                                                                                               |
@@ -29,13 +29,13 @@ borg mount
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
     |                                                                             | ``--numeric-ids``                            | use numeric user and group identifiers from archive(s)                                                    |
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                                                                         |
+    | .. class:: bork-common-opt-ref                                                                                                                                                                                                         |
     |                                                                                                                                                                                                                                        |
     | :ref:`common_options`                                                                                                                                                                                                                  |
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
     | **Archive filters** — Archive filters can be applied to repository targets.                                                                                                                                                            |
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
-    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN`` | only consider archive names matching the pattern. see "borg help match-archives".                         |
+    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN`` | only consider archive names matching the pattern. see "bork help match-archives".                         |
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
     |                                                                             | ``--sort-by KEYS``                           | Comma-separated list of sorting keys; valid keys are: timestamp, name, id; default is: timestamp          |
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
@@ -60,7 +60,7 @@ borg mount
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -83,7 +83,7 @@ borg mount
         |
 
     Archive filters
-        -a PATTERN, --match-archives PATTERN     only consider archive names matching the pattern. see "borg help match-archives".
+        -a PATTERN, --match-archives PATTERN     only consider archive names matching the pattern. see "bork help match-archives".
         --sort-by KEYS                           Comma-separated list of sorting keys; valid keys are: timestamp, name, id; default is: timestamp
         --first N                                consider first N archives after other filters were applied
         --last N                                 consider last N archives after other filters were applied
@@ -108,22 +108,22 @@ special fs flags and ACLs.
 Unless the ``--foreground`` option is given the command will run in the
 background until the filesystem is ``umounted``.
 
-The command ``borgfs`` provides a wrapper for ``borg mount``. This can also be
+The command ``borkfs`` provides a wrapper for ``bork mount``. This can also be
 used in fstab entries:
-``/path/to/repo /mnt/point fuse.borgfs defaults,noauto 0 0``
+``/path/to/repo /mnt/point fuse.borkfs defaults,noauto 0 0``
 
 To allow a regular user to use fstab entries, add the ``user`` option:
-``/path/to/repo /mnt/point fuse.borgfs defaults,noauto,user 0 0``
+``/path/to/repo /mnt/point fuse.borkfs defaults,noauto,user 0 0``
 
 For FUSE configuration and mount options, see the mount.fuse(8) manual page.
 
-Borg's default behavior is to use the archived user and group names of each
+Bork's default behavior is to use the archived user and group names of each
 file and map them to the system's respective user and group ids.
 Alternatively, using ``numeric-ids`` will instead use the archived user and
 group ids without any mapping.
 
-The ``uid`` and ``gid`` mount options (implemented by Borg) can be used to
-override the user and group ids of all files (i.e., ``borg mount -o
+The ``uid`` and ``gid`` mount options (implemented by Bork) can be used to
+override the user and group ids of all files (i.e., ``bork mount -o
 uid=1000,gid=1000``).
 
 The man page references ``user_id`` and ``group_id`` mount options
@@ -134,15 +134,15 @@ manually. Unlike the ``uid`` and ``gid`` mount options which affect all files,
 ``user_id`` and ``group_id`` affect the user and group id of the mounted
 (base) directory.
 
-Additional mount options supported by borg:
+Additional mount options supported by bork:
 
 - versions: when used with a repository mount, this gives a merged, versioned
   view of the files in the archives. EXPERIMENTAL, layout may change in future.
 - allow_damaged_files: by default damaged files (where missing chunks were
-  replaced with runs of zeros by borg check ``--repair``) are not readable and
+  replaced with runs of zeros by bork check ``--repair``) are not readable and
   return EIO (I/O error). Set this option to read such files.
 - ignore_permissions: for security reasons the "default_permissions" mount
-  option is internally enforced by borg. "ignore_permissions" can be given to
+  option is internally enforced by bork. "ignore_permissions" can be given to
   not enforce "default_permissions".
 
 The BORG_MOUNT_DATA_CACHE_ENTRIES environment variable is meant for advanced users

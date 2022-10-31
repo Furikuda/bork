@@ -2,8 +2,8 @@
 
 from textwrap import indent
 
-import borg.archiver  # noqa: F401 - need import to get Error and ErrorWithTraceback subclasses.
-from borg.helpers import Error, ErrorWithTraceback
+import bork.archiver  # noqa: F401 - need import to get Error and ErrorWithTraceback subclasses.
+from bork.helpers import Error, ErrorWithTraceback
 
 classes = Error.__subclasses__() + ErrorWithTraceback.__subclasses__()
 

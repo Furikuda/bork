@@ -1,4 +1,4 @@
-About borg create --chunker-params
+About bork create --chunker-params
 ==================================
 
 --chunker-params CHUNK_MIN_EXP,CHUNK_MAX_EXP,HASH_MASK_BITS,HASH_WINDOW_SIZE
@@ -28,7 +28,7 @@ I backed up a VM directory to demonstrate how different chunker parameters
 influence repo size, index size / chunk count, compression, deduplication.
 
 repo-sm: ~64kiB chunks (16 bits chunk mask), min chunk size 1kiB (2^10B)
-         (these are attic / borg 0.23 internal defaults)
+         (these are attic / bork 0.23 internal defaults)
 
 repo-lg: ~1MiB chunks (20 bits chunk mask), min chunk size 64kiB (2^16B)
 
@@ -38,7 +38,7 @@ repo-xl: 8MiB chunks (2^23B max chunk size), min chunk size 64kiB (2^16B).
          as the cutting point is now (almost) always the end of the buffer
          (at 2^23B == 8MiB).
 
-The repo index size is an indicator for the RAM needs of Borg.
+The repo index size is an indicator for the RAM needs of Bork.
 In this special case, the total RAM needs are about 2.1x the repo index size.
 You see index size of repo-sm is 16x larger than of repo-lg, which corresponds
 to the ratio of the different target chunk sizes.
@@ -54,9 +54,9 @@ Duplication works worse for larger chunks, also as expected.
 small chunks
 ============
 
-$ borg info /extra/repo-sm::1
+$ bork info /extra/repo-sm::1
 
-Command line: /home/tw/w/borg-env/bin/borg create --chunker-params 10,23,16,4095 /extra/repo-sm::1 /home/tw/win
+Command line: /home/tw/w/bork-env/bin/bork create --chunker-params 10,23,16,4095 /extra/repo-sm::1 /home/tw/win
 Number of files: 3
 
                        Original size      Compressed size    Deduplicated size
@@ -76,9 +76,9 @@ $ du -sk /extra/repo-sm
 large chunks
 ============
 
-$ borg info /extra/repo-lg::1
+$ bork info /extra/repo-lg::1
 
-Command line: /home/tw/w/borg-env/bin/borg create --chunker-params 16,23,20,4095 /extra/repo-lg::1 /home/tw/win
+Command line: /home/tw/w/bork-env/bin/bork create --chunker-params 16,23,20,4095 /extra/repo-lg::1 /home/tw/win
 Number of files: 3
 
                        Original size      Compressed size    Deduplicated size
@@ -98,8 +98,8 @@ $ du -sk /extra/repo-lg
 xl chunks
 =========
 
-(borg-env)tw@tux:~/w/borg$ borg info /extra/repo-xl::1
-Command line: /home/tw/w/borg-env/bin/borg create --chunker-params 16,23,31,4095 /extra/repo-xl::1 /home/tw/win
+(bork-env)tw@tux:~/w/bork$ bork info /extra/repo-xl::1
+Command line: /home/tw/w/bork-env/bin/bork create --chunker-params 16,23,31,4095 /extra/repo-xl::1 /home/tw/win
 Number of files: 3
 
                        Original size      Compressed size    Deduplicated size

@@ -4,11 +4,11 @@ Examples
 ~~~~~~~~
 ::
 
-    $ borg create archivename ~
-    $ borg rlist
+    $ bork create archivename ~
+    $ bork rlist
     archivename                          Mon, 2016-02-15 19:50:19
 
-    $ borg rename archivename newname
-    $ borg rlist
+    $ bork rename archivename newname
+    $ bork rlist
     newname                              Mon, 2016-02-15 19:50:19
 

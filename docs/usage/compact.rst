@@ -5,5 +5,5 @@ Examples
 ::
 
     # compact segments and free repo disk space
-    $ borg compact
+    $ bork compact
 

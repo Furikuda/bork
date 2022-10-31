@@ -1,15 +1,15 @@
 [run]
 branch = True
 disable_warnings = module-not-measured
-source = src/borg
+source = src/bork
 omit =
-    */borg/__init__.py
-    */borg/__main__.py
-    */borg/_version.py
-    */borg/fuse.py
-    */borg/support/*
-    */borg/testsuite/*
-    */borg/hash_sizes.py
+    */bork/__init__.py
+    */bork/__main__.py
+    */bork/_version.py
+    */bork/fuse.py
+    */bork/support/*
+    */bork/testsuite/*
+    */bork/hash_sizes.py
 
 [report]
 exclude_lines =

@@ -23,11 +23,11 @@ Usage
        }
    }
    // Fixup anchored links from when usage.html contained all the commands
-   else if(hash.startsWith("borg-key") || hash == "borg-change-passphrase") {
+   else if(hash.startsWith("bork-key") || hash == "bork-change-passphrase") {
       window.location.hash = "";
       window.location.pathname = window.location.pathname.replace("usage.html", "usage/key.html");
    }
-   else if(hash.startsWith("borg-")) {
+   else if(hash.startsWith("bork-")) {
       window.location.hash = "";
       window.location.pathname = window.location.pathname.replace("usage.html", "usage/") + hash.substr(5) + ".html";
    }

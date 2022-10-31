@@ -5,7 +5,7 @@ Vagrant.configure("2") do |config|
     apt-get install -y wget expect gpg asciinema ssh adduser fuse
     mkdir -p /wallpaper
     wget \
-        --user-agent="borgbackup demo screencast" \
+        --user-agent="borkbackup demo screencast" \
         --input-file=/vagrant/sample-wallpapers.txt \
         --directory-prefix=/wallpaper
   SHELL
@@ -17,42 +17,42 @@ Vagrant.configure("2") do |config|
     # `rm` below allows quick re-exec via:
     # vagrant vagrant provision --provision-with "record basic usage"
     # this is useful when testing changes
-    rm -r /media/backup/borgdemo || true
+    rm -r /media/backup/borkdemo || true
     rm -r ~/.ssh/ || true
     rm -r Wallpaper || true
-    deluser --remove-home borgdemo || true
+    deluser --remove-home borkdemo || true
 
     # In case we have skipped "record install"
-    if [ ! -e /usr/local/bin/borg ] ; then
-      wget https://github.com/borgbackup/borg/releases/download/1.2.1/borg-linux64
-      install --owner root --group root --mode 755 borg-linux64 /usr/local/bin/borg
+    if [ ! -e /usr/local/bin/bork ] ; then
+      wget https://github.com/furikuda/bork/releases/download/1.2.1/bork-linux64
+      install --owner root --group root --mode 755 bork-linux64 /usr/local/bin/bork
     fi
 
-    mkdir -p /media/backup/borgdemo
+    mkdir -p /media/backup/borkdemo
     mkdir Wallpaper
     cp -r /wallpaper Wallpaper/bigcollection
     cp /wallpaper/Trapper_cabin.jpg Wallpaper/deer.jpg
 
-    adduser --disabled-password borgdemo
+    adduser --disabled-password borkdemo
     echo '127.0.0.1 remoteserver.example' >> /etc/hosts
     ssh-keygen -f ~/.ssh/id_rsa -N ''
     ssh-keyscan remoteserver.example > ~/.ssh/known_hosts
-    runuser -u borgdemo mkdir ~borgdemo/.ssh
-    runuser -u borgdemo tee ~borgdemo/.ssh/authorized_keys < ~/.ssh/id_rsa.pub
+    runuser -u borkdemo mkdir ~borkdemo/.ssh
+    runuser -u borkdemo tee ~borkdemo/.ssh/authorized_keys < ~/.ssh/id_rsa.pub
 
     asciinema rec -c 'expect /vagrant/basic.tcl' --overwrite /vagrant/basic.json < /dev/null
   SHELL
   config.vm.provision "record advanced usage", type: "shell", inline: <<-SHELL
-    rm -r /media/backup/borgdemo || true
+    rm -r /media/backup/borkdemo || true
     rm -r Wallpaper || true
 
     # In case we have skipped "record install"
-    if [ ! -e /usr/local/bin/borg ] ; then
-      wget https://github.com/borgbackup/borg/releases/download/1.2.1/borg-linux64
-      install --owner root --group root --mode 755 borg-linux64 /usr/local/bin/borg
+    if [ ! -e /usr/local/bin/bork ] ; then
+      wget https://github.com/furikuda/bork/releases/download/1.2.1/bork-linux64
+      install --owner root --group root --mode 755 bork-linux64 /usr/local/bin/bork
     fi
 
-    mkdir -p /media/backup/borgdemo
+    mkdir -p /media/backup/borkdemo
     mkdir Wallpaper
     cp -r /wallpaper Wallpaper/bigcollection
     cp /wallpaper/Trapper_cabin.jpg Wallpaper/deer.jpg
@@ -62,12 +62,12 @@ Vagrant.configure("2") do |config|
 
 	# Make it look as if the adv. usage screencast was recorded after basic usage
     export BORG_PASSPHRASE='1234'
-    borg init --encryption=repokey /media/backup/borgdemo
-    borg create --compression lz4 /media/backup/borgdemo::backup1 Wallpaper
+    bork init --encryption=repokey /media/backup/borkdemo
+    bork create --compression lz4 /media/backup/borkdemo::backup1 Wallpaper
     echo "new nice file" > Wallpaper/newfile.txt
-    borg create --compression lz4 /media/backup/borgdemo::backup2 Wallpaper
+    bork create --compression lz4 /media/backup/borkdemo::backup2 Wallpaper
     mv Wallpaper/bigcollection Wallpaper/bigcollection_NEW
-    borg create --compression lz4 /media/backup/borgdemo::backup3 Wallpaper
+    bork create --compression lz4 /media/backup/borkdemo::backup3 Wallpaper
     unset BORG_PASSPHRASE
 
     asciinema rec -c 'expect /vagrant/advanced.tcl' --overwrite /vagrant/advanced.json < /dev/null

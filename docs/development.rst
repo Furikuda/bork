@@ -5,9 +5,9 @@
 Development
 ===========
 
-This chapter will get you started with Borg development.
+This chapter will get you started with Bork development.
 
-Borg is written in Python (with a little bit of Cython and C for
+Bork is written in Python (with a little bit of Cython and C for
 the performance critical parts).
 
 Contributions
@@ -48,9 +48,9 @@ Some guidance for contributors:
 Branching model
 ---------------
 
-Borg development happens on the ``master`` branch and uses GitHub pull
+Bork development happens on the ``master`` branch and uses GitHub pull
 requests (if you don't have GitHub or don't want to use it you can
-send smaller patches via the borgbackup mailing list to the maintainers).
+send smaller patches via the borkbackup mailing list to the maintainers).
 
 Stable releases are maintained on maintenance branches named ``x.y-maint``, eg.
 the maintenance branch of the 1.2.x series is ``1.2-maint``.
@@ -103,7 +103,7 @@ were collected:
 
 .. rubric:: Historic model
 
-Previously (until release 1.0.10) Borg used a `"merge upwards"
+Previously (until release 1.0.10) Bork used a `"merge upwards"
 <https://git-scm.com/docs/gitworkflows#_merging_upwards>`_ model where
 most minor changes and fixes where committed to a maintenance branch
 (eg. 1.0-maint), and the maintenance branch(es) were regularly merged
@@ -113,10 +113,10 @@ troublesome due to merges growing more conflict-heavy and error-prone.
 Code and issues
 ---------------
 
-Code is stored on GitHub, in the `Borgbackup organization
-<https://github.com/borgbackup/borg/>`_. `Issues
-<https://github.com/borgbackup/borg/issues>`_ and `pull requests
-<https://github.com/borgbackup/borg/pulls>`_ should be sent there as
+Code is stored on GitHub, in the `Borkbackup organization
+<https://github.com/furikuda/bork/>`_. `Issues
+<https://github.com/furikuda/bork/issues>`_ and `pull requests
+<https://github.com/furikuda/bork/pulls>`_ should be sent there as
 well. See also the :ref:`support` section for more details.
 
 Style guide / Automated Code Formatting
@@ -150,9 +150,9 @@ All pull requests go through `GitHub Actions`_, which runs the tests on Linux
 and Mac OS X as well as the flake8 style checker. Windows builds run on AppVeyor_,
 while additional Unix-like platforms are tested on Golem_.
 
-.. _AppVeyor: https://ci.appveyor.com/project/borgbackup/borg/
-.. _Golem: https://golem.enkore.de/view/Borg/
-.. _GitHub Actions: https://github.com/borgbackup/borg/actions
+.. _AppVeyor: https://ci.appveyor.com/project/furikuda/bork/
+.. _Golem: https://golem.enkore.de/view/Bork/
+.. _GitHub Actions: https://github.com/furikuda/bork/actions
 
 Output and Logging
 ------------------
@@ -166,12 +166,12 @@ but directly output to stderr (not: stdout, it could be connected to a pipe).
 To control the amount and kinds of messages output emitted at info level, use
 flags like ``--stats`` or ``--list``, then create a topic logger for messages
 controlled by that flag.  See ``_setup_implied_logging()`` in
-``borg/archiver.py`` for the entry point to topic logging.
+``bork/archiver.py`` for the entry point to topic logging.
 
 Building a development environment
 ----------------------------------
 
-First, just install borg into a virtual env :ref:`as described before <git-installation>`.
+First, just install bork into a virtual env :ref:`as described before <git-installation>`.
 
 To install some additional packages needed for running the tests, activate your
 virtual env and run::
@@ -182,7 +182,7 @@ virtual env and run::
 Running the tests
 -----------------
 
-The tests are in the borg/testsuite package.
+The tests are in the bork/testsuite package.
 
 To run all the tests, you need to have fakeroot installed. If you do not have
 fakeroot, you still will be able to run most tests, just leave away the
@@ -199,15 +199,15 @@ Some more advanced examples::
 
   fakeroot -u tox -e py39  # run all tests, but only on python 3.9
 
-  fakeroot -u tox borg.testsuite.locking  # only run 1 test module
+  fakeroot -u tox bork.testsuite.locking  # only run 1 test module
 
-  fakeroot -u tox borg.testsuite.locking -- -k '"not Timer"'  # exclude some tests
+  fakeroot -u tox bork.testsuite.locking -- -k '"not Timer"'  # exclude some tests
 
-  fakeroot -u tox borg.testsuite -- -v  # verbose py.test
+  fakeroot -u tox bork.testsuite -- -v  # verbose py.test
 
 Important notes:
 
-- When using ``--`` to give options to py.test, you MUST also give ``borg.testsuite[.module]``.
+- When using ``--`` to give options to py.test, you MUST also give ``bork.testsuite[.module]``.
 
 
 Running more checks using coala
@@ -264,7 +264,7 @@ Building the docs with Sphinx
 The documentation (in reStructuredText format, .rst) is in docs/.
 
 To build the html version of it, you need to have Sphinx installed
-(in your Borg virtualenv with Python 3)::
+(in your Bork virtualenv with Python 3)::
 
   pip install -r requirements.d/docs.txt
 
@@ -281,7 +281,7 @@ main repository.
 Using Vagrant
 -------------
 
-We use Vagrant for the automated creation of testing environments and borgbackup
+We use Vagrant for the automated creation of testing environments and borkbackup
 standalone binaries for various platforms.
 
 For better security, there is no automatic sync in the VM to host direction.
@@ -304,7 +304,7 @@ Usage::
    # To shut down and destroy the VM:
    vagrant destroy OS
    # To copy files from the VM (in this case, the generated binary):
-   vagrant scp OS:/vagrant/borg/borg.exe .
+   vagrant scp OS:/vagrant/bork/bork.exe .
 
 
 Creating standalone binaries
@@ -316,8 +316,8 @@ When using the Vagrant VMs, pyinstaller will already be installed.
 With virtual env activated::
 
   pip install pyinstaller  # or git checkout master
-  pyinstaller -F -n borg-PLATFORM borg/__main__.py
-  for file in dist/borg-*; do gpg --armor --detach-sign $file; done
+  pyinstaller -F -n bork-PLATFORM bork/__main__.py
+  for file in dist/bork-*; do gpg --armor --detach-sign $file; done
 
 If you encounter issues, see also our `Vagrantfile` for details.
 
@@ -349,7 +349,7 @@ Checklist:
 
 - Create a clean repo and use it for the following steps::
 
-    git clone borg borg-clean
+    git clone bork bork-clean
 
   This makes sure no uncommitted files get into the release archive.
   It will also reveal uncommitted required files.
@@ -365,15 +365,15 @@ Checklist:
     scripts/upload-pypi X.Y.Z test
     scripts/upload-pypi X.Y.Z
 
-- Put binaries into dist/borg-OSNAME and sign them:
+- Put binaries into dist/bork-OSNAME and sign them:
 
   ::
 
     scripts/sign-binaries 201912312359
 
 - Close the release milestone on GitHub.
-- `Update borgbackup.org
-  <https://github.com/borgbackup/borgbackup.github.io/pull/53/files>`_ with the
+- `Update borkbackup.org
+  <https://github.com/furikuda/borkbackup.github.io/pull/53/files>`_ with the
   new version number and release date.
 - Announce on:
 

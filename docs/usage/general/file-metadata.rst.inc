@@ -1,7 +1,7 @@
 Support for file metadata
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Besides regular file and directory structures, Borg can preserve
+Besides regular file and directory structures, Bork can preserve
 
 * symlinks (stored as symlink, the symlink is not followed)
 * special files:

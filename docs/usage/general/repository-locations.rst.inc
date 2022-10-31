@@ -10,5 +10,5 @@ Commands working with an arbitrary amount of archives, usually take ``-a ARCH_GL
 
 Archive names must not contain the ``/`` (slash) character. For simplicity,
 maybe also avoid blanks or other characters that have special meaning on the
-shell or in a filesystem (borg mount will use the archive name as directory
+shell or in a filesystem (bork mount will use the archive name as directory
 name).

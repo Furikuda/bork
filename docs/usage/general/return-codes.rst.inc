@@ -1,7 +1,7 @@
 Return codes
 ~~~~~~~~~~~~
 
-Borg can exit with the following return codes (rc):
+Bork can exit with the following return codes (rc):
 
 =========== =======
 Return code Meaning

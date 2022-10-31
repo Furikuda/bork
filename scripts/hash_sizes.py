@@ -7,7 +7,7 @@ Compute hashtable sizes with nices properties
 
 Note:
      this is just a tool for developers.
-     within borgbackup, it is just used to generate hash_sizes definition for _hashindex.c.
+     within borkbackup, it is just used to generate hash_sizes definition for _hashindex.c.
 """
 
 from collections import namedtuple

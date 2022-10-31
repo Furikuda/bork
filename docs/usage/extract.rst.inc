@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_extract:
+.. _bork_extract:
 
-borg extract
+bork extract
 ------------
 .. code-block:: none
 
-    borg [common options] extract [options] NAME [PATH...]
+    bork [common options] extract [options] NAME [PATH...]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+---------------------------------------+-----------------------------------------------------------------------------------------------------------+
     | **positional arguments**                                                                                                                                                                                  |
@@ -37,7 +37,7 @@ borg extract
     +-------------------------------------------------------+---------------------------------------+-----------------------------------------------------------------------------------------------------------+
     |                                                       | ``--sparse``                          | create holes in output sparse file from all-zero chunks                                                   |
     +-------------------------------------------------------+---------------------------------------+-----------------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                                            |
+    | .. class:: bork-common-opt-ref                                                                                                                                                                            |
     |                                                                                                                                                                                                           |
     | :ref:`common_options`                                                                                                                                                                                     |
     +-------------------------------------------------------+---------------------------------------+-----------------------------------------------------------------------------------------------------------+
@@ -58,7 +58,7 @@ borg extract
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -100,7 +100,7 @@ archive is extracted but a subset of files and directories can be selected
 by passing a list of ``PATHs`` as arguments. The file selection can further
 be restricted by using the ``--exclude`` option.
 
-For more help on include/exclude patterns, see the :ref:`borg_patterns` command output.
+For more help on include/exclude patterns, see the :ref:`bork_patterns` command output.
 
 By using ``--dry-run``, you can do all extraction steps except actually writing the
 output data: reading metadata and data chunks from the repo, checking the hash/hmac,
@@ -112,8 +112,8 @@ pass over the archive metadata.
 .. note::
 
     Currently, extract always writes into the current working directory ("."),
-    so make sure you ``cd`` to the right place before calling ``borg extract``.
+    so make sure you ``cd`` to the right place before calling ``bork extract``.
 
     When parent directories are not extracted (because of using file/directory selection
-    or any other reason), borg can not restore parent directories' metadata, e.g. owner,
+    or any other reason), bork can not restore parent directories' metadata, e.g. owner,
     group, permission, etc.

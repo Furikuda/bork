@@ -13,6 +13,6 @@ else
     export TWINE_REPOSITORY_URL=
 fi
 
-D=dist/borgbackup-$R.tar.gz
+D=dist/borkbackup-$R.tar.gz
 
 twine upload "$D.asc" "$D"

@@ -4,7 +4,7 @@
 Central repository server with Ansible or Salt
 ==============================================
 
-This section will give an example how to setup a borg repository server for multiple
+This section will give an example how to setup a bork repository server for multiple
 clients.
 
 Machines
@@ -28,7 +28,7 @@ Recommended user and group with additional settings:
 
 * User: `backup`
 * Group: `backup`
-* Shell: `/bin/bash` (or other capable to run the `borg serve` command)
+* Shell: `/bin/bash` (or other capable to run the `bork serve` command)
 * Home: `/home/backup`
 
 Most clients shall initiate a backup from the root user to catch all
@@ -50,12 +50,12 @@ The following folder tree layout is suggested on the repository server:
 Restrictions
 ------------
 
-Borg is instructed to restrict clients into their own paths:
-``borg serve --restrict-to-path /home/backup/repos/<client fqdn>``
+Bork is instructed to restrict clients into their own paths:
+``bork serve --restrict-to-path /home/backup/repos/<client fqdn>``
 
 The client will be able to access any file or subdirectory inside of ``/home/backup/repos/<client fqdn>``
 but no other directories. You can allow a client to access several separate directories by passing multiple
-``--restrict-to-path`` flags, for instance: ``borg serve --restrict-to-path /home/backup/repos/<client fqdn> --restrict-to-path /home/backup/repos/<other client fqdn>``,
+``--restrict-to-path`` flags, for instance: ``bork serve --restrict-to-path /home/backup/repos/<client fqdn> --restrict-to-path /home/backup/repos/<other client fqdn>``,
 which could make sense if multiple machines belong to one person which should then have access to all the
 backups of their machines.
 
@@ -67,7 +67,7 @@ forced command and restrictions applied as shown below:
 ::
 
   command="cd /home/backup/repos/<client fqdn>;
-           borg serve --restrict-to-path /home/backup/repos/<client fqdn>",
+           bork serve --restrict-to-path /home/backup/repos/<client fqdn>",
            restrict <keytype> <key> <host>
 
 .. note:: The text shown above needs to be written on a single line!
@@ -75,7 +75,7 @@ forced command and restrictions applied as shown below:
 The options which are added to the key will perform the following:
 
 1. Change working directory
-2. Run ``borg serve`` restricted to the client base path
+2. Run ``bork serve`` restricted to the client base path
 3. Restrict ssh and do not allow stuff which imposes a security risk
 
 Due to the ``cd`` command we use, the server automatically changes the current
@@ -84,7 +84,7 @@ or relative remote repository path and can directly access the repositories at
 ``<user>@<host>:<repo>``.
 
 .. note:: The setup above ignores all client given commandline parameters
-          which are normally appended to the `borg serve` command.
+          which are normally appended to the `bork serve` command.
 
 Client
 ------
@@ -93,26 +93,26 @@ The client needs to initialize the `pictures` repository like this:
 
 ::
 
- borg init backup@backup01.srv.local:pictures
+ bork init backup@backup01.srv.local:pictures
 
 Or with the full path (should actually never be used, as only for demonstration purposes).
 The server should automatically change the current working directory to the `<client fqdn>` folder.
 
 ::
 
-  borg init backup@backup01.srv.local:/home/backup/repos/johndoe.clnt.local/pictures
+  bork init backup@backup01.srv.local:/home/backup/repos/johndoe.clnt.local/pictures
 
 When `johndoe.clnt.local` tries to access a not restricted path the following error is raised.
 John Doe tries to backup into the Web 01 path:
 
 ::
 
-  borg init backup@backup01.srv.local:/home/backup/repos/web01.srv.local/pictures
+  bork init backup@backup01.srv.local:/home/backup/repos/web01.srv.local/pictures
 
 ::
 
   ~~~ SNIP ~~~
-  Remote: borg.remote.PathNotAllowed: /home/backup/repos/web01.srv.local/pictures
+  Remote: bork.remote.PathNotAllowed: /home/backup/repos/web01.srv.local/pictures
   ~~~ SNIP ~~~
   Repository path not allowed
 
@@ -138,7 +138,7 @@ folder, install and configure software.
         - host: app01.clnt.local
           key: "{{ lookup('file', '/path/to/keys/app01.clnt.local.pub') }}"
     tasks:
-    - package: name=borg state=present
+    - package: name=bork state=present
     - group: name="{{ group }}" state=present
     - user: name="{{ user }}" shell=/bin/bash home="{{ home }}" createhome=yes group="{{ group }}" groups= state=present
     - file: path="{{ home }}" owner="{{ user }}" group="{{ group }}" mode=0700 state=directory
@@ -146,7 +146,7 @@ folder, install and configure software.
     - file: path="{{ pool }}" owner="{{ user }}" group="{{ group }}" mode=0700 state=directory
     - authorized_key: user="{{ user }}"
                       key="{{ item.key }}"
-                      key_options='command="cd {{ pool }}/{{ item.host }};borg serve --restrict-to-path {{ pool }}/{{ item.host }}",restrict'
+                      key_options='command="cd {{ pool }}/{{ item.host }};bork serve --restrict-to-path {{ pool }}/{{ item.host }}",restrict'
       with_items: "{{ auth_users }}"
     - file: path="{{ home }}/.ssh/authorized_keys" owner="{{ user }}" group="{{ group }}" mode=0600 state=file
     - file: path="{{ pool }}/{{ item.host }}" owner="{{ user }}" group="{{ group }}" mode=0700 state=directory
@@ -160,7 +160,7 @@ Salt running on a Debian system.
 
 ::
 
-  Install borg backup from pip:
+  Install bork backup from pip:
     pkg.installed:
       - pkgs:
         - python3
@@ -176,7 +176,7 @@ Salt running on a Debian system.
         - fuse
         - pkg-config
     pip.installed:
-      - pkgs: ["borgbackup"]
+      - pkgs: ["borkbackup"]
       - bin_env: /usr/bin/pip3
 
   Setup backup user:
@@ -194,7 +194,7 @@ Salt running on a Debian system.
       - user: backup
       - source: salt://conf/ssh-pubkeys/{{host}}-backup.id_ecdsa.pub
       - options:
-        - command="cd /home/backup/repos/{{host}}; borg serve --restrict-to-path /home/backup/repos/{{host}}"
+        - command="cd /home/backup/repos/{{host}}; bork serve --restrict-to-path /home/backup/repos/{{host}}"
         - restrict
   {% endfor %}
 
@@ -204,11 +204,11 @@ Enhancements
 
 As this section only describes a simple and effective setup it could be further
 enhanced when supporting (a limited set) of client supplied commands. A wrapper
-for starting `borg serve` could be written. Or borg itself could be enhanced to
+for starting `bork serve` could be written. Or bork itself could be enhanced to
 autodetect it runs under SSH by checking the `SSH_ORIGINAL_COMMAND` environment
 variable. This is left open for future improvements.
 
-When extending ssh autodetection in borg no external wrapper script is necessary
+When extending ssh autodetection in bork no external wrapper script is necessary
 and no other interpreter or application has to be deployed.
 
 See also

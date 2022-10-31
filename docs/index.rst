@@ -1,7 +1,7 @@
 .. include:: global.rst.inc
 .. highlight:: none
 
-Borg Documentation
+Bork Documentation
 ==================
 
 .. include:: ../README.rst

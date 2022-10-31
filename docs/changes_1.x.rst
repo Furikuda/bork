@@ -13,13 +13,13 @@ Pre-1.1.11 potential index corruption / data loss issue
 A bug was discovered in our hashtable code, see issue #4829.
 The code is used for the client-side chunks cache and the server-side repo index.
 
-Although borg uses the hashtables very heavily, the index corruption did not
+Although bork uses the hashtables very heavily, the index corruption did not
 happen too frequently, because it needed specific conditions to happen.
 
 Data loss required even more specific conditions, so it should be rare (and
-also detectable via borg check).
+also detectable via bork check).
 
-You might be affected if borg crashed with / complained about:
+You might be affected if bork crashed with / complained about:
 
 - AssertionError: Corrupted segment reference count - corrupted index or hints
 - ObjectNotFound: Object with key ... not found in repository ...
@@ -28,28 +28,28 @@ You might be affected if borg crashed with / complained about:
 
 Advised procedure to fix any related issue in your indexes/caches:
 
-- install fixed borg code (on client AND server)
+- install fixed bork code (on client AND server)
 - for all of your clients and repos remove the cache by:
 
-  borg delete --cache-only YOURREPO
+  bork delete --cache-only YOURREPO
 
   (later, the cache will be re-built automatically)
 - for all your repos, rebuild the repo index by:
 
-  borg check --repair YOURREPO
+  bork check --repair YOURREPO
 
   This will also check all archives and detect if there is any data-loss issue.
 
 Affected branches / releases:
 
-- fd06497 introduced the bug into 1.1-maint branch - it affects all borg 1.1.x since 1.1.0b4.
-- fd06497 introduced the bug into master branch - it affects all borg 1.2.0 alpha releases.
-- c5cd882 introduced the bug into 1.0-maint branch - it affects all borg 1.0.x since 1.0.11rc1.
+- fd06497 introduced the bug into 1.1-maint branch - it affects all bork 1.1.x since 1.1.0b4.
+- fd06497 introduced the bug into master branch - it affects all bork 1.2.0 alpha releases.
+- c5cd882 introduced the bug into 1.0-maint branch - it affects all bork 1.0.x since 1.0.11rc1.
 
 The bug was fixed by:
 
-- 701159a fixes the bug in 1.1-maint branch - will be released with borg 1.1.11.
-- fa63150 fixes the bug in master branch - will be released with borg 1.2.0a8.
+- 701159a fixes the bug in 1.1-maint branch - will be released with bork 1.1.11.
+- fa63150 fixes the bug in master branch - will be released with bork 1.2.0a8.
 - 7bb90b6 fixes the bug in 1.0-maint branch. Branch is EOL, no new release is planned as of now.
 
 .. _broken_validator:
@@ -57,39 +57,39 @@ The bug was fixed by:
 Pre-1.1.4 potential data corruption issue
 -----------------------------------------
 
-A data corruption bug was discovered in borg check --repair, see issue #3444.
+A data corruption bug was discovered in bork check --repair, see issue #3444.
 
 This is a 1.1.x regression, releases < 1.1 (e.g. 1.0.x) are not affected.
 
-To avoid data loss, you must not run borg check --repair using an unfixed version
-of borg 1.1.x. The first official release that has the fix is 1.1.4.
+To avoid data loss, you must not run bork check --repair using an unfixed version
+of bork 1.1.x. The first official release that has the fix is 1.1.4.
 
 Package maintainers may have applied the fix to updated packages of 1.1.x (x<4)
 though, see the package maintainer's package changelog to make sure.
 
 If you never had missing item metadata chunks, the bug has not affected you
-even if you did run borg check --repair with an unfixed version.
+even if you did run bork check --repair with an unfixed version.
 
-When borg check --repair tried to repair corrupt archives that miss item metadata
+When bork check --repair tried to repair corrupt archives that miss item metadata
 chunks, the resync to valid metadata in still present item metadata chunks
 malfunctioned. This was due to a broken validator that considered all (even valid)
-item metadata as invalid. As they were considered invalid, borg discarded them.
+item metadata as invalid. As they were considered invalid, bork discarded them.
 Practically, that means the affected files, directories or other fs objects were
 discarded from the archive.
 
 Due to the malfunction, the process was extremely slow, but if you let it
-complete, borg would have created a "repaired" archive that has lost a lot of items.
-If you interrupted borg check --repair because it was so strangely slow (killing
-borg somehow, e.g. Ctrl-C) the transaction was rolled back and no corruption occurred.
+complete, bork would have created a "repaired" archive that has lost a lot of items.
+If you interrupted bork check --repair because it was so strangely slow (killing
+bork somehow, e.g. Ctrl-C) the transaction was rolled back and no corruption occurred.
 
 The log message indicating the precondition for the bug triggering looks like:
 
     item metadata chunk missing [chunk: 001056_bdee87d...a3e50d]
 
-If you never had that in your borg check --repair runs, you're not affected.
+If you never had that in your bork check --repair runs, you're not affected.
 
 But if you're unsure or you actually have seen that, better check your archives.
-By just using "borg list repo::archive" you can see if all expected filesystem
+By just using "bork list repo::archive" you can see if all expected filesystem
 items are listed.
 
 .. _tam_vuln:
@@ -97,7 +97,7 @@ items are listed.
 Pre-1.0.9 manifest spoofing vulnerability (CVE-2016-10099)
 ----------------------------------------------------------
 
-A flaw in the cryptographic authentication scheme in Borg allowed an attacker
+A flaw in the cryptographic authentication scheme in Bork allowed an attacker
 to spoof the manifest. The attack requires an attacker to be able to
 
 1. insert files (with no additional headers) into backups
@@ -117,7 +117,7 @@ for existing repositories. Repositories created with 1.0.9 and later require it.
 Steps you should take:
 
 1. Upgrade all clients to 1.0.9 or later.
-2. Run ``borg upgrade --tam <repository>`` *on every client* for *each* repository.
+2. Run ``bork upgrade --tam <repository>`` *on every client* for *each* repository.
 3. This will list all archives, including archive IDs, for easy comparison with your logs.
 4. Done.
 
@@ -130,11 +130,11 @@ otherwise.
 In case a version prior to 1.0.9 is used to modify a repository where above procedure
 was completed, and now you get an error message from other clients:
 
-1. ``borg upgrade --tam --force <repository>`` once with *any* client suffices.
+1. ``bork upgrade --tam --force <repository>`` once with *any* client suffices.
 
 This attack is mitigated by:
 
-- Noting/logging ``borg list``, ``borg info``, or ``borg create --stats``, which
+- Noting/logging ``bork list``, ``bork info``, or ``bork create --stats``, which
   contain the archive IDs.
 
 We are not aware of others having discovered, disclosed or exploited this vulnerability.
@@ -153,13 +153,13 @@ Pre-1.0.9 potential data loss
 -----------------------------
 
 If you have archives in your repository that were made with attic <= 0.13
-(and later migrated to borg), running borg check would report errors in these
+(and later migrated to bork), running bork check would report errors in these
 archives. See issue #1837.
 
 The reason for this is a invalid (and useless) metadata key that was
 always added due to a bug in these old attic versions.
 
-If you run borg check --repair, things escalate quickly: all archive items
+If you run bork check --repair, things escalate quickly: all archive items
 with invalid metadata will be killed. Due to that attic bug, that means all
 items in all archives made with these old attic versions.
 
@@ -172,7 +172,7 @@ corruption of the backup repository due to issue #1138.
 
 A sign that this happened is if "E" status was reported for a file that can
 not be explained by problems with the source file. If you still have logs from
-"borg create -v --list", you can check for "E" status.
+"bork create -v --list", you can check for "E" status.
 
 Here is what could cause corruption and what you can do now:
 
@@ -183,13 +183,13 @@ This could lead to corrupted segment files.
 Fix::
 
     # check for corrupt chunks / segments:
-    borg check -v --repository-only REPO
+    bork check -v --repository-only REPO
 
     # repair the repo:
-    borg check -v --repository-only --repair REPO
+    bork check -v --repository-only --repair REPO
 
     # make sure everything is fixed:
-    borg check -v --repository-only REPO
+    bork check -v --repository-only REPO
 
 2) Unreliable network / unreliable connection to the repo.
 
@@ -198,19 +198,19 @@ This could lead to archive metadata corruption.
 Fix::
 
     # check for corrupt archives:
-    borg check -v --archives-only REPO
+    bork check -v --archives-only REPO
 
     # delete the corrupt archives:
-    borg delete --force REPO::CORRUPT_ARCHIVE
+    bork delete --force REPO::CORRUPT_ARCHIVE
 
     # make sure everything is fixed:
-    borg check -v --archives-only REPO
+    bork check -v --archives-only REPO
 
 3) In case you want to do more intensive checking.
 
 The best check that everything is ok is to run a dry-run extraction::
 
-    borg extract -v --dry-run REPO::ARCHIVE
+    bork extract -v --dry-run REPO::ARCHIVE
 
 .. _changelog_1x:
 
@@ -236,10 +236,10 @@ New features:
   - Solves the potential AES-CTR mode counter management issues of the legacy crypto.
 - init: --key-algorithm=argon2 (new default KDF, older pbkdf2 also still available)
 
-  borg key change-passphrase / change-location keeps the key algorithm unchanged.
+  bork key change-passphrase / change-location keeps the key algorithm unchanged.
 - key change-algorithm: to upgrade existing keys to argon2 or downgrade to pbkdf2.
 
-  We recommend you to upgrade unless you have to keep the key compatible with older versions of borg.
+  We recommend you to upgrade unless you have to keep the key compatible with older versions of bork.
 - key change-location: usable for repokey <-> keyfile location change
 - benchmark cpu: display benchmarks of cpu bound stuff
 - export-tar: new --tar-format=PAX (default: GNU)
@@ -256,9 +256,9 @@ Other changes:
 - use libdeflate.crc32 (Linux and all others) or zlib.crc32 (macOS)
 - repository: code cleanups / simplifications
 - internal crypto api: speedups / cleanups / refactorings / modernisation
-- remove "borg upgrade" support for "attic backup" repos
-- remove PassphraseKey code and borg key migrate-to-repokey command
-- OpenBSD: build borg with OpenSSL (not: LibreSSL), #6474
+- remove "bork upgrade" support for "attic backup" repos
+- remove PassphraseKey code and bork key migrate-to-repokey command
+- OpenBSD: build bork with OpenSSL (not: LibreSSL), #6474
 - remove support for LibreSSL, #6474
 - remove support for OpenSSL < 1.1.1
 
@@ -268,7 +268,7 @@ Version 1.2.0 (2022-02-22 22:02:22 :-)
 
 Please note:
 
-This is the first borg 1.2 release, so be careful and read the notes below.
+This is the first bork 1.2 release, so be careful and read the notes below.
 
 Upgrade notes:
 
@@ -278,21 +278,21 @@ things can be recommended:
 - do you already want to upgrade? 1.1.x also will get fixes for a while.
 - be careful, first upgrade your less critical / smaller repos.
 - first upgrade to a recent 1.1.x release - especially if you run some older
-  1.1.* or even 1.0.* borg release.
-- using that, run at least one `borg create` (your normal backup), `prune`
+  1.1.* or even 1.0.* bork release.
+- using that, run at least one `bork create` (your normal backup), `prune`
   and especially a `check` to see everything is in a good state.
-- check the output of `borg check` - if there is anything special, consider
-  a `borg check --repair` followed by another `borg check`.
-- if everything is fine so far (borg check reports no issues), you can consider
+- check the output of `bork check` - if there is anything special, consider
+  a `bork check --repair` followed by another `bork check`.
+- if everything is fine so far (bork check reports no issues), you can consider
   upgrading to 1.2.0. if not, please first fix any already existing issue.
-- if you want to play safer, first **create a backup of your borg repository**.
-- upgrade to latest borg 1.2.x release (you could use the fat binary from
+- if you want to play safer, first **create a backup of your bork repository**.
+- upgrade to latest bork 1.2.x release (you could use the fat binary from
   github releases page)
-- run `borg compact --cleanup-commits` to clean up a ton of 17 bytes long files
-  in your repo caused by a borg 1.1 bug
-- run `borg check` again (now with borg 1.2.x) and check if there is anything
+- run `bork compact --cleanup-commits` to clean up a ton of 17 bytes long files
+  in your repo caused by a bork 1.1 bug
+- run `bork check` again (now with bork 1.2.x) and check if there is anything
   special.
-- run `borg info` (with borg 1.2.x) to build the local pre12-meta cache (can
+- run `bork info` (with bork 1.2.x) to build the local pre12-meta cache (can
   take significant time, but after that it will be fast) - for more details
   see below.
 - check the compatibility notes (see below) and adapt your scripts, if needed.
@@ -300,22 +300,22 @@ things can be recommended:
   posting new issues there or elsewhere.
 
 If you follow this procedure, you can help avoiding that we get a lot of
-"borg 1.2" issue reports that are not really 1.2 issues, but existed before
+"bork 1.2" issue reports that are not really 1.2 issues, but existed before
 and maybe just were not noticed.
 
 Compatibility notes:
 
-- matching of path patterns has been aligned with borg storing relative paths.
-  Borg archives file paths without leading slashes. Previously, include/exclude
+- matching of path patterns has been aligned with bork storing relative paths.
+  Bork archives file paths without leading slashes. Previously, include/exclude
   patterns could contain leading slashes. You should check your patterns and
   remove leading slashes.
 - dropped support / testing for older Pythons, minimum requirement is 3.8.
   In case your OS does not provide Python >= 3.8, consider using our binary,
   which does not need an external Python interpreter. Or continue using
-  borg 1.1.x, which is still supported.
-- freeing repository space only happens when "borg compact" is invoked.
-- mount: the default for --numeric-ids is False now (same as borg extract)
-- borg create --noatime is deprecated. Not storing atime is the default behaviour
+  bork 1.1.x, which is still supported.
+- freeing repository space only happens when "bork compact" is invoked.
+- mount: the default for --numeric-ids is False now (same as bork extract)
+- bork create --noatime is deprecated. Not storing atime is the default behaviour
   now (use --atime if you want to store the atime).
 - list: corrected mix-up of "isomtime" and "mtime" formats.
   Previously, "isomtime" was the default but produced a verbose human format,
@@ -324,18 +324,18 @@ Compatibility notes:
   and the default is now "mtime".
   "isomtime" is now a real ISO-8601 format ("T" between date and time, not a space).
 - create/recreate --list: file status for all files used to get announced *AFTER*
-  the file (with borg < 1.2). Now, file status is announced *BEFORE* the file
+  the file (with bork < 1.2). Now, file status is announced *BEFORE* the file
   contents are processed. If the file status changes later (e.g. due to an error
   or a content change), the updated/final file status will be printed again.
 - removed deprecated-since-long stuff (deprecated since):
 
-  - command "borg change-passphrase" (2017-02), use "borg key ..."
+  - command "bork change-passphrase" (2017-02), use "bork key ..."
   - option "--keep-tag-files" (2017-01), use "--keep-exclude-tags"
   - option "--list-format" (2017-10), use "--format"
   - option "--ignore-inode" (2017-09), use "--files-cache" w/o "inode"
   - option "--no-files-cache" (2017-09), use "--files-cache=disabled"
 - removed BORG_HOSTNAME_IS_UNIQUE env var.
-  to use borg you must implement one of these 2 scenarios:
+  to use bork you must implement one of these 2 scenarios:
 
   - 1) the combination of FQDN and result of uuid.getnode() must be unique
        and stable (this should be the case for almost everybody, except when
@@ -357,21 +357,21 @@ Fixes:
 - implement internal safe_unlink (was: truncate_and_unlink) function more safely:
   usually it does not truncate any more, only under "disk full" circumstances
   and only if there is only one hardlink.
-  see: https://github.com/borgbackup/borg/discussions/6286
+  see: https://github.com/furikuda/bork/discussions/6286
 
 Other changes:
 
-- info: use a pre12-meta cache to accelerate stats for borg < 1.2 archives.
-  the first time borg info is invoked on a borg 1.1 repo, it can take a
+- info: use a pre12-meta cache to accelerate stats for bork < 1.2 archives.
+  the first time bork info is invoked on a bork 1.1 repo, it can take a
   rather long time computing and caching some stats values for 1.1 archives,
-  which borg 1.2 archives have in their archive metadata structure.
+  which bork 1.2 archives have in their archive metadata structure.
   be patient, esp. if you have lots of old archives.
   following invocations are much faster due to the cache.
   related change: add archive name to calc_stats progress display.
 - docs:
 
-  - add borg 1.2 upgrade notes, #6217
-  - link to borg placeholders and borg patterns help
+  - add bork 1.2 upgrade notes, #6217
+  - link to bork placeholders and bork patterns help
   - init: explain the encryption modes better
   - clarify usage of patternfile roots
   - put import-tar docs into same file as export-tar docs
@@ -407,11 +407,11 @@ Other changes:
 - docs:
 
   - update install docs / requirements docs, #6180
-  - borg mount / FUSE "versions" view is not experimental any more
+  - bork mount / FUSE "versions" view is not experimental any more
   - --pattern* is not experimental any more, #6134
   - impact of deleting path/to/repo/nonce, #5858
   - key export: add examples, #6204
-  - ~/.config/borg/keys is not used for repokey keys, #6107
+  - ~/.config/bork/keys is not used for repokey keys, #6107
   - excluded parent dir's metadata can't restore
 
 
@@ -426,7 +426,7 @@ Fixes:
 - fix hardlinkable file type check, #6037
 - list: remove placeholders for shake_* hashes, #6082
 - prune: handle case of calling prune_split when there are no archives, #6015
-- benchmark crud: make sure cleanup of borg-test-data files/dir happens, #5630
+- benchmark crud: make sure cleanup of bork-test-data files/dir happens, #5630
 - do not show archive name in repository-related error msgs, #6014
 - prettier error msg (no stacktrace) if exclude file is missing, #5734
 - do not require BORG_CONFIG_DIR if BORG_{SECURITY,KEYS}_DIR are set, #5979
@@ -444,7 +444,7 @@ New features:
 - create: add retry_erofs workaround for O_NOATIME issue on volume shadow copies in WSL1, #6024
 - create: allow --files-cache=size (this is potentially dangerous, use on your own risk), #5686
 - import-tar: implement import-tar to complement export-tar, #2233
-- implement BORG_SELFTEST env variable (can be carefully used to speedup borg hosting), #5871
+- implement BORG_SELFTEST env variable (can be carefully used to speedup bork hosting), #5871
 - key export: print key if path is '-' or not given, #6092
 - list --format: Add command_line to format keys
 
@@ -471,7 +471,7 @@ Other changes:
 - shell completions:
 
   - update shell completions to 1.1.17, #5923
-  - remove BORG_LIBC completion, since 9914968 borg no longer uses find_library().
+  - remove BORG_LIBC completion, since 9914968 bork no longer uses find_library().
 - docs:
 
   - fixed readme.rst irc webchat link (we use libera chat now, not freenode)
@@ -479,8 +479,8 @@ Other changes:
   - check --repair: recommend checking hw before check --repair, #5855
   - check --verify-data: clarify and document conflict with --repository-only, #5808
   - serve: improve ssh forced commands docs, #6083
-  - list: improve docs for `borg list` --format, #6061
-  - list: remove --list-format from borg list
+  - list: improve docs for `bork list` --format, #6061
+  - list: remove --list-format from bork list
   - FAQ: fix manifest-timestamp path (inside security dir)
   - fix the broken link to .nix file
   - document behavior for filesystems with inconsistent inodes, #5770
@@ -489,7 +489,7 @@ Other changes:
   - clarify pp vs. pf pattern type, #5300
   - update referenced freebsd/macOS versions used for binary build, #5942
   - pull mode: add some warnings, #5827
-  - clarify "you will need key and passphrase" borg init warning, #4622
+  - clarify "you will need key and passphrase" bork init warning, #4622
   - add missing leading slashes in help patterns, #5857
   - add info on renaming repositories, #5240
   - check: add notice about defective hardware, #5753
@@ -576,18 +576,18 @@ Other changes:
 - use blake2 from python 3.6+ hashlib
   (this removes the requirement for libb2 and the bundled blake2 code)
 - also accept msgpack up to 1.0.2.
-  exclude 1.0.1 though, which had some issues (not sure they affect borg).
+  exclude 1.0.1 though, which had some issues (not sure they affect bork).
 - create: add repository location to --stats output, #5491
 - check: debug log the segment filename
-- delete: add a --list switch to borg delete, #5116
-- borg debug dump-hints - implemented to e.g. to look at shadow_index
-- Tab completion support for additional archives for 'borg delete'
-- refactor: have one borg.constants.zero all-zero bytes object
+- delete: add a --list switch to bork delete, #5116
+- bork debug dump-hints - implemented to e.g. to look at shadow_index
+- Tab completion support for additional archives for 'bork delete'
+- refactor: have one bork.constants.zero all-zero bytes object
 - refactor shadow_index updating repo.put/delete, #5661, #5636.
 - docs:
 
   - add another case of attempted hardlink usage
-  - fix description of borg upgrade hardlink usage, #5518
+  - fix description of bork upgrade hardlink usage, #5518
   - use HTTPS everywhere
   - add examples for --paths-from-stdin, --paths-from-command, --paths-separator, #5644
   - fix typos/grammar
@@ -597,7 +597,7 @@ Other changes:
 - vagrant:
 
   - use brew install --cask ..., #5557
-  - use Python 3.9.1 and PyInstaller 4.1 to build the borg binary
+  - use Python 3.9.1 and PyInstaller 4.1 to build the bork binary
 
 
 Version 1.2.0b1 (2020-12-06)
@@ -605,7 +605,7 @@ Version 1.2.0b1 (2020-12-06)
 
 Fixes:
 
-- BORG_CACHE_DIR crashing borg if empty, atomic handling of
+- BORG_CACHE_DIR crashing bork if empty, atomic handling of
   recursive directory creation, #5216
 - fix --dry-run and --stats coexistence, #5415
 - allow EIO with warning when trying to hardlink, #4336
@@ -618,7 +618,7 @@ New features:
 - create: implement --paths-from-stdin and --paths-from-command, see #5492.
   These switches read paths to archive from stdin. Delimiter can specified
   by --paths-delimiter=DELIM. Paths read will be added honoring every
-  option but exclusion options and --one-file-system. borg won't recurse
+  option but exclusion options and --one-file-system. bork won't recurse
   into directories.
 - 'obfuscate' pseudo compressor obfuscates compressed chunk size in repo
 - add pyfuse3 (successor of llfuse) as an alternative lowlevel fuse
@@ -655,10 +655,10 @@ Other changes:
   - process/policy for adding new compression algorithms
   - updated docs about hacked backup client, #5480
   - improve ansible deployment docs, make it more generic
-  - how to approach borg speed issues, give speed example, #5371
+  - how to approach bork speed issues, give speed example, #5371
   - fix mathematical inaccuracy about chunk size, #5336
   - add example for excluding content using --pattern cli option
-  - clarify borg create's '--one-file-system' option, #4009
+  - clarify bork create's '--one-file-system' option, #4009
   - improve docs/FAQ about append-only remote repos, #5497
   - fix reST markup issues, labels
   - add infos about contributor retirement status
@@ -671,13 +671,13 @@ Fixes:
 
 - fix memory leak related to preloading, #5202
 - check --repair: fix potential data loss, #5325
-- persist shadow_index in between borg runs, #4830
+- persist shadow_index in between bork runs, #4830
 - fix hardlinked CACHEDIR.TAG processing, #4911
 - --read-special: .part files also should be regular files, #5217
-- allow server side enforcing of umask, --umask is for the local borg
+- allow server side enforcing of umask, --umask is for the local bork
   process only (see docs), #4947
 - exit with 128 + signal number, #5161
-- borg config --list does not show last_segment_checked, #5159
+- bork config --list does not show last_segment_checked, #5159
 - locking:
 
   - fix ExclusiveLock race condition bug, #4923
@@ -713,7 +713,7 @@ Other changes:
   - update Homebrew install instructions, #5185
   - better description of how cache and rebuilds of it work
     and how the workaround applies to that
-  - point to borg create --list item flags in recreate usage, #5165
+  - point to bork create --list item flags in recreate usage, #5165
   - add a note to create from stdin regarding files cache, #5180
   - add security faq explaining AES-CTR crypto issues, #5254
   - clarify --exclude-if-present in recreate, #5193
@@ -739,7 +739,7 @@ Fixes:
 - check: do not stumble over invalid item key, #4845
 - update prevalence of env vars to set config and cache paths
 - mount: fix FUSE low linear read speed on large files, #5032
-- extract: fix confusing output of borg extract --list --strip-components, #4934
+- extract: fix confusing output of bork extract --list --strip-components, #4934
 - recreate: support --timestamp option, #4745
 - fix ProgressIndicator msgids (JSON output), #4935
 - fuse: set f_namemax in statfs result, #2684
@@ -777,13 +777,13 @@ Other changes:
 
   - improve description of path variables
   - document how to completely delete data, #2929
-  - add FAQ about Borg config dir, #4941
+  - add FAQ about Bork config dir, #4941
   - add docs about errors not printed as JSON, #4073
   - update usage_general.rst.inc
   - added "Will move with BORG_CONFIG_DIR variable unless specified." to BORG_SECURITY_DIR info.
   - put BORG_SECURITY_DIR immediately below BORG_CONFIG_DIR (and moved BORG_CACHE_DIR up before them).
   - add paragraph regarding cache security assumptions, #4900
-  - tell about borg cache security precautions
+  - tell about bork cache security precautions
   - add FAQ describing difference between a local repo vs. repo on a server.
   - document how to test exclusion patterns without performing an actual backup
   - create: tell that "Calculating size" time and space needs are caused by --progress
@@ -798,11 +798,11 @@ Other changes:
   - add upgrade of tools to pip installation how-to, #5090
   - document one cause of orphaned chunks in check command, #2295
   - clean up the whole check usage paragraph
-  - FAQ: linked recommended restrictions to ssh public keys on borg servers, #4946
+  - FAQ: linked recommended restrictions to ssh public keys on bork servers, #4946
   - fixed "doc downplays severity of Nonce reuse issue", #4883
-  - borg repo restore instructions needed, #3428
+  - bork repo restore instructions needed, #3428
   - new FAQ: A repo is corrupt and must be replaced with an older repo.
-  - clarify borg init's encryption modes
+  - clarify bork init's encryption modes
 - native windows port:
 
   - update README_WINDOWS.rst
@@ -841,13 +841,13 @@ Fixes:
 - Repository.check_can_create_repository: use stat() to check, ~ #4695.
 - SecurityManager.known(): check all files, #4614
 - after double-force delete, warn about necessary repair, #4704
-- cope with ANY error when importing pytest into borg.testsuite, #4652
+- cope with ANY error when importing pytest into bork.testsuite, #4652
 - fix invalid archive error message
 - setup.py: fix detection of missing Cython
 - filter out selinux xattrs, #4574
 - location arg - should it be optional? #4541
 - enable placeholder usage in --comment, #4559
-- use whitelist approach for borg serve, #4097
+- use whitelist approach for bork serve, #4097
 
 New features:
 
@@ -855,9 +855,9 @@ New features:
 - create: first ctrl-c (SIGINT) triggers checkpoint and abort, #4606
 - new BORG_WORKAROUNDS mechanism, basesyncfile, #4710
 - remove WSL autodetection. if WSL still has this problem, you need to
-  set BORG_WORKAROUNDS=basesyncfile in the borg process environment to
+  set BORG_WORKAROUNDS=basesyncfile in the bork process environment to
   work around it.
-- support xxh64 checksum in addition to the hashlib hashes in borg list
+- support xxh64 checksum in addition to the hashlib hashes in bork list
 - enable placeholder usage in all extra archive arguments
 - enable placeholder usage in --comment, #4559
 - enable placeholder usage in --glob-archives, #4495
@@ -868,16 +868,16 @@ New features:
     often rather not interesting and fragile - it easily changes even if nothing
     else has changed and, if stored into the archive, spoils deduplication of
     the archive metadata stream.
-  - if you give the --noatime option, borg will output a deprecation warning
+  - if you give the --noatime option, bork will output a deprecation warning
     because it is currently ignored / does nothing.
-    Please remove the --noatime option when using borg 1.2.
+    Please remove the --noatime option when using bork 1.2.
   - added a --atime option for storing files' atime into an archive
 
 Other changes:
 
 - argparser: always use REPOSITORY in metavar
-- do not check python/libc for borg serve, #4483
-- small borg compact improvements, #4522
+- do not check python/libc for bork serve, #4483
+- small bork compact improvements, #4522
 - compact: log freed space at INFO level
 - tests:
 
@@ -893,11 +893,11 @@ Other changes:
     mention bind mount solution, #4738
   - add restore docs, #4670
   - updated docs to cover use of temp directory on remote, #4545
-  - add a push-style example to borg-create(1), #4613
+  - add a push-style example to bork-create(1), #4613
   - timestamps in the files cache are now usually ctime, #4583
   - benchmark crud: clarify that space is used until compact
-  - update documentation of borg create,
-    corrects a mention of borg 1.1 as a future version.
+  - update documentation of bork create,
+    corrects a mention of bork 1.1 as a future version.
   - fix osxfuse github link in installation docs
   - how to supply a passphrase, use crypto devices, #4549
   - extract: document limitation "needs empty destination",  #4598
@@ -927,14 +927,14 @@ Other changes:
 - docs:
 
   - sdd "SSH Configuration" section, #4493, #3988, #636, #4485
-  - better document borg check --max-duration, #4473
+  - better document bork check --max-duration, #4473
   - sorted commands help in multiple steps, #4471
 - testing:
 
   - travis: use py 3.5.3 and 3.6.7 on macOS to get a pyenv-based python
     build with openssl 1.1
   - vagrant: use py 3.5.3 and 3.6.8 on darwin64 VM to build python and
-    borg with openssl 1.1
+    bork with openssl 1.1
   - pytest: -v and default XDISTN to 1, #4481
 
 
@@ -945,17 +945,17 @@ Fixes:
 
 - warn if a file has changed while being backed up, #1750
 - lrucache: regularly remove old FDs, #4427
-- borg command shall terminate with rc 2 for ImportErrors, #4424
+- bork command shall terminate with rc 2 for ImportErrors, #4424
 - make freebsd xattr platform code api compatible with linux, #3952
 
 Other changes:
 
 - major setup code refactoring (especially how libraries like openssl, liblz4,
   libzstd, libb2 are discovered and how it falls back to code bundled with
-  borg), new: uses pkg-config now (and needs python "pkgconfig" package
+  bork), new: uses pkg-config now (and needs python "pkgconfig" package
   installed), #1925
 
-  if you are a borg package maintainer, please try packaging this
+  if you are a bork package maintainer, please try packaging this
   (see comments in setup.py).
 - Vagrantfile: add zstd, reorder, build env vars, #4444
 - travis: install script improvements
@@ -979,14 +979,14 @@ Fixes:
 New features:
 
 - check: incremental repo check (only checks crc32 for segment entries), #1657
-  borg check --repository-only --max-duration SECONDS ...
-- delete: timestamp for borg delete --info added, #4359
+  bork check --repository-only --max-duration SECONDS ...
+- delete: timestamp for bork delete --info added, #4359
 
 Other changes:
 
 - redo stale lock handling, #3986
   drop BORG_HOSTNAME_IS_UNIQUE (please use BORG_HOST_ID if needed).
-  borg now always assumes it has a unique host id - either automatically
+  bork now always assumes it has a unique host id - either automatically
   from fqdn plus uuid.getnode() or overridden via BORG_HOST_ID.
 - docs:
 
@@ -1015,18 +1015,18 @@ Version 1.2.0a2 and earlier (2019-02-24)
 
 New features:
 
-- compact: "borg compact" needs to be used to free repository space by
+- compact: "bork compact" needs to be used to free repository space by
   compacting the segments (reading sparse segments, rewriting still needed
   data to new segments, deleting the sparse segments).
-  Borg < 1.2 invoked compaction automatically at the end of each repository
+  Bork < 1.2 invoked compaction automatically at the end of each repository
   writing command.
-  Borg >= 1.2 does not do that any more to give better speed, more control,
+  Bork >= 1.2 does not do that any more to give better speed, more control,
   more segment file stability (== less stuff moving to newer segments) and
   more robustness.
-  See the docs about "borg compact" for more details.
-- "borg compact --cleanup-commits" is to cleanup the tons of 17byte long
-  commit-only segment files caused by borg 1.1.x issue #2850.
-  Invoke this once after upgrading (the server side) borg to 1.2.
+  See the docs about "bork compact" for more details.
+- "bork compact --cleanup-commits" is to cleanup the tons of 17byte long
+  commit-only segment files caused by bork 1.1.x issue #2850.
+  Invoke this once after upgrading (the server side) bork to 1.2.
   Compaction now automatically removes unneeded commit-only segment files.
 - prune: Show which rule was applied to keep archive, #2886
 - add fixed blocksize chunker (see --chunker-params docs), #1086
@@ -1089,11 +1089,11 @@ Version 1.1.18 (2022-06-05)
 
 Compatibility notes:
 
-- When upgrading from borg 1.0.x to 1.1.x, please note:
+- When upgrading from bork 1.0.x to 1.1.x, please note:
 
   - read all the compatibility notes for 1.1.0*, starting from 1.1.0b1.
-  - borg upgrade: you do not need to and you also should not run it.
-  - borg might ask some security-related questions once after upgrading.
+  - bork upgrade: you do not need to and you also should not run it.
+  - bork might ask some security-related questions once after upgrading.
     You can answer them either manually or via environment variable.
     One known case is if you use unencrypted repositories, then it will ask
     about a unknown unencrypted repository one time.
@@ -1105,7 +1105,7 @@ Compatibility notes:
     See the --files-cache docs for details.
 - 1.1.11 removes WSL autodetection (Windows 10 Subsystem for Linux).
   If WSL still has a problem with sync_file_range, you need to set
-  BORG_WORKAROUNDS=basesyncfile in the borg process environment to
+  BORG_WORKAROUNDS=basesyncfile in the bork process environment to
   work around the WSL issue.
 - 1.1.14 changes return codes due to a bug fix:
   In case you have scripts expecting rc == 2 for a signal exit, you need to
@@ -1140,7 +1140,7 @@ Fixes:
 - deal with the SaveFile/SyncFile race, docs, see #6176 5c5b59bc9
 - avoid expanding path into LHS of formatting operation + tests, #6064 #6063
 - repository: quota / compactable computation fixes, #6119.
-  This is mainly to keep the repo code in sync with borg 1.2. As borg 1.1
+  This is mainly to keep the repo code in sync with bork 1.2. As bork 1.1
   compacts immediately, there was not really an issue with this in 1.1.
 - fix transaction rollback: use files cache filename as found in txn.active, #6353
 - do not load files cache for commands not using it, fixes #5673
@@ -1181,15 +1181,15 @@ Other changes:
 - fix compilation warnings: ‘PyUnicode_AsUnicode’ is deprecated
 - docs:
 
-  - ~/.config/borg/keys is not used for repokey keys, #6107
+  - ~/.config/bork/keys is not used for repokey keys, #6107
   - excluded parent dir's metadata can't restore, #6062
   - permissions note rewritten to make it less confusing, #5490
   - add note about grandfather-father-son backup retention policy / rotation scheme
-  - clarify who starts the remote agent (borg serve)
+  - clarify who starts the remote agent (bork serve)
   - test/improve pull backup docs, #5903
   - document the socat pull mode described in #900 #515ß
-  - borg serve: improve ssh forced commands docs, #6083
-  - improve docs for borg list --format, #6080
+  - bork serve: improve ssh forced commands docs, #6083
+  - improve docs for bork list --format, #6080
   - fix the broken link to .nix file
   - clarify pattern usage with commands, #5176
   - clarify user_id vs uid for fuse, #5723
@@ -1203,12 +1203,12 @@ Other changes:
   - update link to ubuntu packages, #6485
   - clarify on-disk order and size of log entry fields, #6357
   - do not transform --/--- to unicode dashes
-  - improve linking inside docs, link to borg_placeholders, link to borg_patterns
+  - improve linking inside docs, link to bork_placeholders, link to bork_patterns
   - use same phrasing in misc. help texts
-  - borg init: explain the encryption modes better
+  - bork init: explain the encryption modes better
   - explain the difference between a path that ends with or without a slash, #6297
   - clarify usage of patternfile roots, #6242
-  - borg key export: add examples
+  - bork key export: add examples
   - updates about features not experimental any more: FUSE "versions" view, --pattern*, #6134
   - fix/update cygwin package requirements
   - impact of deleting path/to/repo/nonce, #5858
@@ -1236,11 +1236,11 @@ Version 1.1.17 (2021-07-12)
 
 Compatibility notes:
 
-- When upgrading from borg 1.0.x to 1.1.x, please note:
+- When upgrading from bork 1.0.x to 1.1.x, please note:
 
   - read all the compatibility notes for 1.1.0*, starting from 1.1.0b1.
-  - borg upgrade: you do not need to and you also should not run it.
-  - borg might ask some security-related questions once after upgrading.
+  - bork upgrade: you do not need to and you also should not run it.
+  - bork might ask some security-related questions once after upgrading.
     You can answer them either manually or via environment variable.
     One known case is if you use unencrypted repositories, then it will ask
     about a unknown unencrypted repository one time.
@@ -1252,7 +1252,7 @@ Compatibility notes:
     See the --files-cache docs for details.
 - 1.1.11 removes WSL autodetection (Windows 10 Subsystem for Linux).
   If WSL still has a problem with sync_file_range, you need to set
-  BORG_WORKAROUNDS=basesyncfile in the borg process environment to
+  BORG_WORKAROUNDS=basesyncfile in the bork process environment to
   work around the WSL issue.
 - 1.1.14 changes return codes due to a bug fix:
   In case you have scripts expecting rc == 2 for a signal exit, you need to
@@ -1264,7 +1264,7 @@ Fixes:
 
 - pyinstaller dir-mode: fix pyi detection / LIBPATH treatment, #5897
 - handle crash due to kill stale lock race, #5828
-- fix BORG_CACHE_DIR crashing borg if empty, #5216
+- fix BORG_CACHE_DIR crashing bork if empty, #5216
 - create --dry-run: fix display of kept tagfile, #5834
 - fix missing parameter in "did not consistently fail" msg, #5822
 - missing / healed chunks: always tell chunk ID, #5704
@@ -1273,12 +1273,12 @@ Fixes:
 New features:
 
 - implement BORG_SELFTEST env variable, #5871.
-  this can be used to accelerate borg startup a bit. not recommended for
-  normal usage, but borg mass hosters with a lot of borg invocations can
+  this can be used to accelerate bork startup a bit. not recommended for
+  normal usage, but bork mass hosters with a lot of bork invocations can
   save some resources with this. on my laptop, this saved ~100ms cpu time
-  (sys+user) per borg command invocation.
+  (sys+user) per bork command invocation.
 - implement BORG_LIBC env variable to give the libc filename, #5870.
-  you can use this if a borg does not find your libc.
+  you can use this if a bork does not find your libc.
 - check: add progress indicator for archive check.
 - allow --files-cache=size (not recommended, make sure you know what you do)
 
@@ -1301,13 +1301,13 @@ Other changes:
   - improve docs/FAQ about append-only remote repos, #5497
   - complement the documentation for pattern files and exclude files, #5520
   - "filename with spaces" example added to exclude file, #5236
-    note: no whitespace escaping needed, processed by borg.
+    note: no whitespace escaping needed, processed by bork.
   - add info on renaming repositories, #5240
-  - clarify borg check --verify-data, #5808
+  - clarify bork check --verify-data, #5808
   - add notice about defective hardware to check documentation, #5753
   - add paragraph added in #5855 to utility documentation source
   - add missing leading slashes in help patterns, #5857
-  - clarify "you will need key and passphrase" borg init warning, #4622
+  - clarify "you will need key and passphrase" bork init warning, #4622
   - pull mode: add some warnings, #5827
   - mention tar --compare (compare archive to fs files), #5880
   - fix typos, backport of #5597
@@ -1329,30 +1329,30 @@ Fixes:
 - setup.py: add special openssl prefix for Apple M1 compatibility
 - do not recurse into duplicate roots, #5603
 - remove empty shadowed_segments lists, #5275, #5614
-- fix libpython load error when borg fat binary / dir-based binary is invoked
+- fix libpython load error when bork fat binary / dir-based binary is invoked
   via a symlink by upgrading pyinstaller to v4.2, #5688
 - config: accept non-int value (like 500M or 100G) for max_segment_size or
   storage_quota, #5639.
   please note: when setting a non-int value for this in a repo config,
-  using the repo will require borg >= 1.1.16.
+  using the repo will require bork >= 1.1.16.
 
 New features:
 
 - bundled msgpack: drop support for old buffer protocol to support Python 3.10
 - verbose files cache logging via --debug-topic=files_cache, #5659.
-  Use this if you suspect that borg does not detect unmodified files as expected.
+  Use this if you suspect that bork does not detect unmodified files as expected.
 - create/extract: add --noxattrs and --noacls option, #3955.
-  when given with borg create, borg will not get xattrs / ACLs from input files
-  (and thus, it will not archive xattrs / ACLs). when given with borg extract,
-  borg will not read xattrs / ACLs from archive and will not set xattrs / ACLs
+  when given with bork create, bork will not get xattrs / ACLs from input files
+  (and thus, it will not archive xattrs / ACLs). when given with bork extract,
+  bork will not read xattrs / ACLs from archive and will not set xattrs / ACLs
   on extracted files.
 - diff: add --json-lines option, #3765
 - check: debug log segment filename
-- borg debug dump-hints
+- bork debug dump-hints
 
 Other changes:
 
-- Tab completion support for additional archives for 'borg delete'
+- Tab completion support for additional archives for 'bork delete'
 - repository: deduplicate code of put and delete, no functional change
 - tests: fix result order issue (sporadic test failure on openindiana)
 - vagrant:
@@ -1434,7 +1434,7 @@ Other changes:
   - new compression algorithm policy, #1633 #5505
   - faq: add a hint on sleeping computer, #5301
   - note requirements for full disk access on macOS Catalina, #5303
-  - fix/improve description of borg upgrade hardlink usage, #5518
+  - fix/improve description of bork upgrade hardlink usage, #5518
 - modernize 1.1 code:
 
   - drop code/workarounds only needed to support Python 3.4
@@ -1449,7 +1449,7 @@ Version 1.1.14 (2020-10-07)
 Fixes:
 
 - check --repair: fix potential data loss when interrupting it, #5325
-- exit with 128 + signal number (as documented) when borg is killed by a signal, #5161
+- exit with 128 + signal number (as documented) when bork is killed by a signal, #5161
 - fix hardlinked CACHEDIR.TAG processing, #4911
 - create --read-special: .part files also should be regular files, #5217
 - llfuse dependency: choose least broken 1.3.6/1.3.7.
@@ -1473,7 +1473,7 @@ Other changes:
   - rewrite zsh completion:
 
     - completion for almost all optional and positional arguments
-    - completion for Borg environment variables (parameters)
+    - completion for Bork environment variables (parameters)
 - use "allow/deny list" instead of "white/black list" wording
 - declare "allow_cache_wipe" marker in setup.cfg to avoid pytest warning
 - vagrant / tests:
@@ -1488,17 +1488,17 @@ Other changes:
 - docs:
 
   - add ssh-agent pull backup method docs, #5288
-  - how to approach borg speed issues, #5371
+  - how to approach bork speed issues, #5371
   - mention double --force in prune docs
   - update Homebrew install instructions, #5185
   - better description of how cache and rebuilds of it work
-  - point to borg create --list item flags in recreate usage, #5165
+  - point to bork create --list item flags in recreate usage, #5165
   - add security faq explaining AES-CTR crypto issues, #5254
   - add a note to create from stdin regarding files cache, #5180
-  - fix borg.1 manpage generation regression, #5211
+  - fix bork.1 manpage generation regression, #5211
   - clarify how exclude options work in recreate, #5193
   - add section for retired contributors
-  - hint about not misusing private email addresses of contributors for borg support
+  - hint about not misusing private email addresses of contributors for bork support
 
 
 Version 1.1.13 (2020-06-06)
@@ -1506,11 +1506,11 @@ Version 1.1.13 (2020-06-06)
 
 Compatibility notes:
 
-- When upgrading from borg 1.0.x to 1.1.x, please note:
+- When upgrading from bork 1.0.x to 1.1.x, please note:
 
   - read all the compatibility notes for 1.1.0*, starting from 1.1.0b1.
-  - borg upgrade: you do not need to and you also should not run it.
-  - borg might ask some security-related questions once after upgrading.
+  - bork upgrade: you do not need to and you also should not run it.
+  - bork might ask some security-related questions once after upgrading.
     You can answer them either manually or via environment variable.
     One known case is if you use unencrypted repositories, then it will ask
     about a unknown unencrypted repository one time.
@@ -1522,7 +1522,7 @@ Compatibility notes:
     See the --files-cache docs for details.
 - 1.1.11 removes WSL autodetection (Windows 10 Subsystem for Linux).
   If WSL still has a problem with sync_file_range, you need to set
-  BORG_WORKAROUNDS=basesyncfile in the borg process environment to
+  BORG_WORKAROUNDS=basesyncfile in the bork process environment to
   work around the WSL issue.
 
 Fixes:
@@ -1536,7 +1536,7 @@ Version 1.1.12 (2020-06-06)
 Fixes:
 
 - fix preload-related memory leak, #5202.
-- mount / borgfs (FUSE filesystem):
+- mount / borkfs (FUSE filesystem):
 
   - fix FUSE low linear read speed on large files, #5067
   - fix crash on old llfuse without birthtime attrs, #5064 - accidentally
@@ -1561,16 +1561,16 @@ Other changes:
 - docs:
 
   - PlaceholderError not printed as JSON, #4073
-  - "How important is Borg config?", #4941
+  - "How important is Bork config?", #4941
   - make Sphinx warnings break docs build, #4587
   - some markup / warning fixes
-  - add "updating borgbackup.org/releases" to release checklist, #4999
+  - add "updating borkbackup.org/releases" to release checklist, #4999
   - add "rendering docs" to release checklist, #5000
-  - clarify borg init's encryption modes
+  - clarify bork init's encryption modes
   - add note about patterns and stored paths, #4160
   - add upgrade of tools to pip installation how-to
   - document one cause of orphaned chunks in check command, #2295
-  - linked recommended restrictions to ssh public keys on borg servers in faq, #4946
+  - linked recommended restrictions to ssh public keys on bork servers in faq, #4946
 
 
 Version 1.1.11 (2020-03-08)
@@ -1578,11 +1578,11 @@ Version 1.1.11 (2020-03-08)
 
 Compatibility notes:
 
-- When upgrading from borg 1.0.x to 1.1.x, please note:
+- When upgrading from bork 1.0.x to 1.1.x, please note:
 
   - read all the compatibility notes for 1.1.0*, starting from 1.1.0b1.
-  - borg upgrade: you do not need to and you also should not run it.
-  - borg might ask some security-related questions once after upgrading.
+  - bork upgrade: you do not need to and you also should not run it.
+  - bork might ask some security-related questions once after upgrading.
     You can answer them either manually or via environment variable.
     One known case is if you use unencrypted repositories, then it will ask
     about a unknown unencrypted repository one time.
@@ -1594,7 +1594,7 @@ Compatibility notes:
     See the --files-cache docs for details.
 - 1.1.11 removes WSL autodetection (Windows 10 Subsystem for Linux).
   If WSL still has a problem with sync_file_range, you need to set
-  BORG_WORKAROUNDS=basesyncfile in the borg process environment to
+  BORG_WORKAROUNDS=basesyncfile in the bork process environment to
   work around the WSL issue.
 
 Fixes:
@@ -1613,7 +1613,7 @@ Fixes:
   - fix KeyError for "partial" extraction, #4607
   - fix "partial" extract for hardlinked contentless file types, #4725
   - fix preloading for old (0.xx) remote servers, #4652
-  - fix confusing output of borg extract --list --strip-components, #4934
+  - fix confusing output of bork extract --list --strip-components, #4934
 - delete: after double-force delete, warn about necessary repair, #4704
 - create: give invalid repo error msg if repo config not found, #4411
 - mount: fix FUSE mount missing st_birthtime, #4763 #4767
@@ -1652,8 +1652,8 @@ Other:
   - add FAQ describing difference between a local repo vs. repo on a server.
   - document how to test exclusion patterns without performing an actual backup
   - timestamps in the files cache are now usually ctime, #4583
-  - fix bad reference to borg compact (does not exist in 1.1), #4660
-  - create: borg 1.1 is not future any more
+  - fix bad reference to bork compact (does not exist in 1.1), #4660
+  - create: bork 1.1 is not future any more
   - extract: document limitation "needs empty destination", #4598
   - how to supply a passphrase, use crypto devices, #4549
   - fix osxfuse github link in installation docs
@@ -1672,13 +1672,13 @@ Other:
   - reiterate that 'file cache names are absolute' in FAQ
 - tests:
 
-  - cope with ANY error when importing pytest into borg.testsuite, #4652
+  - cope with ANY error when importing pytest into bork.testsuite, #4652
   - fix broken test that relied on improper zlib assumptions
   - test_fuse: filter out selinux xattrs, #4574
 - travis / vagrant:
 
   - misc python versions removed / changed (due to openssl 1.1 compatibility)
-    or added (3.7 and 3.8, for better borg compatibility testing)
+    or added (3.7 and 3.8, for better bork compatibility testing)
   - binary building is on python 3.5.9 now
 - vagrant:
 
@@ -1704,15 +1704,15 @@ Version 1.1.10 (2019-05-16)
 Fixes:
 
 - extract: hang on partial extraction with ssh: repo, when hardlink master
-  is not matched/extracted and borg hangs on related slave hardlink, #4350
+  is not matched/extracted and bork hangs on related slave hardlink, #4350
 - lrucache: regularly remove old FDs, #4427
 - avoid stale filehandle issues, #3265
 - freebsd: make xattr platform code api compatible with linux, #3952
-- use whitelist approach for borg serve, #4097
-- borg command shall terminate with rc 2 for ImportErrors, #4424
+- use whitelist approach for bork serve, #4097
+- bork command shall terminate with rc 2 for ImportErrors, #4424
 - create: only run stat_simple_attrs() once, this increases
   backup with lots of unchanged files performance by ~ 5%.
-- prune: fix incorrect borg prune --stats output with --dry-run, #4373
+- prune: fix incorrect bork prune --stats output with --dry-run, #4373
 - key export: emit user-friendly error if repo key is exported to a directory,
   #4348
 
@@ -1723,15 +1723,15 @@ New features:
   optionally, we still support using an external msgpack (see hints in
   setup.py), but this requires solid requirements management within
   distributions and is not recommended.
-  borgbackup will break if you upgrade msgpack to an unsupported version.
+  borkbackup will break if you upgrade msgpack to an unsupported version.
 - display msgpack version as part of sysinfo (e.g. in tracebacks)
-- timestamp for borg delete --info added, #4359
+- timestamp for bork delete --info added, #4359
 - enable placeholder usage in --comment and --glob-archives, #4559, #4495
 
 Other:
 
-- serve: do not check python/libc for borg serve, #4483
-- shell completions: borg diff second archive
+- serve: do not check python/libc for bork serve, #4483
+- shell completions: bork diff second archive
 - release scripts: signing binaries with Qubes OS support
 - testing:
 
@@ -1743,7 +1743,7 @@ Other:
   - pure-py msgpack warning shall not make a lot of tests fail, #4558
 - docs:
 
-  - add "SSH Configuration" section to "borg serve", #3988, #636, #4485
+  - add "SSH Configuration" section to "bork serve", #3988, #636, #4485
   - README: new URL for funding options
   - add a sample logging.conf in docs/misc, #4380
   - elaborate on append-only mode docs, #3504
@@ -1761,11 +1761,11 @@ Version 1.1.9 (2019-02-10)
 
 Compatibility notes:
 
-- When upgrading from borg 1.0.x to 1.1.x, please note:
+- When upgrading from bork 1.0.x to 1.1.x, please note:
 
   - read all the compatibility notes for 1.1.0*, starting from 1.1.0b1.
-  - borg upgrade: you do not need to and you also should not run it.
-  - borg might ask some security-related questions once after upgrading.
+  - bork upgrade: you do not need to and you also should not run it.
+  - bork might ask some security-related questions once after upgrading.
     You can answer them either manually or via environment variable.
     One known case is if you use unencrypted repositories, then it will ask
     about a unknown unencrypted repository one time.
@@ -1779,7 +1779,7 @@ Compatibility notes:
 Fixes:
 
 - security fix: configure FUSE with "default_permissions", #3903
-  "default_permissions" is now enforced by borg by default to let the
+  "default_permissions" is now enforced by bork by default to let the
   kernel check uid/gid/mode based permissions.
   "ignore_permissions" can be given to not enforce "default_permissions".
 - make "hostname" short, even on misconfigured systems, #4262
@@ -1803,9 +1803,9 @@ Other:
 - check for unsupported msgpack versions
 - shell completions:
 
-  - new shell completions for borg 1.1.9
-  - more complete shell completions for borg mount -o
-  - added shell completions for borg help
+  - new shell completions for bork 1.1.9
+  - more complete shell completions for bork mount -o
+  - added shell completions for bork help
   - option arguments for zsh tab completion
 - docs:
 
@@ -1846,7 +1846,7 @@ Other:
 
   - option --format is required for some expensive-to-compute values for json
 
-    borg list by default does not compute expensive values except when
+    bork list by default does not compute expensive values except when
     they are needed. whether they are needed is determined by the format,
     in standard mode as well as in --json mode.
   - tell that our binaries are x86/x64 amd/intel, bauerj has ARM
@@ -1887,9 +1887,9 @@ New features:
 
 - init: add warning to store both key and passphrase at safe place(s)
 - BORG_HOST_ID env var to work around all-zero MAC address issue, #3985
-- borg debug dump-repo-objs --ghost (dump everything from segment files,
+- bork debug dump-repo-objs --ghost (dump everything from segment files,
   including deleted or superseded objects or commit tags)
-- borg debug search-repo-objs (search in repo objects for hex bytes or strings)
+- bork debug search-repo-objs (search in repo objects for hex bytes or strings)
 
 Other changes:
 
@@ -1897,7 +1897,7 @@ Other changes:
 - updated shell completions
 - call socket.gethostname only once
 - locking: better logging, add some asserts
-- borg debug dump-repo-objs:
+- bork debug dump-repo-objs:
 
   - filename layout improvements
   - use repository.scan() to get on-disk order
@@ -1931,9 +1931,9 @@ Compatibility notes:
 
 Fixes:
 
-- fix borg exception handling on ENOSPC error with xattrs, #3808
+- fix bork exception handling on ENOSPC error with xattrs, #3808
 - prune: fix/improve overall progress display
-- borg config repo ... does not need cache/manifest/key, #3802
+- bork config repo ... does not need cache/manifest/key, #3802
 - debug dump-repo-objs should not depend on a manifest obj
 - pypi package:
 
@@ -1951,7 +1951,7 @@ New features:
 
   - show progress while rebuilding missing manifest, #3787
   - more --repair output
-- borg config --list <repo>, #3612
+- bork config --list <repo>, #3612
 
 Other changes:
 
@@ -1966,7 +1966,7 @@ Other changes:
 
   - FUSE for macOS: upgrade 3.7.1 to 3.8.0
   - exclude macOS High Sierra upgrade on the darwin64 machine
-  - remove borgbackup.egg-info dir in fs_init (after rsync)
+  - remove borkbackup.egg-info dir in fs_init (after rsync)
   - use pyenv-based build/test on jessie32/62
   - use local 32 and 64bit debian jessie boxes
   - use "vagrant" as username for new xenial box
@@ -1999,7 +1999,7 @@ Fixes:
   when it shouldn't
 - build: do .h file content checks in binary mode, fixes build issue for
   non-ascii header files on pure-ascii locale platforms, #3544 #3639
-- borgfs: fix patterns/paths processing, #3551
+- borkfs: fix patterns/paths processing, #3551
 - config: add some validation, #3566
 - repository config: add validation for max_segment_size, #3592
 - set cache previous_location on load instead of save
@@ -2010,12 +2010,12 @@ Fixes:
 New features:
 
 - create: implement --stdin-name, #3533
-- add chunker_params to borg archive info (--json)
+- add chunker_params to bork archive info (--json)
 - BORG_SHOW_SYSINFO=no to hide system information from exceptions
 
 Other changes:
 
-- updated zsh completions for borg 1.1.4
+- updated zsh completions for bork 1.1.4
 - files cache related code cleanups
 - be more helpful when parsing invalid --pattern values, #3575
 - be more clear in secure-erase warning message, #3591
@@ -2026,7 +2026,7 @@ Other changes:
   - security: explicitly note what happens OUTSIDE the attack model
   - security: add note about combining compression and encryption
   - security: describe chunk size / proximity issue, #3687
-  - quickstart: add note about permissions, borg@localhost, #3452
+  - quickstart: add note about permissions, bork@localhost, #3452
   - quickstart: add introduction to repositories & archives, #3620
   - recreate --recompress: add missing metavar, clarify description, #3617
   - improve logging docs, #3549
@@ -2054,11 +2054,11 @@ Version 1.1.4 (2017-12-31)
 
 Compatibility notes:
 
-- When upgrading from borg 1.0.x to 1.1.x, please note:
+- When upgrading from bork 1.0.x to 1.1.x, please note:
 
   - read all the compatibility notes for 1.1.0*, starting from 1.1.0b1.
-  - borg upgrade: you do not need to and you also should not run it.
-  - borg might ask some security-related questions once after upgrading.
+  - bork upgrade: you do not need to and you also should not run it.
+  - bork might ask some security-related questions once after upgrading.
     You can answer them either manually or via environment variable.
     One known case is if you use unencrypted repositories, then it will ask
     about a unknown unencrypted repository one time.
@@ -2068,9 +2068,9 @@ Compatibility notes:
     You can avoid the one-time slowdown by using the pre-1.1.0rc4-compatible
     mode (but that is less safe for detecting changed files than the default).
     See the --files-cache docs for details.
-- borg 1.1.4 changes:
+- bork 1.1.4 changes:
 
-  - zstd compression is new in borg 1.1.4, older borg can't handle it.
+  - zstd compression is new in bork 1.1.4, older bork can't handle it.
   - new minimum requirements for the compression libraries - if the required
     versions (header and lib) can't be found at build time, bundled code will
     be used:
@@ -2080,10 +2080,10 @@ Compatibility notes:
 
 Fixes:
 
-- check: data corruption fix: fix for borg check --repair malfunction, #3444.
+- check: data corruption fix: fix for bork check --repair malfunction, #3444.
   See the more detailed notes close to the top of this document.
 - delete: also delete security dir when deleting a repo, #3427
-- prune: fix building the "borg prune" man page, #3398
+- prune: fix building the "bork prune" man page, #3398
 - init: use given --storage-quota for local repo, #3470
 - init: properly quote repo path in output
 - fix startup delay with dns-only own fqdn resolving, #3471
@@ -2101,11 +2101,11 @@ Other changes:
 - add parens for C preprocessor macro argument usages (did not cause malfunction)
 - exclude broken pytest 3.3.0 release
 - updated fish/bash completions
-- init: more clear exception messages for borg create, #3465
+- init: more clear exception messages for bork create, #3465
 - docs:
 
-  - add auto-generated docs for borg config
-  - don't generate HTML docs page for borgfs, #3404
+  - add auto-generated docs for bork config
+  - don't generate HTML docs page for borkfs, #3404
   - docs update for lz4 b2 zstd changes
   - add zstd to compression help, readme, docs
   - update requirements and install docs about bundled lz4 and zstd
@@ -2128,38 +2128,38 @@ Version 1.1.3 (2017-11-27)
 Fixes:
 
 - Security Fix for CVE-2017-15914: Incorrect implementation of access controls
-  allows remote users to override repository restrictions in Borg servers.
-  A user able to access a remote Borg SSH server is able to circumvent access
+  allows remote users to override repository restrictions in Bork servers.
+  A user able to access a remote Bork SSH server is able to circumvent access
   controls post-authentication.
   Affected releases: 1.1.0, 1.1.1, 1.1.2. Releases 1.0.x are NOT affected.
-- crc32: deal with unaligned buffer, add tests - this broke borg on older ARM
+- crc32: deal with unaligned buffer, add tests - this broke bork on older ARM
   CPUs that can not deal with unaligned 32bit memory accesses and raise a bus
   error in such cases. the fix might also improve performance on some CPUs as
   all 32bit memory accesses by the crc32 code are properly aligned now. #3317
-- mount: fixed support of --consider-part-files and do not show .borg_part_N
+- mount: fixed support of --consider-part-files and do not show .bork_part_N
   files by default in the mounted FUSE filesystem. #3347
 - fixed cache/repo timestamp inconsistency message, highlight that information
   is obtained from security dir (deleting the cache will not bypass this error
   in case the user knows this is a legitimate repo).
-- borgfs: don't show sub-command in borgfs help, #3287
+- borkfs: don't show sub-command in borkfs help, #3287
 - create: show an error when --dry-run and --stats are used together, #3298
 
 New features:
 
 - mount: added exclusion group options and paths, #2138
 
-  Reused some code to support similar options/paths as borg extract offers -
+  Reused some code to support similar options/paths as bork extract offers -
   making good use of these to only mount a smaller subset of dirs/files can
   speed up mounting a lot and also will consume way less memory.
 
-  borg mount [options] repo_or_archive mountpoint path [paths...]
+  bork mount [options] repo_or_archive mountpoint path [paths...]
 
-  paths: you can just give some "root paths" (like for borg extract) to
+  paths: you can just give some "root paths" (like for bork extract) to
   only partially populate the FUSE filesystem.
 
   new options: --exclude[-from], --pattern[s-from], --strip-components
 - create/extract: support st_birthtime on platforms supporting it, #3272
-- add "borg config" command for querying/setting/deleting config values, #3304
+- add "bork config" command for querying/setting/deleting config values, #3304
 
 Other changes:
 
@@ -2167,22 +2167,22 @@ Other changes:
   .c/.h/.pyx files)
 - docs:
 
-  - point out tuning options for borg create, #3239
+  - point out tuning options for bork create, #3239
   - add instructions for using ntfsclone, zerofree, #81
   - move image backup-related FAQ entries to a new page
-  - clarify key aliases for borg list --format, #3111
+  - clarify key aliases for bork list --format, #3111
   - mention break-lock in checkpointing FAQ entry, #3328
   - document sshfs rename workaround, #3315
   - add FAQ about removing files from existing archives
   - add FAQ about different prune policies
-  - usage and man page for borgfs, #3216
+  - usage and man page for borkfs, #3216
   - clarify create --stats duration vs. wall time, #3301
-  - clarify encrypted key format for borg key export, #3296
+  - clarify encrypted key format for bork key export, #3296
   - update release checklist about security fixes
   - document good and problematic option placements, fix examples, #3356
   - add note about using --nobsdflags to avoid speed penalty related to
     bsdflags, #3239
-  - move most of support section to www.borgbackup.org
+  - move most of support section to www.borkbackup.org
 
 
 Version 1.1.2 (2017-11-05)
@@ -2190,7 +2190,7 @@ Version 1.1.2 (2017-11-05)
 
 Fixes:
 
-- fix KeyError crash when talking to borg server < 1.0.7, #3244
+- fix KeyError crash when talking to bork server < 1.0.7, #3244
 - extract: set bsdflags last (include immutable flag), #3263
 - create: don't do stat() call on excluded-norecurse directory, fix exception
   handling for stat() call, #3209
@@ -2212,11 +2212,11 @@ Other changes:
 
   - clarify using a blank passphrase in keyfile mode
   - mention "!" (exclude-norecurse) type in "patterns" help
-  - document to first heal before running borg recreate to re-chunk stuff,
+  - document to first heal before running bork recreate to re-chunk stuff,
     because that will have to get rid of chunks_healthy metadata.
   - more than 23 is not supported for CHUNK_MAX_EXP, #3115
-  - borg does not respect nodump flag by default any more
-  - clarify same-filesystem requirement for borg upgrade, #2083
+  - bork does not respect nodump flag by default any more
+  - clarify same-filesystem requirement for bork upgrade, #2083
   - update / rephrase cygwin / WSL status, #3174
   - improve docs about --stats, #3260
 - vagrant: openindiana new clang package
@@ -2233,22 +2233,22 @@ Version 1.1.1 (2017-10-22)
 Compatibility notes:
 
 - The deprecated --no-files-cache is not a global/common option any more,
-  but only available for borg create (it is not needed for anything else).
+  but only available for bork create (it is not needed for anything else).
   Use --files-cache=disabled instead of --no-files-cache.
 - The nodump flag ("do not backup this file") is not honoured any more by
   default because this functionality (esp. if it happened by error or
   unexpected) was rather confusing and unexplainable at first to users.
   If you want that "do not backup NODUMP-flagged files" behaviour, use:
-  borg create --exclude-nodump ...
+  bork create --exclude-nodump ...
 - If you are on Linux and do not need bsdflags archived, consider using
-  ``--nobsdflags`` with ``borg create`` to avoid additional syscalls and
+  ``--nobsdflags`` with ``bork create`` to avoid additional syscalls and
   speed up backup creation.
 
 Fixes:
 
-- borg recreate: correctly compute part file sizes. fixes cosmetic, but
-  annoying issue as borg check complains about size inconsistencies of part
-  files in affected archives. you can solve that by running borg recreate on
+- bork recreate: correctly compute part file sizes. fixes cosmetic, but
+  annoying issue as bork check complains about size inconsistencies of part
+  files in affected archives. you can solve that by running bork recreate on
   these archives, see also #3157.
 - bsdflags support: do not open BLK/CHR/LNK files, avoid crashes and
   slowness, #3130
@@ -2260,9 +2260,9 @@ Fixes:
 - cache: use SaveFile for more safety, #3158
 - init: fix wrong encryption choices in command line parser, fix missing
   "authenticated-blake2", #3103
-- move --no-files-cache from common to borg create options, #3146
+- move --no-files-cache from common to bork create options, #3146
 - fix detection of non-local path (failed on ..filename), #3108
-- logging with fileConfig: set json attr on "borg" logger, #3114
+- logging with fileConfig: set json attr on "bork" logger, #3114
 - fix crash with relative BORG_KEY_FILE, #3197
 - show excluded dir with "x" for tagged dirs / caches, #3189
 
@@ -2278,7 +2278,7 @@ Other changes:
 - travis: don't brew update, hopefully fixes #2532
 - docs:
 
-  - readme: -e option is required in borg 1.1
+  - readme: -e option is required in bork 1.1
   - add example showing --show-version --show-rc
   - use --format rather than --list-format (deprecated) in example
   - update docs about hardlinked symlinks limitation
@@ -2289,16 +2289,16 @@ Version 1.1.0 (2017-10-07)
 
 Compatibility notes:
 
-- borg command line: do not put options in between positional arguments
+- bork command line: do not put options in between positional arguments
 
-  This sometimes works (e.g. it worked in borg 1.0.x), but can easily stop
+  This sometimes works (e.g. it worked in bork 1.0.x), but can easily stop
   working if we make positional arguments optional (like it happened for
-  borg create's "paths" argument in 1.1). There are also places in borg 1.0
+  bork create's "paths" argument in 1.1). There are also places in bork 1.0
   where we do that, so it doesn't work there in general either. #3356
 
-  Good: borg create -v --stats repo::archive path
-  Good: borg create repo::archive path -v --stats
-  Bad:  borg create repo::archive -v --stats path
+  Good: bork create -v --stats repo::archive path
+  Good: bork create repo::archive path -v --stats
+  Bad:  bork create repo::archive -v --stats path
 
 Fixes:
 
@@ -2320,7 +2320,7 @@ Version 1.1.0rc4 (2017-10-01)
 
 Compatibility notes:
 
-- A borg server >= 1.1.0rc4 does not support borg clients 1.1.0b3-b5. #3033
+- A bork server >= 1.1.0rc4 does not support bork clients 1.1.0b3-b5. #3033
 - The files cache is now controlled differently and has a new default mode:
 
   - the files cache now uses ctime by default for improved file change
@@ -2352,9 +2352,9 @@ Other changes:
 - docs:
 
   - security: change-passphrase only changes the passphrase, #2990
-  - fixed/improved borg create --compression examples, #3034
+  - fixed/improved bork create --compression examples, #3034
   - add note about metadata dedup and --no[ac]time, #2518
-  - twitter account @borgbackup now, better visible, #2948
+  - twitter account @borkbackup now, better visible, #2948
   - simplified rate limiting wrapper in FAQ
 
 
@@ -2407,7 +2407,7 @@ Fixes:
 - create --timestamp: set start time, #2957
 - ignore corrupt files cache, #2939
 - migrate locks to child PID when daemonize is used
-- fix exitcode of borg serve, #2910
+- fix exitcode of bork serve, #2910
 - only compare contents when chunker params match, #2899
 - umount: try fusermount, then try umount, #2863
 
@@ -2443,7 +2443,7 @@ Compatibility notes:
 
 New features:
 
-- support borg list repo --format {comment} {bcomment} {end}, #2081
+- support bork list repo --format {comment} {bcomment} {end}, #2081
 - key import: allow reading from stdin, #2760
 
 Fixes:
@@ -2470,7 +2470,7 @@ Other changes:
 - upgrade FUSE for macOS (osxfuse) from 3.5.8 to 3.6.3, #2706
 - hashindex: speed up by replacing modulo with "if" to check for wraparound
 - coala checker / pylint: fixed requirements and .coafile, more ignores
-- borg upgrade: name backup directories as 'before-upgrade', #2811
+- bork upgrade: name backup directories as 'before-upgrade', #2811
 - add .mailmap
 - some minor changes suggested by lgtm.com
 - docs:
@@ -2485,7 +2485,7 @@ Other changes:
   - improved style / formatting
   - improved/fixed segments_per_dir docs
   - recreate: fix wrong "remove unwanted files" example
-  - reference list of status chars in borg recreate --filter description
+  - reference list of status chars in bork recreate --filter description
   - update source-install docs about doc build dependencies, #2795
   - cleanup installation docs
   - file system requirements, update segs per dir
@@ -2507,8 +2507,8 @@ Version 1.1.0b6 (2017-06-18)
 
 Compatibility notes:
 
-- Running "borg init" via a "borg serve --append-only" server will *not* create
-  an append-only repository anymore. Use "borg init --append-only" to initialize
+- Running "bork init" via a "bork serve --append-only" server will *not* create
+  an append-only repository anymore. Use "bork init --append-only" to initialize
   an append-only repository.
 
 - Repositories in the "repokey" and "repokey-blake2" modes with an empty passphrase
@@ -2528,9 +2528,9 @@ Compatibility notes:
 
 - The client-side temporary repository cache now holds unencrypted data for better speed.
 
-- borg init: removed the short form of --append-only (-a).
+- bork init: removed the short form of --append-only (-a).
 
-- borg upgrade: removed the short form of --inplace (-i).
+- bork upgrade: removed the short form of --inplace (-i).
 
 New features:
 
@@ -2538,7 +2538,7 @@ New features:
   contents, integrity checked via xxh64. #2515
 - reduced space usage of chunks.archive.d. Existing caches are migrated during
   a cache sync. #235 #2638
-- integrity checking using xxh64 for important files used by borg, #1101:
+- integrity checking using xxh64 for important files used by bork, #1101:
 
   - repository: index and hints files
   - cache: chunks and files caches, chunks.archive.d
@@ -2550,9 +2550,9 @@ New features:
 - implement storage quotas, #2517
 - serve: add --restrict-to-repository, #2589
 - BORG_PASSCOMMAND: use external tool providing the key passphrase, #2573
-- borg export-tar, #2519
+- bork export-tar, #2519
 - list: --json-lines instead of --json for archive contents, #2439
-- add --debug-profile option (and also "borg debug convert-profile"), #2473
+- add --debug-profile option (and also "bork debug convert-profile"), #2473
 - implement --glob-archives/-a, #2448
 - normalize authenticated key modes for better naming consistency:
 
@@ -2576,7 +2576,7 @@ Fixes:
   - redo ItemCache, on top of object cache
   - use decrypted cache
   - remove unnecessary normpaths
-- serve: ignore --append-only when initializing a repository (borg init), #2501
+- serve: ignore --append-only when initializing a repository (bork init), #2501
 - serve: fix incorrect type of exception_short for Errors, #2513
 - fix --exclude and --exclude-from recursing into directories, #2469
 - init: don't allow creating nested repositories, #2563
@@ -2606,7 +2606,7 @@ Other changes:
 - document follow_symlinks requirements, check libc, use stat and chown
   with follow_symlinks=False, #2507
 - support common options on the main command, #2508
-- support common options on mid-level commands (e.g. borg *key* export)
+- support common options on mid-level commands (e.g. bork *key* export)
 - make --progress a common option
 - increase DEFAULT_SEGMENTS_PER_DIR to 1000
 - chunker: fix invalid use of types (function only used by tests)
@@ -2635,11 +2635,11 @@ Other changes:
   - data structures: demingle cache and repo index
   - Attic FAQ: separate section for attic stuff
   - FAQ: I get an IntegrityError or similar - what now?
-  - FAQ: Can I use Borg on SMR hard drives?, #2252
+  - FAQ: Can I use Bork on SMR hard drives?, #2252
   - FAQ: specify "using inline shell scripts"
   - add systemd warning regarding placeholders, #2543
   - xattr: document API
-  - add docs/misc/borg-data-flow data flow chart
+  - add docs/misc/bork-data-flow data flow chart
   - debugging facilities
   - README: how to help the project, #2550
   - README: add bountysource badge, #2558
@@ -2649,7 +2649,7 @@ Other changes:
   - mark --pattern, --patterns-from as experimental
   - highlight experimental features in online docs
   - remove regex based pattern examples, #2458
-  - nanorst for "borg help TOPIC" and --help
+  - nanorst for "bork help TOPIC" and --help
   - split deployment
   - deployment: hosting repositories
   - deployment: automated backups to a local hard drive
@@ -2696,11 +2696,11 @@ Other changes:
 
   - binaries: don't bundle libssl
   - setup.py clean to remove compiled files
-  - fail in borg package if version metadata is very broken (setuptools_scm)
+  - fail in bork package if version metadata is very broken (setuptools_scm)
 
 - repo / code structure:
 
-  - create borg.algorithms and borg.crypto packages
+  - create bork.algorithms and bork.crypto packages
   - algorithms: rename crc32 to checksums
   - move patterns to module, #2469
   - gitignore: complete paths for src/ excludes
@@ -2722,7 +2722,7 @@ Compatibility notes:
 Fixes:
 
 - catch exception for os.link when hardlinks are not supported, #2405
-- borg rename / recreate: expand placeholders, #2386
+- bork rename / recreate: expand placeholders, #2386
 - generic support for hardlinks (files, devices, FIFOs), #2324
 - extract: also create parent dir for device files, if needed, #2358
 - extract: if a hardlink master is not in the to-be-extracted subset,
@@ -2739,7 +2739,7 @@ Other changes:
   with --compression defaults.
 - placeholders: deny access to internals and other unspecified stuff
 - clearer error message for unrecognized placeholder
-- more clear exception if borg check does not help, #2427
+- more clear exception if bork check does not help, #2427
 - vagrant: upgrade FUSE for macOS to 3.5.8, #2346
 - linux binary builds: get rid of glibc 2.13 dependency, #2430
 - docs:
@@ -2750,11 +2750,11 @@ Other changes:
   - more docs about compression
   - LICENSE: use canonical formulation
     ("copyright holders and contributors" instead of "author")
-  - document borg init behaviour via append-only borg serve, #2440
+  - document bork init behaviour via append-only bork serve, #2440
   - be clear about what buzhash is used for, #2390
   - add hint about chunker params, #2421
-  - clarify borg upgrade docs, #2436
-  - FAQ to explain warning when running borg check --repair, #2341
+  - clarify bork upgrade docs, #2436
+  - FAQ to explain warning when running bork check --repair, #2341
   - repository file system requirements, #2080
   - pre-install considerations
   - misc. formatting / crossref fixes
@@ -2778,8 +2778,8 @@ Version 1.1.0b4 (2017-03-27)
 Compatibility notes:
 
 - init: the --encryption argument is mandatory now (there are several choices)
-- moved "borg migrate-to-repokey" to "borg key migrate-to-repokey".
-- "borg change-passphrase" is deprecated, use "borg key change-passphrase"
+- moved "bork migrate-to-repokey" to "bork key migrate-to-repokey".
+- "bork change-passphrase" is deprecated, use "bork key change-passphrase"
   instead.
 - the --exclude-if-present option now supports tagging a folder with any
   filesystem object type (file, folder, etc), instead of expecting only files
@@ -2793,20 +2793,20 @@ New features:
 - JSON API to make developing frontends and automation easier
   (see :ref:`json_output`)
 
-  - add JSON output to commands: `borg create/list/info --json ...`.
+  - add JSON output to commands: `bork create/list/info --json ...`.
   - add --log-json option for structured logging output.
   - add JSON progress information, JSON support for confirmations (yes()).
 - add two new options --pattern and --patterns-from as discussed in #1406
 - new path full match pattern style (pf:) for very fast matching, #2334
 - add 'debug dump-manifest' and 'debug dump-archive' commands
-- add 'borg benchmark crud' command, #1788
-- new 'borg delete --force --force' to delete severely corrupted archives, #1975
+- add 'bork benchmark crud' command, #1788
+- new 'bork delete --force --force' to delete severely corrupted archives, #1975
 - info: show utilization of maximum archive size, #1452
 - list: add dsize and dcsize keys, #2164
 - paperkey.html: Add interactive html template for printing key backups.
 - key export: add qr html export mode
 - securely erase config file (which might have old encryption key), #2257
-- archived file items: add size to metadata, 'borg extract' and 'borg check' do
+- archived file items: add size to metadata, 'bork extract' and 'bork check' do
   check the file size for consistency, FUSE uses precomputed size from Item.
 
 Fixes:
@@ -2819,7 +2819,7 @@ Fixes:
   (performance fix), #2246
 - Location regex: fix bad parsing of wrong syntax
 - ignore posix_fadvise errors in repository.py, #2095
-- borg rpc: use limited msgpack.Unpacker (security precaution), #2139
+- bork rpc: use limited msgpack.Unpacker (security precaution), #2139
 - Manifest: Make sure manifest timestamp is strictly monotonically increasing.
 - create: handle BackupOSError on a per-path level in one spot
 - create: clarify -x option / meaning of "same filesystem"
@@ -2837,7 +2837,7 @@ Fixes:
 - hashindex: fix wrong skip_hint on hashindex_set when encountering tombstones,
   the regression was introduced in #1748
 - fix ChunkIndex.__contains__ assertion  for big-endian archs
-- fix borg key/debug/benchmark crashing without subcommand, #2240
+- fix bork key/debug/benchmark crashing without subcommand, #2240
 - Location: accept //servername/share/path
 - correct/refactor calculation of unique/non-unique chunks
 - extract: fix missing call to ProgressIndicator.finish
@@ -2868,7 +2868,7 @@ Other changes:
 - tests:
 
   - help python development by testing 3.6-dev
-  - test for borg delete --force
+  - test for bork delete --force
 - vagrant:
 
   - freebsd: some fixes, #2067
@@ -2883,7 +2883,7 @@ Other changes:
   - create really nice man pages
   - faq: mention --remote-ratelimit in bandwidth limit question
   - fix caskroom link, #2299
-  - docs/security: reiterate that RPC in Borg does no networking
+  - docs/security: reiterate that RPC in Bork does no networking
   - docs/security: counter tracking, #2266
   - docs/development: update merge remarks
   - address SSH batch mode in docs, #2202 #2270
@@ -2902,7 +2902,7 @@ Other changes:
   - datas: enc: 1.1.x mas different MACs
   - datas: enc: correct factual error -- no nonce involved there.
   - make internals.rst an index page and edit it a bit
-  - add "Cryptography in Borg" and "Remote RPC protocol security" sections
+  - add "Cryptography in Bork" and "Remote RPC protocol security" sections
   - document BORG_HOSTNAME_IS_UNIQUE, #2087
   - FAQ by categories as proposed by @anarcat in #1802
   - FAQ: update Which file types, attributes, etc. are *not* preserved?
@@ -2910,7 +2910,7 @@ Other changes:
   - development: define "ours" merge strategy for auto-generated files
   - create: move --exclude note to main doc
   - create: move item flags to main doc
-  - fix examples using borg init without -e/--encryption
+  - fix examples using bork init without -e/--encryption
   - list: don't print key listings in fat (html + man)
   - remove Python API docs (were very incomplete, build problems on RTFD)
   - added FAQ section about backing up root partition
@@ -2921,15 +2921,15 @@ Version 1.1.0b3 (2017-01-15)
 
 Compatibility notes:
 
-- borg init: removed the default of "--encryption/-e", #1979
+- bork init: removed the default of "--encryption/-e", #1979
   This was done so users do a informed decision about -e mode.
 
 Bug fixes:
 
-- borg recreate: don't rechunkify unless explicitly told so
-- borg info: fixed bug when called without arguments, #1914
-- borg init: fix free space check crashing if disk is full, #1821
-- borg debug delete/get obj: fix wrong reference to exception
+- bork recreate: don't rechunkify unless explicitly told so
+- bork info: fixed bug when called without arguments, #1914
+- bork init: fix free space check crashing if disk is full, #1821
+- bork debug delete/get obj: fix wrong reference to exception
 - fix processing of remote ~/ and ~user/ paths (regressed since 1.1.0b1), #1759
 - posix platform module: only build / import on non-win32 platforms, #2041
 
@@ -2941,19 +2941,19 @@ New features:
 - automatically remove stale locks - set BORG_HOSTNAME_IS_UNIQUE env var
   to enable stale lock killing. If set, stale locks in both cache and
   repository are deleted. #562 #1253
-- borg info <repo>: print general repo information, #1680
-- borg check --first / --last / --sort / --prefix, #1663
-- borg mount --first / --last / --sort / --prefix, #1542
+- bork info <repo>: print general repo information, #1680
+- bork check --first / --last / --sort / --prefix, #1663
+- bork mount --first / --last / --sort / --prefix, #1542
 - implement "health" item formatter key, #1749
 - BORG_SECURITY_DIR to remember security related infos outside the cache.
   Key type, location and manifest timestamp checks now survive cache
   deletion. This also means that you can now delete your cache and avoid
-  previous warnings, since Borg can still tell it's safe.
+  previous warnings, since Bork can still tell it's safe.
 - implement BORG_NEW_PASSPHRASE, #1768
 
 Other changes:
 
-- borg recreate:
+- bork recreate:
 
   - remove special-cased --dry-run
   - update --help
@@ -2964,8 +2964,8 @@ Other changes:
 - fixed cache sync performance regression from 1.1.0b1 onwards, #1940
 - syncing the cache without chunks.archive.d (see :ref:`disable_archive_chunks`)
   now avoids any merges and is thus faster, #1940
-- borg check --verify-data: faster due to linear on-disk-order scan
-- borg debug-xxx commands removed, we use "debug xxx" subcommands now, #1627
+- bork check --verify-data: faster due to linear on-disk-order scan
+- bork debug-xxx commands removed, we use "debug xxx" subcommands now, #1627
 - improve metadata handling speed
 - shortcut hashindex_set by having hashindex_lookup hint about address
 - improve / add progress displays, #1721
@@ -2981,7 +2981,7 @@ Other changes:
     documented in usage chapter.
   - mention file://
   - document repo URLs / archive location
-  - clarify borg diff help, #980
+  - clarify bork diff help, #980
   - deployment: synthesize alternative --restrict-to-path example
   - improve cache / index docs, esp. files cache docs, #1825
   - document using "git merge 1.0-maint -s recursive -X rename-threshold=20%"
@@ -3003,10 +3003,10 @@ Version 1.1.0b2 (2016-10-01)
 Bug fixes:
 
 - fix incorrect preservation of delete tags, leading to "object count mismatch"
-  on borg check, #1598. This only occurred with 1.1.0b1 (not with 1.0.x) and is
-  normally fixed by running another borg create/delete/prune.
+  on bork check, #1598. This only occurred with 1.1.0b1 (not with 1.0.x) and is
+  normally fixed by running another bork create/delete/prune.
 - fix broken --progress for double-cell paths (e.g. CJK), #1624
-- borg recreate: also catch SIGHUP
+- bork recreate: also catch SIGHUP
 - FUSE:
 
   - fix hardlinks in versions view, #1599
@@ -3015,17 +3015,17 @@ Bug fixes:
 New features:
 
 - Archiver, RemoteRepository: add --remote-ratelimit (send data)
-- borg help compression, #1582
-- borg check: delete chunks with integrity errors, #1575, so they can be
+- bork help compression, #1582
+- bork check: delete chunks with integrity errors, #1575, so they can be
   "repaired" immediately and maybe healed later.
 - archives filters concept (refactoring/unifying older code)
 
   - covers --first/--last/--prefix/--sort-by options
-  - currently used for borg list/info/delete
+  - currently used for bork list/info/delete
 
 Other changes:
 
-- borg check --verify-data slightly tuned (use get_many())
+- bork check --verify-data slightly tuned (use get_many())
 - change {utcnow} and {now} to ISO-8601 format ("T" date/time separator)
 - repo check: log transaction IDs, improve object count mismatch diagnostic
 - Vagrantfile: use TW's fresh-bootloader pyinstaller branch
@@ -3040,16 +3040,16 @@ New features:
 
 - new commands:
 
-  - borg recreate: re-create existing archives, #787 #686 #630 #70, also see
+  - bork recreate: re-create existing archives, #787 #686 #630 #70, also see
     #757, #770.
 
     - selectively remove files/dirs from old archives
     - re-compress data
-    - re-chunkify data, e.g. to have upgraded Attic / Borg 0.xx archives
-      deduplicate with Borg 1.x archives or to experiment with chunker-params.
-  - borg diff: show differences between archives
-  - borg with-lock: execute a command with the repository locked, #990
-- borg create:
+    - re-chunkify data, e.g. to have upgraded Attic / Bork 0.xx archives
+      deduplicate with Bork 1.x archives or to experiment with chunker-params.
+  - bork diff: show differences between archives
+  - bork with-lock: execute a command with the repository locked, #990
+- bork create:
 
   - Flexible compression with pattern matching on path/filename,
     and LZ4 heuristic for deciding compressibility, #810, #1007
@@ -3062,13 +3062,13 @@ New features:
   - add 'x' status for excluded paths, #814
 
     - also means files excluded via UF_NODUMP, #1080
-- borg check:
+- bork check:
 
   - will not produce the "Checking segments" output unless new --progress option is passed, #824.
   - --verify-data to verify data cryptographically on the client, #975
-- borg list, #751, #1179
+- bork list, #751, #1179
 
-  - removed {formatkeys}, see "borg list --help"
+  - removed {formatkeys}, see "bork list --help"
   - --list-format is deprecated, use --format instead
   - --format now also applies to listing archives, not only archive contents, #1179
   - now supports the usual [PATH [PATHS…]] syntax and excludes
@@ -3076,7 +3076,7 @@ New features:
   - supports guaranteed_available hashlib hashes
     (to avoid varying functionality depending on environment),
     which includes the SHA1 and SHA2 family as well as MD5
-- borg prune:
+- bork prune:
 
   - to better visualize the "thinning out", we now list all archives in
     reverse time order. rephrase and reorder help text.
@@ -3084,16 +3084,16 @@ New features:
     assuming that there is not more than 1 backup archive made in 1s,
     --keep-last N and --keep-secondly N are equivalent, #537
   - cleanup checkpoints except the latest, #1008
-- borg extract:
+- bork extract:
 
   - added --progress, #1449
   - Linux: limited support for BSD flags, #1050
-- borg info:
+- bork info:
 
-  - output is now more similar to borg create --stats, #977
-- borg mount:
+  - output is now more similar to bork create --stats, #977
+- bork mount:
 
-  - provide "borgfs" wrapper for borg mount, enables usage via fstab, #743
+  - provide "borkfs" wrapper for bork mount, enables usage via fstab, #743
   - "versions" mount option - when used with a repository mount, this gives
     a merged, versioned view of the files in all archives, #729
 - repository:
@@ -3110,9 +3110,9 @@ New features:
 
 - options that imply output (--show-rc, --show-version, --list, --stats,
   --progress) don't need -v/--info to have that output displayed, #865
-- add archive comments (via borg (re)create --comment), #842
-- borg list/prune/delete: also output archive id, #731
-- --show-version: shows/logs the borg version, #725
+- add archive comments (via bork (re)create --comment), #842
+- bork list/prune/delete: also output archive id, #731
+- --show-version: shows/logs the bork version, #725
 - added --debug-topic for granular debug logging, #1447
 - use atomic file writing/updating for configuration and key files, #1377
 - BORG_KEY_FILE environment variable, #1001
@@ -3141,7 +3141,7 @@ Other changes:
   - move some constants to new constants module
   - better readability and fewer errors with namedtuples, #823
   - moved source tree into src/ subdirectory, #1016
-  - made borg.platform a package, #1113
+  - made bork.platform a package, #1113
   - removed dead crypto code, #1032
   - improved and ported parts of the test suite to py.test, #912
   - created data classes instead of passing dictionaries around, #981, #1158, #1161
@@ -3173,10 +3173,10 @@ Please note: this is very likely the last 1.0.x release, please upgrade to 1.1.x
 Bug fixes:
 
 - security fix: configure FUSE with "default_permissions", #3903.
-  "default_permissions" is now enforced by borg by default to let the
+  "default_permissions" is now enforced by bork by default to let the
   kernel check uid/gid/mode based permissions.
   "ignore_permissions" can be given to not enforce "default_permissions".
-- xattrs: fix borg exception handling on ENOSPC error, #3808.
+- xattrs: fix bork exception handling on ENOSPC error, #3808.
 
 New features:
 
@@ -3221,7 +3221,7 @@ Bug fixes:
 - fix detection of non-local path, #3108
 - fix LDLP restoration for subprocesses, #3077
 - fix subprocess environments (xattr module's fakeroot version check,
-  borg umount, BORG_PASSCOMMAND), #3050
+  bork umount, BORG_PASSCOMMAND), #3050
 - remote: deal with partial lines, #2637
 - get rid of datetime.isoformat, use safe parse_timestamp to parse
   timestamps, #2994
@@ -3248,10 +3248,10 @@ Other changes:
   - update docs about hardlinked symlinks limitation
   - faq: we do not implement futile attempts of ETA / progress displays
   - simplified rate limiting wrapper in FAQ
-  - twitter account @borgbackup, #2948
+  - twitter account @borkbackup, #2948
   - add note about metadata dedup and --no[ac]time, #2518
   - change-passphrase only changes the passphrase, #2990
-  - clarify encrypted key format for borg key export, #3296
+  - clarify encrypted key format for bork key export, #3296
   - document sshfs rename workaround, #3315
   - update release checklist about security fixes
   - docs about how to verify a signed release, #3634
@@ -3304,9 +3304,9 @@ Bug fixes:
   fixes huge memory usage of mount (8 MiB × number of archives)
 - IPv6 address support
   also: Location: more informative exception when parsing fails
-- borg single-file binary: use pyinstaller v3.2.1, #2396
+- bork single-file binary: use pyinstaller v3.2.1, #2396
   this fixes that the prelink cronjob on some distros kills the
-  borg binary by stripping away parts of it.
+  bork binary by stripping away parts of it.
 - extract:
 
   - warning for unextracted big extended attributes, #2258
@@ -3315,14 +3315,14 @@ Bug fixes:
 - archive check: detect and fix missing all-zero replacement chunks, #2180
 - fix (de)compression exceptions, #2224 #2221
 - files cache: update inode number, #2226
-- borg rpc: use limited msgpack.Unpacker (security precaution), #2139
+- bork rpc: use limited msgpack.Unpacker (security precaution), #2139
 - Manifest: use limited msgpack.Unpacker (security precaution), #2175
 - Location: accept //servername/share/path
 - fix ChunkIndex.__contains__ assertion  for big-endian archs (harmless)
 - create: handle BackupOSError on a per-path level in one spot
-- fix error msg, there is no --keep-last in borg 1.0.x, #2282
+- fix error msg, there is no --keep-last in bork 1.0.x, #2282
 - clamp (nano)second values to unproblematic range, #2304
-- fuse / borg mount:
+- fuse / bork mount:
 
   - fix st_blocks to be an integer (not float) value
   - fix negative uid/gid crash (they could come into archives e.g. when
@@ -3330,10 +3330,10 @@ Bug fixes:
   - fix crash if empty (None) xattr is read
   - do pre-mount checks before opening repository
   - check llfuse is installed before asking for passphrase
-- borg rename: expand placeholders, #2386
-- borg serve: fix forced command lines containing BORG_* env vars
+- bork rename: expand placeholders, #2386
+- bork serve: fix forced command lines containing BORG_* env vars
 - fix error msg, it is --keep-within, not --within
-- fix borg key/debug/benchmark crashing without subcommand, #2240
+- fix bork key/debug/benchmark crashing without subcommand, #2240
 - chunker: fix invalid use of types, don't do uint32_t >> 32
 - document follow_symlinks requirements, check libc, #2507
 
@@ -3342,7 +3342,7 @@ New features:
 - added BORG_PASSCOMMAND environment variable, #2573
 - add minimal version of in repository mandatory feature flags, #2134
 
-  This should allow us to make sure older borg versions can be cleanly
+  This should allow us to make sure older bork versions can be cleanly
   prevented from doing operations that are no longer safe because of
   repository format evolution. This allows more fine grained control than
   just incrementing the manifest version. So for example a change that
@@ -3350,7 +3350,7 @@ New features:
   when an old version tries to delete an archive or check the repository
   would add the new feature to the check and delete set but leave it out
   of the write set.
-- borg delete --force --force to delete severely corrupted archives, #1975
+- bork delete --force --force to delete severely corrupted archives, #1975
 
 Other changes:
 
@@ -3374,12 +3374,12 @@ Other changes:
   - create empty docs.txt reequirements, #2694
   - README: how to help the project
   - note -v/--verbose requirement on affected options, #2542
-  - document borg init behaviour via append-only borg serve, #2440
+  - document bork init behaviour via append-only bork serve, #2440
   - be clear about what buzhash is used for (chunking) and want it is not
     used for (deduplication)- also say already in the readme that we use a
     cryptohash for dedupe, so people don't worry, #2390
-  - add hint about chunker params to borg upgrade docs, #2421
-  - clarify borg upgrade docs, #2436
+  - add hint about chunker params to bork upgrade docs, #2421
+  - clarify bork upgrade docs, #2436
   - quickstart: delete problematic BORG_PASSPHRASE use, #2623
   - faq: specify "using inline shell scripts"
   - document pattern denial of service, #2624
@@ -3390,12 +3390,12 @@ Other changes:
 
     - enhance travis setuptools_scm situation
     - install fakeroot for Linux
-  - add test for borg delete --force
+  - add test for bork delete --force
   - enable remote tests on cygwin (the cygwin issue that caused these tests
     to break was fixed in cygwin at least since cygwin 2.8, maybe even since
     2.7.0).
   - remove skipping the noatime tests on GNU/Hurd, #2710
-  - fix borg import issue, add comment, #2718
+  - fix bork import issue, add comment, #2718
   - include attic.tar.gz when installing the package
     also: add include_package_data=True
 
@@ -3424,7 +3424,7 @@ Other changes:
 
 - docs:
 
-  - language clarification - "borg create --one-file-system" option does not respect
+  - language clarification - "bork create --one-file-system" option does not respect
     mount points, but considers different file systems instead, #2141
 - setup.py: build_api: sort file list for determinism
 
@@ -3434,17 +3434,17 @@ Version 1.0.10rc1 (2017-01-29)
 
 Bug fixes:
 
-- borg serve: fix transmission data loss of pipe writes, #1268
+- bork serve: fix transmission data loss of pipe writes, #1268
   This affects only the cygwin platform (not Linux, BSD, OS X).
 - Avoid triggering an ObjectiveFS bug in xattr retrieval, #1992
 - When running out of buffer memory when reading xattrs, only skip the
   current file, #1993
-- Fixed "borg upgrade --tam" crashing with unencrypted repositories. Since
+- Fixed "bork upgrade --tam" crashing with unencrypted repositories. Since
   :ref:`the issue <tam_vuln>` is not relevant for unencrypted repositories,
   it now does nothing and prints an error, #1981.
 - Fixed change-passphrase crashing with unencrypted repositories, #1978
-- Fixed "borg check repo::archive" indicating success if "archive" does not exist, #1997
-- borg check: print non-exit-code warning if --last or --prefix aren't fulfilled
+- Fixed "bork check repo::archive" indicating success if "archive" does not exist, #1997
+- bork check: print non-exit-code warning if --last or --prefix aren't fulfilled
 - fix bad parsing of wrong repo location syntax
 - create: don't create hard link refs to failed files,
   mount: handle invalid hard link refs, #2092
@@ -3459,7 +3459,7 @@ Other changes:
 - Enable the fault handler: install handlers for the SIGSEGV, SIGFPE, SIGABRT,
   SIGBUS and SIGILL signals to dump the Python traceback.
 - Also print a traceback on SIGUSR2.
-- borg change-passphrase: print key location (simplify making a backup of it)
+- bork change-passphrase: print key location (simplify making a backup of it)
 - officially support Python 3.6 (setup.py: add Python 3.6 qualifier)
 - tests:
 
@@ -3478,8 +3478,8 @@ Other changes:
 - docs:
 
   - language clarification - VM backup FAQ
-  - borg create: document how to backup stdin, #2013
-  - borg upgrade: fix incorrect title levels
+  - bork create: document how to backup stdin, #2013
+  - bork upgrade: fix incorrect title levels
   - add CVE numbers for issues fixed in 1.0.9, #2106
 - fix typos (taken from Debian package patch)
 - remote: include data hexdump in "unexpected RPC data" error message
@@ -3499,12 +3499,12 @@ Version 1.0.9 (2016-12-20)
 
 Security fixes:
 
-- A flaw in the cryptographic authentication scheme in Borg allowed an attacker
+- A flaw in the cryptographic authentication scheme in Bork allowed an attacker
   to spoof the manifest. See :ref:`tam_vuln` above for the steps you should
   take.
 
   CVE-2016-10099 was assigned to this vulnerability.
-- borg check: When rebuilding the manifest (which should only be needed very rarely)
+- bork check: When rebuilding the manifest (which should only be needed very rarely)
   duplicate archive names would be handled on a "first come first serve" basis, allowing
   an attacker to apparently replace archives.
 
@@ -3512,7 +3512,7 @@ Security fixes:
 
 Bug fixes:
 
-- borg check:
+- bork check:
 
   - rebuild manifest if it's corrupted
   - skip corrupted chunks during manifest rebuild
@@ -3549,7 +3549,7 @@ Bug fixes:
   used in cache cleanup and led to wrong "A" [added] status for unchanged
   files in next backup), #1860.
 
-- borg check:
+- bork check:
 
   - fix incorrectly reporting attic 0.13 and earlier archives as corrupt
   - handle repo w/o objects gracefully and also bail out early if repo is
@@ -3559,11 +3559,11 @@ Bug fixes:
 
 New features:
 
-- borg umount <mountpoint>
+- bork umount <mountpoint>
   exposed already existing umount code via the CLI api, so users can use it,
-  which is more consistent than using borg to mount and fusermount -u (or
+  which is more consistent than using bork to mount and fusermount -u (or
   umount) to un-mount, #1855.
-- implement borg create --noatime --noctime, fixes #1853
+- implement bork create --noatime --noctime, fixes #1853
 
 Other changes:
 
@@ -3608,8 +3608,8 @@ Bug fixes:
 
 New features:
 
-- implement borgmajor/borgminor/borgpatch placeholders, #1694
-  {borgversion} was already there (full version string). With the new
+- implement borkmajor/borkminor/borkpatch placeholders, #1694
+  {borkversion} was already there (full version string). With the new
   placeholders you can now also get e.g. 1 or 1.0 or 1.0.8.
 
 Other changes:
@@ -3637,7 +3637,7 @@ Other changes:
 
   - no chown when rsyncing (fixes boxes w/o vagrant group)
   - fix FUSE permission issues on linux/freebsd, #1544
-  - skip FUSE test for borg binary + fakeroot
+  - skip FUSE test for bork binary + fakeroot
   - ignore security.selinux xattrs, fixes tests on centos, #1735
 
 
@@ -3650,14 +3650,14 @@ Bug fixes:
   Fixes e.g. leftover lock files for quickly repeated signals (e.g. Ctrl-C
   Ctrl-C) or lost connections or systemd sending SIGHUP.
 - progress display: adapt formatting to narrow screens, do not crash, #1628
-- borg create --read-special - fix crash on broken symlink, #1584.
+- bork create --read-special - fix crash on broken symlink, #1584.
   also correctly processes broken symlinks. before this regressed to a crash
   (5b45385) a broken symlink would've been skipped.
 - process_symlink: fix missing backup_io()
   Fixes a chmod/chown/chgrp/unlink/rename/... crash race between getting
   dirents and dispatching to process_symlink.
 - yes(): abort on wrong answers, saying so, #1622
-- fixed exception borg serve raised when connection was closed before repository
+- fixed exception bork serve raised when connection was closed before repository
   was opened. Add an error message for this.
 - fix read-from-closed-FD issue, #1551
   (this seems not to get triggered in 1.0.x, but was discovered in master)
@@ -3668,25 +3668,25 @@ Bug fixes:
 - update changed repo location immediately after acceptance, #1524
 - fix debug get-obj / delete-obj crash if object not found and remote repo,
   #1684
-- pyinstaller: use a spec file to build borg.exe binary, exclude osxfuse dylib
+- pyinstaller: use a spec file to build bork.exe binary, exclude osxfuse dylib
   on Mac OS X (avoids mismatch lib <-> driver), #1619
 
 New features:
 
-- add "borg key export" / "borg key import" commands, #1555, so users are able
+- add "bork key export" / "bork key import" commands, #1555, so users are able
   to backup / restore their encryption keys more easily.
 
-  Supported formats are the keyfile format used by borg internally and a
+  Supported formats are the keyfile format used by bork internally and a
   special "paper" format with by line checksums for printed backups. For the
   paper format, the import is an interactive process which checks each line as
   soon as it is input.
-- add "borg debug-refcount-obj" to determine a repo objects' referrer counts,
+- add "bork debug-refcount-obj" to determine a repo objects' referrer counts,
   #1352
 
 Other changes:
 
-- add "borg debug ..." subcommands
-  (borg debug-* still works, but will be removed in borg 1.1)
+- add "bork debug ..." subcommands
+  (bork debug-* still works, but will be removed in bork 1.1)
 - setup.py: Add subcommand support to build_usage.
 - remote: change exception message for unexpected RPC data format to indicate
   dataflow direction.
@@ -3695,7 +3695,7 @@ Other changes:
   - IntegrityError: add placeholder for message, so that the message we give
     appears not only in the traceback, but also in the (short) error message,
     #1572
-  - borg.key: include chunk id in exception msgs, #1571
+  - bork.key: include chunk id in exception msgs, #1571
   - better messages for cache newer than repo, #1700
 - vagrant (testing/build VMs):
 
@@ -3710,11 +3710,11 @@ Other changes:
   - fix second block in "Easy to use" section not showing on GitHub, #1576
   - add bestpractices badge
   - link reference docs and faq about BORG_FILES_CACHE_TTL, #1561
-  - improve borg info --help, explain size infos, #1532
+  - improve bork info --help, explain size infos, #1532
   - add release signing key / security contact to README, #1560
   - add contribution guidelines for developers
   - development.rst: add sphinx_rtd_theme to the sphinx install command
-  - adjust border color in borg.css
+  - adjust border color in bork.css
   - add debug-info usage help file
   - internals.rst: fix typos
   - setup.py: fix build_usage to always process all commands
@@ -3725,7 +3725,7 @@ Other changes:
 
   - work around FUSE xattr test issue with recent fakeroot
   - simplify repo/hashindex tests
-  - travis: test FUSE-enabled borg, use trusty to have a recent FUSE
+  - travis: test FUSE-enabled bork, use trusty to have a recent FUSE
   - re-enable FUSE tests for RemoteArchiver (no deadlocks any more)
   - clean env for pytest based tests, #1714
   - fuse_mount contextmanager: accept any options
@@ -3736,7 +3736,7 @@ Version 1.0.7 (2016-08-19)
 
 Security fixes:
 
-- borg serve: fix security issue with remote repository access, #1428
+- bork serve: fix security issue with remote repository access, #1428
   If you used e.g. --restrict-to-path /path/client1/ (with or without trailing
   slash does not make a difference), it acted like a path prefix match using
   /path/client1 (note the missing trailing slash) - the code then also allowed
@@ -3757,12 +3757,12 @@ Security fixes:
 
 Bug fixes:
 
-- fixed repeated LockTimeout exceptions when borg serve tried to write into
-  a already write-locked repo (e.g. by a borg mount), #502 part b)
+- fixed repeated LockTimeout exceptions when bork serve tried to write into
+  a already write-locked repo (e.g. by a bork mount), #502 part b)
   This was solved by the fix for #1220 in 1.0.7rc1 already.
-- fix cosmetics + file leftover for "not a valid borg repository", #1490
+- fix cosmetics + file leftover for "not a valid bork repository", #1490
 - Cache: release lock if cache is invalid, #1501
-- borg extract --strip-components: fix leak of preloaded chunk contents
+- bork extract --strip-components: fix leak of preloaded chunk contents
 - Repository, when a InvalidRepository exception happens:
 
   - fix spurious, empty lock.roster
@@ -3770,7 +3770,7 @@ Bug fixes:
 
 New features:
 
-- implement borg debug-info, fixes #1122
+- implement bork debug-info, fixes #1122
   (just calls already existing code via cli, same output as below tracebacks)
 
 Other changes:
@@ -3786,11 +3786,11 @@ Version 1.0.7rc2 (2016-08-13)
 Bug fixes:
 
 - do not write objects to repository that are bigger than the allowed size,
-  borg will reject reading them, #1451.
+  bork will reject reading them, #1451.
 
   Important: if you created archives with many millions of files or
   directories, please verify if you can open them successfully,
-  e.g. try a "borg list REPO::ARCHIVE".
+  e.g. try a "bork list REPO::ARCHIVE".
 - lz4 compression: dynamically enlarge the (de)compression buffer, the static
   buffer was not big enough for archives with extremely many items, #1453
 - larger item metadata stream chunks, raise archive item limit by 8x, #1452
@@ -3811,8 +3811,8 @@ Other changes:
 - print active env var override by default, #1467
 - xattr module: refactor code, deduplicate, clean up
 - repository: split object size check into too small and too big
-- add a transaction_id assertion, so borg init on a broken (inconsistent)
-  filesystem does not look like a coding error in borg, but points to the
+- add a transaction_id assertion, so bork init on a broken (inconsistent)
+  filesystem does not look like a coding error in bork, but points to the
   real problem.
 - explain confusing TypeError caused by compat support for old servers, #1456
 - add forgotten usage help file from build_usage
@@ -3830,7 +3830,7 @@ Bug fixes:
 
 - fix repo lock deadlocks (related to lock upgrade), #1220
 - catch unpacker exceptions, resync, #1351
-- fix borg break-lock ignoring BORG_REPO env var, #1324
+- fix bork break-lock ignoring BORG_REPO env var, #1324
 - files cache performance fixes (fixes unnecessary re-reading/chunking/
   hashing of unmodified files for some use cases):
 
@@ -3847,16 +3847,16 @@ Bug fixes:
 
 New features:
 
-- better borg versions management support (useful esp. for borg servers
-  wanting to offer multiple borg versions and for clients wanting to choose
-  a specific server borg version), #1392:
+- better bork versions management support (useful esp. for bork servers
+  wanting to offer multiple bork versions and for clients wanting to choose
+  a specific server bork version), #1392:
 
-  - add BORG_VERSION environment variable before executing "borg serve" via ssh
-  - add new placeholder {borgversion}
+  - add BORG_VERSION environment variable before executing "bork serve" via ssh
+  - add new placeholder {borkversion}
   - substitute placeholders in --remote-path
 
-- borg init --append-only option (makes using the more secure append-only mode
-  more convenient. when used remotely, this requires 1.0.7+ also on the borg
+- bork init --append-only option (makes using the more secure append-only mode
+  more convenient. when used remotely, this requires 1.0.7+ also on the bork
   server), #1291.
 
 Other changes:
@@ -3876,7 +3876,7 @@ Other changes:
   - OS X: install pkg-config to build with FUSE support, fixes #1400
   - add notes about shell/sudo pitfalls with env. vars, #1380
   - added platform feature matrix
-- implement borg debug-dump-repo-objs
+- implement bork debug-dump-repo-objs
 
 
 Version 1.0.6 (2016-07-12)
@@ -3904,7 +3904,7 @@ Version 1.0.6rc1 (2016-07-10)
 
 New features:
 
-- borg check --repair: heal damaged files if missing chunks re-appear (e.g. if
+- bork check --repair: heal damaged files if missing chunks re-appear (e.g. if
   the previously missing chunk was added again in a later backup archive),
   #148. (*) Also improved logging.
 
@@ -3913,15 +3913,15 @@ Bug fixes:
 - sync_dir: silence fsync() failing with EINVAL, #1287
   Some network filesystems (like smbfs) don't support this and we use this in
   repository code.
-- borg mount (FUSE):
+- bork mount (FUSE):
 
   - fix directories being shadowed when contained paths were also specified,
     #1295
   - raise I/O Error (EIO) on damaged files (unless -o allow_damaged_files is
     used), #1302. (*)
-- borg extract: warn if a damaged file is extracted, #1299. (*)
+- bork extract: warn if a damaged file is extracted, #1299. (*)
 - Added some missing return code checks (ChunkIndex._add, hashindex_resize).
-- borg check: fix/optimize initial hash table size, avoids resize of the table.
+- bork check: fix/optimize initial hash table size, avoids resize of the table.
 
 Other changes:
 
@@ -3929,19 +3929,19 @@ Other changes:
 
   - add more FUSE tests, #1284
   - deduplicate FUSE (u)mount code
-  - fix borg binary test issues, #862
+  - fix bork binary test issues, #862
 - docs:
 
-  - changelog: added release dates to older borg releases
+  - changelog: added release dates to older bork releases
   - fix some sphinx (docs generator) warnings, #881
 
 Notes:
 
 (*) Some features depend on information (chunks_healthy list) added to item
 metadata when a file with missing chunks was "repaired" using all-zero
-replacement chunks. The chunks_healthy list is generated since borg 1.0.4,
-thus borg can't recognize such "repaired" (but content-damaged) files if the
-repair was done with an older borg version.
+replacement chunks. The chunks_healthy list is generated since bork 1.0.4,
+thus bork can't recognize such "repaired" (but content-damaged) files if the
+repair was done with an older bork version.
 
 
 Version 1.0.5 (2016-07-07)
@@ -3949,7 +3949,7 @@ Version 1.0.5 (2016-07-07)
 
 Bug fixes:
 
-- borg mount: fix FUSE crash in xattr code on Linux introduced in 1.0.4, #1282
+- bork mount: fix FUSE crash in xattr code on Linux introduced in 1.0.4, #1282
 
 Other changes:
 
@@ -3966,29 +3966,29 @@ Version 1.0.4 (2016-07-07)
 
 New features:
 
-- borg serve --append-only, #1168
+- bork serve --append-only, #1168
   This was included because it was a simple change (append-only functionality
   was already present via repository config file) and makes better security now
   practically usable.
 - BORG_REMOTE_PATH environment variable, #1258
   This was included because it was a simple change (--remote-path cli option
-  was already present) and makes borg much easier to use if you need it.
+  was already present) and makes bork much easier to use if you need it.
 - Repository: cleanup incomplete transaction on "no space left" condition.
   In many cases, this can avoid a 100% full repo filesystem (which is very
-  problematic as borg always needs free space - even to delete archives).
+  problematic as bork always needs free space - even to delete archives).
 
 Bug fixes:
 
-- Fix wrong handling and reporting of OSErrors in borg create, #1138.
-  This was a serious issue: in the context of "borg create", errors like
+- Fix wrong handling and reporting of OSErrors in bork create, #1138.
+  This was a serious issue: in the context of "bork create", errors like
   repository I/O errors (e.g. disk I/O errors, ssh repo connection errors)
   were handled badly and did not lead to a crash (which would be good for this
   case, because the repo transaction would be incomplete and trigger a
   transaction rollback to clean up).
   Now, error handling for source files is cleanly separated from every other
   error handling, so only problematic input files are logged and skipped.
-- Implement fail-safe error handling for borg extract.
-  Note that this isn't nearly as critical as the borg create error handling
+- Implement fail-safe error handling for bork extract.
+  Note that this isn't nearly as critical as the bork create error handling
   bug, since nothing is written to the repo. So this was "merely" misleading
   error reporting.
 - Add missing error handler in directory attr restore loop.
@@ -3996,7 +3996,7 @@ Bug fixes:
   sync the containing directory.
 - FUSE: getxattr fail must use errno.ENOATTR, #1126
   (fixes Mac OS X Finder malfunction: "zero bytes" file length, access denied)
-- borg check --repair: do not lose information about the good/original chunks.
+- bork check --repair: do not lose information about the good/original chunks.
   If we do not lose the original chunk IDs list when "repairing" a file
   (replacing missing chunks with all-zero chunks), we have a chance to "heal"
   the file back into its original state later, in case the chunks re-appear
@@ -4013,13 +4013,13 @@ Bug fixes:
 - catch and format exceptions in arg parsing
 - helpers: fix "undefined name 'e'" in exception handler
 - better error handling for missing repo manifest, #1043
-- borg delete:
+- bork delete:
 
   - make it possible to delete a repo without manifest
-  - borg delete --forced allows one to delete corrupted archives, #1139
-- borg check:
+  - bork delete --forced allows one to delete corrupted archives, #1139
+- bork check:
 
-  - make borg check work for empty repo
+  - make bork check work for empty repo
   - fix resync and msgpacked item qualifier, #1135
   - rebuild_manifest: fix crash if 'name' or 'time' key were missing.
   - better validation of item metadata dicts, #1130
@@ -4036,13 +4036,13 @@ Bug fixes:
 
 Other changes:
 
-- make borg build/work on OpenSSL 1.0 and 1.1, #1187
+- make bork build/work on OpenSSL 1.0 and 1.1, #1187
 - docs / help:
 
   - fix / clarify prune help, #1143
   - fix "patterns" help formatting
   - add missing docs / help about placeholders
-  - resources: rename atticmatic to borgmatic
+  - resources: rename atticmatic to borkmatic
   - document sshd settings, #545
   - more details about checkpoints, add split trick, #1171
   - support docs: add freenode web chat link, #1175
@@ -4051,9 +4051,9 @@ Other changes:
   - make clear that lzma levels > 6 are a waste of cpu cycles
   - add a "do not edit" note to auto-generated files, #1250
   - update cygwin installation docs
-- repository interoperability with borg master (1.1dev) branch:
+- repository interoperability with bork master (1.1dev) branch:
 
-  - borg check: read item metadata keys from manifest, #1147
+  - bork check: read item metadata keys from manifest, #1147
   - read v2 hints files, #1235
   - fix hints file "unknown version" error handling bug
 - tests: add tests for format_line
@@ -4079,8 +4079,8 @@ Bug fixes:
   considered invalid (annoying, but harmless), #942
 - fix capabilities extraction on Linux (set xattrs last, after chown()), #1069
 - repository: fix commit tags being seen in data
-- when probing key files, do binary reads. avoids crash when non-borg binary
-  files are located in borg's key files directory.
+- when probing key files, do binary reads. avoids crash when non-bork binary
+  files are located in bork's key files directory.
 - handle SIGTERM and make a clean exit - avoids orphan lock files.
 - repository cache: don't cache large objects (avoid using lots of temp. disk
   space), #1063
@@ -4093,9 +4093,9 @@ Other changes:
 - docs / help:
 
   - update readthedocs URLs, #991
-  - add missing docs for "borg break-lock", #992
-  - borg create help: add some words to about the archive name
-  - borg create help: document format tags, #894
+  - add missing docs for "bork break-lock", #992
+  - bork create help: add some words to about the archive name
+  - bork create help: document format tags, #894
 
 
 Version 1.0.2 (2016-04-16)
@@ -4107,7 +4107,7 @@ Bug fixes:
   architectures or bi-endian archs in (rare) BE mode. #886, #889
 
   cache resync / index merge was malfunctioning due to this, potentially
-  leading to data loss. borg info had cosmetic issues (displayed wrong values).
+  leading to data loss. bork info had cosmetic issues (displayed wrong values).
 
   note: all (widespread) little-endian archs (like x86/x64) or bi-endian archs
   in (widespread) LE mode (like ARMEL, MIPSEL, ...) were NOT affected.
@@ -4115,10 +4115,10 @@ Bug fixes:
   values, switch from int32 to uint32.
 - fix so that refcount will never overflow, but just stick to max. value after
   a overflow would have occurred.
-- borg delete: fix --cache-only for broken caches, #874
+- bork delete: fix --cache-only for broken caches, #874
 
   Makes --cache-only idempotent: it won't fail if the cache is already deleted.
-- fixed borg create --one-file-system erroneously traversing into other
+- fixed bork create --one-file-system erroneously traversing into other
   filesystems (if starting fs device number was 0), #873
 - workaround a bug in Linux fadvise FADV_DONTNEED, #907
 
@@ -4144,15 +4144,15 @@ due to their high impact on security/safety/speed or because they are fixes
 also:
 
 - append-only mode for repositories, #809, #36 (see docs)
-- borg create: add --ignore-inode option to make borg detect unmodified files
+- bork create: add --ignore-inode option to make bork detect unmodified files
   even if your filesystem does not have stable inode numbers (like sshfs and
   possibly CIFS).
 - add options --warning, --error, --critical for missing log levels, #826.
   it's not recommended to suppress warnings or errors, but the user may decide
   this on his own.
-  note: --warning is not given to borg serve so a <= 1.0.0 borg will still
+  note: --warning is not given to bork serve so a <= 1.0.0 bork will still
   work as server (it is not needed as it is the default).
-  do not use --error or --critical when using a <= 1.0.0 borg server.
+  do not use --error or --critical when using a <= 1.0.0 bork server.
 
 Bug fixes:
 
@@ -4199,10 +4199,10 @@ Compatibility notes:
   note: we provide binaries that include python 3.5.1 and everything else
   needed. they are an option in case you are stuck with < 3.4 otherwise.
 - change encryption to be on by default (using "repokey" mode)
-- moved keyfile keys from ~/.borg/keys to ~/.config/borg/keys,
-  you can either move them manually or run "borg upgrade <REPO>"
+- moved keyfile keys from ~/.bork/keys to ~/.config/bork/keys,
+  you can either move them manually or run "bork upgrade <REPO>"
 - remove support for --encryption=passphrase,
-  use borg migrate-to-repokey to switch to repokey mode, #97
+  use bork migrate-to-repokey to switch to repokey mode, #97
 - remove deprecated --compression <number>,
   use --compression zlib,<number> instead
   in case of 0, you could also use --compression none
@@ -4214,8 +4214,8 @@ Compatibility notes:
 
   - -p now is same as --progress
   - -P now is same as --prefix
-- remove deprecated "borg verify",
-  use "borg extract --dry-run" instead
+- remove deprecated "bork verify",
+  use "bork extract --dry-run" instead
 - cleanup environment variable semantics, #355
   the environment variables used to be "yes sayers" when set, this was
   conceptually generalized to "automatic answerers" and they just give their
@@ -4224,7 +4224,7 @@ Compatibility notes:
 - change the builtin default for --chunker-params, create 2MiB chunks, #343
   --chunker-params new default: 19,23,21,4095 - old default: 10,23,16,4095
 
-  one of the biggest issues with borg < 1.0 (and also attic) was that it had a
+  one of the biggest issues with bork < 1.0 (and also attic) was that it had a
   default target chunk size of 64kiB, thus it created a lot of chunks and thus
   also a huge chunk management overhead (high RAM and disk usage).
 
@@ -4243,7 +4243,7 @@ Compatibility notes:
   if you used the old --chunker-params default value (or if you did not use
   --chunker-params option at all) and you'ld like to continue using small
   chunks (and you accept the huge resource usage that comes with that), just
-  explicitly use borg create --chunker-params=10,23,16,4095.
+  explicitly use bork create --chunker-params=10,23,16,4095.
 - archive timestamps: the 'time' timestamp now refers to archive creation
   start time (was: end time), the new 'time_end' timestamp refers to archive
   creation end time. This might affect prune if your backups take rather long.
@@ -4276,20 +4276,20 @@ Version 1.0.0rc2 (2016-02-28)
 New features:
 
 - format options for location: user, pid, fqdn, hostname, now, utcnow, user
-- borg list --list-format
-- borg prune -v --list enables the keep/prune list output, #658
+- bork list --list-format
+- bork prune -v --list enables the keep/prune list output, #658
 
 Bug fixes:
 
 - fix _open_rb noatime handling, #657
 - add a simple archivename validator, #680
-- borg create --stats: show timestamps in localtime, use same labels/formatting
-  as borg info, #651
+- bork create --stats: show timestamps in localtime, use same labels/formatting
+  as bork info, #651
 - llfuse compatibility fixes (now compatible with: 0.40, 0.41, 0.42)
 
 Other changes:
 
-- it is now possible to use "pip install borgbackup[fuse]" to automatically
+- it is now possible to use "pip install borkbackup[fuse]" to automatically
   install the llfuse dependency using the correct version requirement
   for it. you still need to care about having installed the FUSE / build
   related OS package first, though, so that building llfuse can succeed.
@@ -4297,17 +4297,17 @@ Other changes:
 - Vagrant: use pyinstaller v3.1.1 to build binaries
 - docs:
 
-  - borg upgrade: add to docs that only LOCAL repos are supported
-  - borg upgrade also handles borg 0.xx -> 1.0
+  - bork upgrade: add to docs that only LOCAL repos are supported
+  - bork upgrade also handles bork 0.xx -> 1.0
   - use pip extras or requirements file to install llfuse
   - fix order in release process
   - updated usage docs and other minor / cosmetic fixes
-  - verified borg examples in docs, #644
+  - verified bork examples in docs, #644
   - freebsd dependency installation and FUSE configuration, #649
   - add example how to restore a raw device, #671
   - add a hint about the dev headers needed when installing from source
   - add examples for delete (and handle delete after list, before prune), #656
-  - update example for borg create -v --stats (use iso datetime format), #663
+  - update example for bork create -v --stats (use iso datetime format), #663
   - added example to BORG_RSH docs
   - "connection closed by remote": add FAQ entry and point to issue #636
 
@@ -4317,14 +4317,14 @@ Version 1.0.0rc1 (2016-02-07)
 
 New features:
 
-- borg migrate-to-repokey ("passphrase" -> "repokey" encryption key mode)
-- implement --short for borg list REPO, #611
-- implement --list for borg extract (consistency with borg create)
-- borg serve: overwrite client's --restrict-to-path with ssh forced command's
+- bork migrate-to-repokey ("passphrase" -> "repokey" encryption key mode)
+- implement --short for bork list REPO, #611
+- implement --list for bork extract (consistency with bork create)
+- bork serve: overwrite client's --restrict-to-path with ssh forced command's
   option value (but keep everything else from the client commandline), #544
-- use $XDG_CONFIG_HOME/keys for keyfile keys (~/.config/borg/keys), #515
-- "borg upgrade" moves the keyfile keys to the new location
-- display both archive creation start and end time in "borg info", #627
+- use $XDG_CONFIG_HOME/keys for keyfile keys (~/.config/bork/keys), #515
+- "bork upgrade" moves the keyfile keys to the new location
+- display both archive creation start and end time in "bork info", #627
 
 
 Bug fixes:
@@ -4346,17 +4346,17 @@ Other changes:
   - use hmac.compare_digest instead of == operator (constant time comparison)
   - use stat.filemode instead of homegrown code
   - use "mock" library from stdlib, #145
-  - remove borg.support (with non-broken argparse copy), it is ok in 3.4+, #358
+  - remove bork.support (with non-broken argparse copy), it is ok in 3.4+, #358
 - Vagrant: copy CHANGES.rst as symlink, #592
 - cosmetic code cleanups, add flake8 to tox/travis, #4
 - docs / help:
 
-  - make "borg -h" output prettier, #591
+  - make "bork -h" output prettier, #591
   - slightly rephrase prune help
-  - add missing example for --list option of borg create
+  - add missing example for --list option of bork create
   - quote exclude line that includes an asterisk to prevent shell expansion
   - fix dead link to license
   - delete Ubuntu Vivid, it is not supported anymore (EOL)
   - OS X binary does not work for older OS X releases, #629
-  - borg serve's special support for forced/original ssh commands, #544
+  - bork serve's special support for forced/original ssh commands, #544
   - misc. updates and fixes

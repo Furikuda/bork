@@ -1,12 +1,12 @@
-borg prune visualized
+bork prune visualized
 =====================
 
 Assume it is 2016-01-01, today's backup has not yet been made, you have
 created at least one backup on each day in 2015 except on 2015-12-19 (no
-backup made on that day), and you started backing up with borg on
+backup made on that day), and you started backing up with bork on
 2015-01-01.
 
-This is what borg prune --keep-daily 14 --keep-monthly 6 --keep-yearly 1
+This is what bork prune --keep-daily 14 --keep-monthly 6 --keep-yearly 1
 would keep.
 
 Backups kept by the --keep-daily rule are marked by a "d" to the right,

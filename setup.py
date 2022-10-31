@@ -1,4 +1,4 @@
-# borgbackup - main setup code (see also setup.cfg and other setup_*.py files)
+# borkbackup - main setup code (see also setup.cfg and other setup_*.py files)
 
 import os
 import sys
@@ -43,18 +43,18 @@ on_rtd = os.environ.get("READTHEDOCS")
 # Extra cflags for all extensions, usually just warnings we want to explicitly enable
 cflags = ["-Wall", "-Wextra", "-Wpointer-arith"]
 
-compress_source = "src/borg/compress.pyx"
-crypto_ll_source = "src/borg/crypto/low_level.pyx"
-chunker_source = "src/borg/chunker.pyx"
-hashindex_source = "src/borg/hashindex.pyx"
-item_source = "src/borg/item.pyx"
-checksums_source = "src/borg/checksums.pyx"
-platform_posix_source = "src/borg/platform/posix.pyx"
-platform_linux_source = "src/borg/platform/linux.pyx"
-platform_syncfilerange_source = "src/borg/platform/syncfilerange.pyx"
-platform_darwin_source = "src/borg/platform/darwin.pyx"
-platform_freebsd_source = "src/borg/platform/freebsd.pyx"
-platform_windows_source = "src/borg/platform/windows.pyx"
+compress_source = "src/bork/compress.pyx"
+crypto_ll_source = "src/bork/crypto/low_level.pyx"
+chunker_source = "src/bork/chunker.pyx"
+hashindex_source = "src/bork/hashindex.pyx"
+item_source = "src/bork/item.pyx"
+checksums_source = "src/bork/checksums.pyx"
+platform_posix_source = "src/bork/platform/posix.pyx"
+platform_linux_source = "src/bork/platform/linux.pyx"
+platform_syncfilerange_source = "src/bork/platform/syncfilerange.pyx"
+platform_darwin_source = "src/bork/platform/darwin.pyx"
+platform_freebsd_source = "src/bork/platform/freebsd.pyx"
+platform_windows_source = "src/bork/platform/windows.pyx"
 
 cython_sources = [
     compress_source,
@@ -81,7 +81,7 @@ else:
 
     cython_c_files = [fn.replace(".pyx", ".c") for fn in cython_sources]
     if not on_rtd and not all(os.path.exists(path) for path in cython_c_files):
-        raise ImportError("The GIT version of Borg needs Cython. Install Cython or use a released version.")
+        raise ImportError("The GIT version of Bork needs Cython. Install Cython or use a released version.")
 
 
 def rm(file):
@@ -187,22 +187,22 @@ if not on_rtd:
     )
 
     ext_modules += [
-        Extension("borg.crypto.low_level", **crypto_ext_kwargs),
-        Extension("borg.compress", **compress_ext_kwargs),
-        Extension("borg.hashindex", [hashindex_source], extra_compile_args=cflags),
-        Extension("borg.item", [item_source], extra_compile_args=cflags),
-        Extension("borg.chunker", [chunker_source], extra_compile_args=cflags),
-        Extension("borg.checksums", **checksums_ext_kwargs),
+        Extension("bork.crypto.low_level", **crypto_ext_kwargs),
+        Extension("bork.compress", **compress_ext_kwargs),
+        Extension("bork.hashindex", [hashindex_source], extra_compile_args=cflags),
+        Extension("bork.item", [item_source], extra_compile_args=cflags),
+        Extension("bork.chunker", [chunker_source], extra_compile_args=cflags),
+        Extension("bork.checksums", **checksums_ext_kwargs),
     ]
 
-    posix_ext = Extension("borg.platform.posix", [platform_posix_source], extra_compile_args=cflags)
-    linux_ext = Extension("borg.platform.linux", [platform_linux_source], libraries=["acl"], extra_compile_args=cflags)
+    posix_ext = Extension("bork.platform.posix", [platform_posix_source], extra_compile_args=cflags)
+    linux_ext = Extension("bork.platform.linux", [platform_linux_source], libraries=["acl"], extra_compile_args=cflags)
     syncfilerange_ext = Extension(
-        "borg.platform.syncfilerange", [platform_syncfilerange_source], extra_compile_args=cflags
+        "bork.platform.syncfilerange", [platform_syncfilerange_source], extra_compile_args=cflags
     )
-    freebsd_ext = Extension("borg.platform.freebsd", [platform_freebsd_source], extra_compile_args=cflags)
-    darwin_ext = Extension("borg.platform.darwin", [platform_darwin_source], extra_compile_args=cflags)
-    windows_ext = Extension("borg.platform.windows", [platform_windows_source], extra_compile_args=cflags)
+    freebsd_ext = Extension("bork.platform.freebsd", [platform_freebsd_source], extra_compile_args=cflags)
+    darwin_ext = Extension("bork.platform.darwin", [platform_darwin_source], extra_compile_args=cflags)
+    windows_ext = Extension("bork.platform.windows", [platform_windows_source], extra_compile_args=cflags)
 
     if not is_win32:
         ext_modules.append(posix_ext)

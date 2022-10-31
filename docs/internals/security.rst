@@ -9,9 +9,9 @@
 Security
 ========
 
-.. _borgcrypto:
+.. _borkcrypto:
 
-Cryptography in Borg
+Cryptography in Bork
 ====================
 
 .. _attack_model:
@@ -19,8 +19,8 @@ Cryptography in Borg
 Attack model
 ------------
 
-The attack model of Borg is that the environment of the client process
-(e.g. ``borg create``) is trusted and the repository (server) is not. The
+The attack model of Bork is that the environment of the client process
+(e.g. ``bork create``) is trusted and the repository (server) is not. The
 attacker has any and all access to the repository, including interactive
 manipulation (man-in-the-middle) for remote repositories.
 
@@ -28,7 +28,7 @@ Furthermore the client environment is assumed to be persistent across
 attacks (practically this means that the security database cannot be
 deleted between attacks).
 
-Under these circumstances Borg guarantees that the attacker cannot
+Under these circumstances Bork guarantees that the attacker cannot
 
 1. modify the data of any archive without the client detecting the change
 2. rename, remove or add an archive without the client detecting the change
@@ -46,14 +46,14 @@ forbid connections to the repository, or delete it entirely).
 Structural Authentication
 -------------------------
 
-Borg is fundamentally based on an object graph structure (see :ref:`internals`),
+Bork is fundamentally based on an object graph structure (see :ref:`internals`),
 where the root object is called the manifest.
 
-Borg follows the `Horton principle`_, which states that
+Bork follows the `Horton principle`_, which states that
 not only the message must be authenticated, but also its meaning (often
 expressed through context), because every object used is referenced by a
 parent object through its object ID up to the manifest. The object ID in
-Borg is a MAC of the object's plaintext, therefore this ensures that
+Bork is a MAC of the object's plaintext, therefore this ensures that
 an attacker cannot change the context of an object without forging the MAC.
 
 In other words, the object ID itself only authenticates the plaintext of the
@@ -76,7 +76,7 @@ does not apply to it, indeed, cannot apply to it; it is impossible to authentica
 the root node of a DAG through its edges, since the root node has no incoming edges.
 
 With the scheme as described so far an attacker could easily replace the manifest,
-therefore Borg includes a tertiary authentication mechanism (TAM) that is applied
+therefore Bork includes a tertiary authentication mechanism (TAM) that is applied
 to the manifest (see :ref:`tam_vuln`).
 
 TAM works by deriving a separate key through HKDF_ from the other encryption and
@@ -87,7 +87,7 @@ authentication keys and calculating the HMAC of the metadata to authenticate [#]
 
     ikm = id_key || crypt_key
     # *context* depends on the operation, for manifest authentication it is
-    # the ASCII string "borg-metadata-authentication-manifest".
+    # the ASCII string "bork-metadata-authentication-manifest".
     tam_key = HKDF-SHA-512(ikm, salt, context)
 
     # *data* is a dict-like structure
@@ -102,19 +102,19 @@ to forge the authentication.
 
 This effectively 'anchors' the manifest to the key, which is controlled by the
 client, thereby anchoring the entire DAG, making it impossible for an attacker
-to add, remove or modify any part of the DAG without Borg being able to detect
+to add, remove or modify any part of the DAG without Bork being able to detect
 the tampering.
 
 Note that when using BORG_PASSPHRASE the attacker cannot swap the *entire*
 repository against a new repository with e.g. repokey mode and no passphrase,
-because Borg will abort access when BORG_PASSPHRASE is incorrect.
+because Bork will abort access when BORG_PASSPHRASE is incorrect.
 
 However, interactively a user might not notice this kind of attack
 immediately, if she assumes that the reason for the absent passphrase
 prompt is a set BORG_PASSPHRASE. See issue :issue:`2169` for details.
 
 .. [#] The reason why the authentication tag is stored in the packed
-       data itself is that older Borg versions can still read the
+       data itself is that older Bork versions can still read the
        manifest this way, while a changed layout would have broken
        compatibility.
 
@@ -128,25 +128,25 @@ AEAD modes
 
 Modes: --encryption (repokey|keyfile)-[blake2-](aes-ocb|chacha20-poly1305)
 
-Supported: borg 2.0+
+Supported: bork 2.0+
 
 Encryption with these modes is based on AEAD ciphers (authenticated encryption
 with associated data) and session keys.
 
-Depending on the chosen mode (see :ref:`borg_rcreate`) different AEAD ciphers are used:
+Depending on the chosen mode (see :ref:`bork_rcreate`) different AEAD ciphers are used:
 
 - AES-256-OCB - super fast, single-pass algorithm IF you have hw accelerated AES.
 - chacha20-poly1305 - very fast, purely software based AEAD cipher.
 
-The chunk ID is derived via a MAC over the plaintext (mac key taken from borg key):
+The chunk ID is derived via a MAC over the plaintext (mac key taken from bork key):
 
 - HMAC-SHA256 - super fast IF you have hw accelerated SHA256 (see section "Encryption" below).
 - Blake2b - very fast, purely software based algorithm.
 
-For each borg invocation, a new session id is generated by `os.urandom`_.
+For each bork invocation, a new session id is generated by `os.urandom`_.
 
-From that session id, the initial key material (ikm, taken from the borg key)
-and an application and cipher specific salt, borg derives a session key via HKDF.
+From that session id, the initial key material (ikm, taken from the bork key)
+and an application and cipher specific salt, bork derives a session key via HKDF.
 
 For each session key, IVs (nonces) are generated by a counter which increments for
 each encrypted message.
@@ -155,7 +155,7 @@ Session::
 
     sessionid = os.urandom(24)
     ikm = crypt_key
-    salt = "borg-session-key-CIPHERNAME"
+    salt = "bork-session-key-CIPHERNAME"
     sessionkey = HKDF(ikm, sessionid, salt)
     message_iv = 0
 
@@ -198,12 +198,12 @@ Legacy modes
 
 Modes: --encryption (repokey|keyfile)-[blake2]
 
-Supported: borg < 2.0
+Supported: bork < 2.0
 
-These were the AES-CTR based modes in previous borg versions.
+These were the AES-CTR based modes in previous bork versions.
 
-borg 2.0 does not support creating new repos using these modes,
-but ``borg transfer`` can still read such existing repos.
+bork 2.0 does not support creating new repos using these modes,
+but ``bork transfer`` can still read such existing repos.
 
 
 .. _key_encryption:
@@ -211,7 +211,7 @@ but ``borg transfer`` can still read such existing repos.
 Offline key security
 --------------------
 
-Borg cannot secure the key material while it is running, because the keys
+Bork cannot secure the key material while it is running, because the keys
 are needed in plain to decrypt/encrypt repository objects.
 
 For offline storage of the encryption keys they are encrypted with a
@@ -273,20 +273,20 @@ by piping data from/to it).
 
 This means that the authorization and transport security properties
 are inherited from SSH and the configuration of the SSH client and the
-SSH server -- Borg RPC does not contain *any* networking
+SSH server -- Bork RPC does not contain *any* networking
 code. Networking is done by the SSH client running in a separate
-process, Borg only communicates over the standard pipes (stdout,
-stderr and stdin) with this process. This also means that Borg doesn't
+process, Bork only communicates over the standard pipes (stdout,
+stderr and stdin) with this process. This also means that Bork doesn't
 have to directly use a SSH client (or SSH at all). For example,
 ``sudo`` or ``qrexec`` could be used as an intermediary.
 
 By using the system's SSH client and not implementing a
-(cryptographic) network protocol Borg sidesteps many security issues
+(cryptographic) network protocol Bork sidesteps many security issues
 that would normally impact distributing statically linked / standalone
 binaries.
 
 The remainder of this section will focus on the security of the RPC
-protocol within Borg.
+protocol within Bork.
 
 The assumed worst-case a server can inflict to a client is a
 denial of repository service.
@@ -327,7 +327,7 @@ The msgpack implementation used (msgpack-python) has a good security track recor
 a large test suite and no issues found by fuzzing. It is based on the msgpack-c implementation,
 sharing the unpacking engine and some support code. msgpack-c has a good track record as well.
 Some issues [#]_ in the past were located in code not included in msgpack-python.
-Borg does not use msgpack-c.
+Bork does not use msgpack-c.
 
 .. [#] - `MessagePack fuzzing <https://blog.gypsyengineer.com/fun/msgpack-fuzzing.html>`_
        - `Fixed integer overflow and EXT size problem <https://github.com/msgpack/msgpack-c/pull/547>`_
@@ -336,16 +336,16 @@ Borg does not use msgpack-c.
 Using OpenSSL
 =============
 
-Borg uses the OpenSSL library for most cryptography (see `Implementations used`_ above).
+Bork uses the OpenSSL library for most cryptography (see `Implementations used`_ above).
 OpenSSL is bundled with static releases, thus the bundled copy is not updated with system
 updates.
 
 OpenSSL is a large and complex piece of software and has had its share of vulnerabilities,
-however, it is important to note that Borg links against ``libcrypto`` **not** ``libssl``.
+however, it is important to note that Bork links against ``libcrypto`` **not** ``libssl``.
 libcrypto is the low-level cryptography part of OpenSSL,
 while libssl implements TLS and related protocols.
 
-The latter is not used by Borg (cf. `Remote RPC protocol security`_, Borg itself does not implement
+The latter is not used by Bork (cf. `Remote RPC protocol security`_, Bork itself does not implement
 any network access) and historically contained most vulnerabilities, especially critical ones.
 The static binaries released by the project contain neither libssl nor the Python ssl/_ssl modules.
 
@@ -354,7 +354,7 @@ Compression and Encryption
 
 Combining encryption with compression can be insecure in some contexts (e.g. online protocols).
 
-There was some discussion about this in :issue:`1040` and for Borg some developers
+There was some discussion about this in :issue:`1040` and for Bork some developers
 concluded this is no problem at all, some concluded this is hard and extremely slow to exploit
 and thus no problem in practice.
 
@@ -367,7 +367,7 @@ Fingerprinting
 Stored chunk sizes
 ------------------
 
-A borg repository does not hide the size of the chunks it stores (size
+A bork repository does not hide the size of the chunks it stores (size
 information is needed to operate the repository).
 
 The chunks stored in the repo are the (compressed, encrypted and authenticated)
@@ -397,7 +397,7 @@ he assumes that the victim also possesses (and backups into the repository)
 could try a brute force fingerprinting attack based on the chunk sizes in the
 repository to prove his assumption.
 
-To make this more difficult, borg has an ``obfuscate`` pseudo compressor, that
+To make this more difficult, bork has an ``obfuscate`` pseudo compressor, that
 will take the output of the normal compression step and tries to obfuscate
 the size of that output. Of course, it can only **add** to the size, not reduce
 it. Thus, the optional usage of this mechanism comes at a cost: it will make
@@ -421,17 +421,17 @@ To summarize, this is making size-based fingerprinting difficult:
 Secret key usage against fingerprinting
 ---------------------------------------
 
-Borg uses the borg key also for chunking and chunk ID generation to protect against fingerprinting.
-As usual for borg's attack model, the attacker is assumed to have access to a borg repository.
+Bork uses the bork key also for chunking and chunk ID generation to protect against fingerprinting.
+As usual for bork's attack model, the attacker is assumed to have access to a bork repository.
 
-The borg key includes a secret random chunk_seed which (together with the chunking algorithm)
+The bork key includes a secret random chunk_seed which (together with the chunking algorithm)
 determines the cutting places and thereby the length of the chunks cut. Because the attacker trying
-a chunk length fingerprinting attack would use a different chunker secret than the borg setup being
+a chunk length fingerprinting attack would use a different chunker secret than the bork setup being
 attacked, they would not be able to determine the set of chunk lengths for a known set of files.
 
-The borg key also includes a secret random id_key. The chunk ID generation is not just using a simple
+The bork key also includes a secret random id_key. The chunk ID generation is not just using a simple
 cryptographic hash like sha256 (because that would be insecure as an attacker could see the hashes of
-small files that result only in 1 chunk in the repository). Instead, borg uses keyed hash (a MAC,
+small files that result only in 1 chunk in the repository). Instead, bork uses keyed hash (a MAC,
 e.g. HMAC-SHA256) to compute the chunk ID from the content and the secret id_key. Thus, an attacker
 can't compute the same chunk IDs for a known set of small files to determine whether these are stored
 in the attacked repository.
@@ -439,7 +439,7 @@ in the attacked repository.
 Stored chunk proximity
 ----------------------
 
-Borg does not try to obfuscate order / proximity of files it discovers by
+Bork does not try to obfuscate order / proximity of files it discovers by
 recursing through the filesystem. For performance reasons, we sort directory
 contents in file inode order (not in file name alphabetical order), so order
 fingerprinting is not useful for an attacker.

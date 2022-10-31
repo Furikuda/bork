@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_key_export:
+.. _bork_key_export:
 
-borg key export
+bork key export
 ---------------
 .. code-block:: none
 
-    borg [common options] key export [options] [PATH]
+    bork [common options] key export [options] [PATH]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+---------------+------------------------------------------------------------------------+
     | **positional arguments**                                                                                                                       |
@@ -23,7 +23,7 @@ borg key export
     +-------------------------------------------------------+---------------+------------------------------------------------------------------------+
     |                                                       | ``--qr-html`` | Create an html file suitable for printing and later type-in or qr scan |
     +-------------------------------------------------------+---------------+------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                 |
+    | .. class:: bork-common-opt-ref                                                                                                                 |
     |                                                                                                                                                |
     | :ref:`common_options`                                                                                                                          |
     +-------------------------------------------------------+---------------+------------------------------------------------------------------------+
@@ -32,7 +32,7 @@ borg key export
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -77,11 +77,11 @@ is damaged for some reason.
 
 Examples::
 
-    borg key export /path/to/repo > encrypted-key-backup
-    borg key export --paper /path/to/repo > encrypted-key-backup.txt
-    borg key export --qr-html /path/to/repo > encrypted-key-backup.html
+    bork key export /path/to/repo > encrypted-key-backup
+    bork key export --paper /path/to/repo > encrypted-key-backup.txt
+    bork key export --qr-html /path/to/repo > encrypted-key-backup.html
     # Or pass the output file as an argument instead of redirecting stdout:
-    borg key export /path/to/repo encrypted-key-backup
-    borg key export --paper /path/to/repo encrypted-key-backup.txt
-    borg key export --qr-html /path/to/repo encrypted-key-backup.html
+    bork key export /path/to/repo encrypted-key-backup
+    bork key export --paper /path/to/repo encrypted-key-backup.txt
+    bork key export --qr-html /path/to/repo encrypted-key-backup.html
 

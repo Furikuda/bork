@@ -1,19 +1,19 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_benchmark_cpu:
+.. _bork_benchmark_cpu:
 
-borg benchmark cpu
+bork benchmark cpu
 ------------------
 .. code-block:: none
 
-    borg [common options] benchmark cpu [options]
+    bork [common options] benchmark cpu [options]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                        |
+    | .. class:: bork-common-opt-ref                        |
     |                                                       |
     | :ref:`common_options`                                 |
     +-------------------------------------------------------+
@@ -22,7 +22,7 @@ borg benchmark cpu
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -36,7 +36,7 @@ borg benchmark cpu
 Description
 ~~~~~~~~~~~
 
-This command benchmarks misc. CPU bound borg operations.
+This command benchmarks misc. CPU bound bork operations.
 
 It creates input data in memory, runs the operation and then displays throughput.
 To reduce outside influence on the timings, please make sure to run this with:

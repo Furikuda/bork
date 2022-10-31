@@ -7,7 +7,7 @@ Data structures and file formats
 ================================
 
 This page documents the internal data structures and storage
-mechanisms of Borg. It is partly based on `mailing list
+mechanisms of Bork. It is partly based on `mailing list
 discussion about internals`_ and also on static code analysis.
 
 .. todo:: Clarify terms, perhaps create a glossary.
@@ -21,14 +21,14 @@ Repository
 
 .. Some parts of this description were taken from the Repository docstring
 
-Borg stores its data in a `Repository`, which is a file system based
+Bork stores its data in a `Repository`, which is a file system based
 transactional key-value store. Thus the repository does not know about
 the concept of archives or items.
 
 Each repository has the following file structure:
 
 README
-  simple text file telling that this is a Borg repository
+  simple text file telling that this is a Bork repository
 
 config
   repository configuration
@@ -79,7 +79,7 @@ Normally the keys are computed like this::
 
   key = id = id_hash(plaintext_data)  # plain = not encrypted, not compressed, not obfuscated
 
-The id_hash function depends on the :ref:`encryption mode <borg_rcreate>`.
+The id_hash function depends on the :ref:`encryption mode <bork_rcreate>`.
 
 As the id / key is used for deduplication, id_hash must be a cryptographically
 strong hash or MAC.
@@ -138,7 +138,7 @@ chunks) is compressed, optionally obfuscated and encrypted. This produces some
 additional metadata (size and compression information), which is separately
 serialized and also encrypted.
 
-See :ref:`data-encryption` for a graphic outlining the anatomy of the encryption in Borg.
+See :ref:`data-encryption` for a graphic outlining the anatomy of the encryption in Bork.
 What you see at the bottom there is done twice: once for the data and once for the metadata.
 
 An object (the payload part of a segment file log entry) must be like:
@@ -212,18 +212,18 @@ Since writing a ``DELETE`` tag does not actually delete any data and
 thus does not free disk space any log-based data store will need a
 compaction strategy (somewhat analogous to a garbage collector).
 
-Borg uses a simple forward compacting algorithm, which avoids modifying existing segments.
+Bork uses a simple forward compacting algorithm, which avoids modifying existing segments.
 Compaction runs when a commit is issued with ``compact=True`` parameter, e.g.
-by the ``borg compact`` command (unless the :ref:`append_only_mode` is active).
+by the ``bork compact`` command (unless the :ref:`append_only_mode` is active).
 
 The compaction algorithm requires two inputs in addition to the segments themselves:
 
 (i) Which segments are sparse, to avoid scanning all segments (impractical).
-    Further, Borg uses a conditional compaction strategy: Only those
+    Further, Bork uses a conditional compaction strategy: Only those
     segments that exceed a threshold sparsity are compacted.
 
     To implement the threshold condition efficiently, the sparsity has
-    to be stored as well. Therefore, Borg stores a mapping ``(segment
+    to be stored as well. Therefore, Bork stores a mapping ``(segment
     id,) -> (number of sparse bytes,)``.
 
 (ii) Each segment's reference count, which indicates how many live objects are in a segment.
@@ -235,7 +235,7 @@ These two pieces of information are stored in the hints file (`hints.N`)
 next to the index (`index.N`).
 
 Compaction may take some time if a repository has been kept in append-only mode
-or ``borg compact`` has not been used for a longer time, which both has caused
+or ``bork compact`` has not been used for a longer time, which both has caused
 the number of sparse segments to grow.
 
 Compaction processes sparse segments from oldest to newest; sparse segments
@@ -256,7 +256,7 @@ commit logic) showing the principal operation of compaction:
     :width: 100%
 
 (The actual algorithm is more complex to avoid various consistency issues, refer to
-the ``borg.repository`` module for more comments and documentation on these issues.)
+the ``bork.repository`` module for more comments and documentation on these issues.)
 
 .. _internals_storage_quota:
 
@@ -264,7 +264,7 @@ Storage quotas
 ~~~~~~~~~~~~~~
 
 Quotas are implemented at the Repository level. The active quota of a repository
-is determined by the ``storage_quota`` `config` entry or a run-time override (via :ref:`borg_serve`).
+is determined by the ``storage_quota`` `config` entry or a run-time override (via :ref:`bork_serve`).
 The currently used quota is stored in the hints file. Operations (PUT and DELETE) during
 a transaction modify the currently used quota:
 
@@ -287,13 +287,13 @@ Tracking effective size on the other hand accounts DELETEs immediately as freein
 .. rubric:: Enforcing the quota
 
 The storage quota is meant as a robust mechanism for service providers, therefore
-:ref:`borg_serve` has to enforce it without loopholes (e.g. modified clients).
+:ref:`bork_serve` has to enforce it without loopholes (e.g. modified clients).
 The following sections refer to using quotas on remotely accessed repositories.
 For local access, consider *client* and *serve* the same.
 Accordingly, quotas cannot be enforced with local access,
 since the quota can be changed in the repository config.
 
-The quota is enforcible only if *all* :ref:`borg_serve` versions
+The quota is enforcible only if *all* :ref:`bork_serve` versions
 accessible to clients support quotas (see next section). Further, quota is
 per repository. Therefore, ensure clients can only access a defined set of repositories
 with their quotas set, using ``--restrict-to-repository``.
@@ -309,19 +309,19 @@ state).
 
 .. rubric:: Compatibility with older servers and enabling quota after-the-fact
 
-If no quota data is stored in the hints file, Borg assumes zero quota is used.
-Thus, if a repository with an enabled quota is written to with an older ``borg serve``
+If no quota data is stored in the hints file, Bork assumes zero quota is used.
+Thus, if a repository with an enabled quota is written to with an older ``bork serve``
 version that does not understand quotas, then the quota usage will be erased.
 
 The client version is irrelevant to the storage quota and has no part in it.
 The form of error messages due to exceeding quota varies with client versions.
 
-A similar situation arises when upgrading from a Borg release that did not have quotas.
-Borg will start tracking quota use from the time of the upgrade, starting at zero.
+A similar situation arises when upgrading from a Bork release that did not have quotas.
+Bork will start tracking quota use from the time of the upgrade, starting at zero.
 
 If the quota shall be enforced accurately in these cases, either
 
-- delete the ``index.N`` and ``hints.N`` files, forcing Borg to rebuild both,
+- delete the ``index.N`` and ``hints.N`` files, forcing Bork to rebuild both,
   re-acquiring quota data in the process, or
 - edit the msgpacked ``hints.N`` file (not recommended and thus not
   documented further).
@@ -330,7 +330,7 @@ The object graph
 ----------------
 
 On top of the simple key-value store offered by the Repository_,
-Borg builds a much more sophisticated data structure that is essentially
+Bork builds a much more sophisticated data structure that is essentially
 a completely encrypted object graph. Objects, such as archives_, are referenced
 by their chunk ID, which is cryptographically derived from their contents.
 More on how this helps security in :ref:`security_structural_auth`.
@@ -375,8 +375,8 @@ The *timestamp* field is used to avoid logical replay attacks where
 the server just resets the repository to a previous state.
 
 *item_keys* is a list containing all Item_ keys that may be encountered in
-the repository. It is used by *borg check*, which verifies that all keys
-in all items are a subset of these keys. Thus, an older version of *borg check*
+the repository. It is used by *bork check*, which verifies that all keys
+in all items are a subset of these keys. Thus, an older version of *bork check*
 supporting this mechanism can correctly detect keys introduced in later versions.
 
 The *tam* key is part of the :ref:`tertiary authentication mechanism <tam_description>`
@@ -384,8 +384,8 @@ The *tam* key is part of the :ref:`tertiary authentication mechanism <tam_descri
 the manifest, since an ID check is not possible.
 
 *config* is a general-purpose location for additional metadata. All versions
-of Borg preserve its contents (it may have been a better place for *item_keys*,
-which is not preserved by unaware Borg versions, releases predating 1.0.4).
+of Bork preserve its contents (it may have been a better place for *item_keys*,
+which is not preserved by unaware Bork versions, releases predating 1.0.4).
 
 Feature flags
 +++++++++++++
@@ -411,7 +411,7 @@ needs to be handled.
 
 Lastly, cache_ invalidation is handled by noting which feature
 flags were and which were not understood while manipulating a cache.
-This allows borg to detect whether the cache needs to be invalidated,
+This allows bork to detect whether the cache needs to be invalidated,
 i.e. rebuilt from scratch. See `Cache feature flags`_ below.
 
 The *config* key stores the feature flags enabled on a repository:
@@ -448,28 +448,28 @@ require reading/understanding repository contents).
 Each operation can contain several sets of feature flags. Only one set,
 the *mandatory* set is currently defined.
 
-Upon reading the manifest, the Borg client has already determined which operation
+Upon reading the manifest, the Bork client has already determined which operation
 should be performed. If feature flags are found in the manifest, the set
 of feature flags supported by the client is compared to the mandatory set
 found in the manifest. If any unsupported flags are found (i.e. the mandatory set is
-not a subset of the features supported by the Borg client used), the operation
+not a subset of the features supported by the Bork client used), the operation
 is aborted with a *MandatoryFeatureUnsupported* error:
 
-    Unsupported repository feature(s) {'some_feature'}. A newer version of borg is required to access this repository.
+    Unsupported repository feature(s) {'some_feature'}. A newer version of bork is required to access this repository.
 
-Older Borg releases do not have this concept and do not perform feature flags checks.
+Older Bork releases do not have this concept and do not perform feature flags checks.
 These can be locked out with manifest version 2. Thus, the only difference between
-manifest versions 1 and 2 is that the latter is only accepted by Borg releases
+manifest versions 1 and 2 is that the latter is only accepted by Bork releases
 implementing feature flags.
 
 Therefore, as soon as any mandatory feature flag is enabled in a repository,
 the manifest version must be switched to version 2 in order to lock out all
-Borg releases unaware of feature flags.
+Bork releases unaware of feature flags.
 
 .. _Cache feature flags:
 .. rubric:: Cache feature flags
 
-`The cache`_ does not have its separate set of feature flags. Instead, Borg stores
+`The cache`_ does not have its separate set of feature flags. Instead, Bork stores
 which flags were used to create or modify a cache.
 
 All mandatory manifest features from all operations are gathered in one set.
@@ -537,7 +537,7 @@ The archive object itself further contains some metadata:
 
 * *version*
 * *name*, which might differ from the name set in the manifest.
-  When :ref:`borg_check` rebuilds the manifest (e.g. if it was corrupted) and finds
+  When :ref:`bork_check` rebuilds the manifest (e.g. if it was corrupted) and finds
   more than one archive object with the same name, it adds a counter to the name
   in the manifest, but leaves the *name* field of the archives as it was.
 * *item_ptrs*, a list of "pointer chunk" IDs.
@@ -548,7 +548,7 @@ The archive object itself further contains some metadata:
 * *time* and *time_end* are the start and end timestamps, respectively
 * *comment*, a user-specified archive comment
 * *chunker_params* are the :ref:`chunker-params <chunker-params>` used for creating the archive.
-  This is used by :ref:`borg_recreate` to determine whether a given archive needs rechunking.
+  This is used by :ref:`bork_recreate` to determine whether a given archive needs rechunking.
 * Some other pieces of information related to recreate.
 
 .. _item:
@@ -589,7 +589,7 @@ A chunk is stored as an object as well, of course.
 Chunks
 ~~~~~~
 
-Borg has these chunkers:
+Bork has these chunkers:
 
 - "fixed": a simple, low cpu overhead, fixed blocksize chunker, optionally
   supporting a header block of different size.
@@ -609,7 +609,7 @@ Optionally, it supports processing a differently sized "header" first, before
 it starts to cut chunks of the desired block size.
 The default is not to have a differently sized header.
 
-``borg create --chunker-params fixed,BLOCK_SIZE[,HEADER_SIZE]``
+``bork create --chunker-params fixed,BLOCK_SIZE[,HEADER_SIZE]``
 
 - BLOCK_SIZE: no default value, multiple of the system page size (usually 4096
   bytes) recommended. E.g.: 4194304 would cut 4MiB sized chunks.
@@ -618,7 +618,7 @@ The default is not to have a differently sized header.
 The fixed chunker also supports processing sparse files (reading only the ranges
 with data and seeking over the empty hole ranges).
 
-``borg create --sparse --chunker-params fixed,BLOCK_SIZE[,HEADER_SIZE]``
+``bork create --sparse --chunker-params fixed,BLOCK_SIZE[,HEADER_SIZE]``
 
 "buzhash" chunker
 +++++++++++++++++
@@ -648,11 +648,11 @@ compute a new hash as well as *remove* a previously added input byte
 from the computed hash. This makes the cost of computing a hash for each
 input byte largely independent of the window size.
 
-Borg defines minimum and maximum chunk sizes (CHUNK_MIN_EXP and CHUNK_MAX_EXP, respectively)
+Bork defines minimum and maximum chunk sizes (CHUNK_MIN_EXP and CHUNK_MAX_EXP, respectively)
 which narrows down where cuts may be made, greatly reducing the amount of data
 that is actually hashed for content-defined chunking.
 
-``borg create --chunker-params buzhash,CHUNK_MIN_EXP,CHUNK_MAX_EXP,HASH_MASK_BITS,HASH_WINDOW_SIZE``
+``bork create --chunker-params buzhash,CHUNK_MIN_EXP,CHUNK_MAX_EXP,HASH_MASK_BITS,HASH_WINDOW_SIZE``
 can be used to tune the chunker parameters, the default is:
 
 - CHUNK_MIN_EXP = 19 (minimum chunk size = 2^19 B = 512 kiB)
@@ -695,7 +695,7 @@ cache).
 If everything is matching and all chunks are present, the file is not read /
 chunked / hashed again (but still a file metadata item is written to the
 archive, made from fresh file metadata read from the filesystem). This is
-what makes borg so fast when processing unchanged files.
+what makes bork so fast when processing unchanged files.
 
 If there is a mismatch or a chunk is missing, the file is read / chunked /
 hashed. Chunks already present in repo won't be transferred to repo again.
@@ -704,7 +704,7 @@ The inode number is stored and compared to make sure we distinguish between
 different files, as a single path may not be unique across different
 archives in different setups.
 
-Not all filesystems have stable inode numbers. If that is the case, borg can
+Not all filesystems have stable inode numbers. If that is the case, bork can
 be told to ignore the inode number in the check via --files-cache.
 
 The age value is used for cache management. If a file is "seen" in a backup
@@ -715,7 +715,7 @@ removed. See also: :ref:`always_chunking` and :ref:`a_status_oddity`
 The files cache is a python dictionary, storing python objects, which
 generates a lot of overhead.
 
-Borg can also work without using the files cache (saves memory if you have a
+Bork can also work without using the files cache (saves memory if you have a
 lot of files or not much RAM free), then all files are assumed to have changed.
 This is usually much slower than with files cache.
 
@@ -748,7 +748,7 @@ i.e. the reference count is pinned to MAX_VALUE.
 Indexes / Caches memory usage
 -----------------------------
 
-Here is the estimated memory usage of Borg - it's complicated::
+Here is the estimated memory usage of Bork - it's complicated::
 
   chunk_size ~= 2 ^ HASH_MASK_BITS  (for buzhash chunker, BLOCK_SIZE for fixed chunker)
   chunk_count ~= total_file_size / chunk_size
@@ -793,7 +793,7 @@ For small hash tables, we start with a growth factor of 2, which comes down to
 
 E.g. backing up a total count of 1 Mi (IEC binary prefix i.e. 2^20) files with a total size of 1TiB.
 
-a) with ``create --chunker-params buzhash,10,23,16,4095`` (custom, like borg < 1.0):
+a) with ``create --chunker-params buzhash,10,23,16,4095`` (custom, like bork < 1.0):
 
   mem_usage  =  2.8GiB
 
@@ -873,14 +873,14 @@ raises an AssertionError if they are used.
 Encryption
 ----------
 
-.. seealso:: The :ref:`borgcrypto` section for an in-depth review.
+.. seealso:: The :ref:`borkcrypto` section for an in-depth review.
 
 AEAD modes
 ~~~~~~~~~~
 
-For new repositories, borg only uses modern AEAD ciphers: AES-OCB or CHACHA20-POLY1305.
+For new repositories, bork only uses modern AEAD ciphers: AES-OCB or CHACHA20-POLY1305.
 
-For each borg invocation, a new sessionkey is derived from the borg key material
+For each bork invocation, a new sessionkey is derived from the bork key material
 and the 48bit IV starts from 0 again (both ciphers internally add a 32bit counter
 to our IV, so we'll just count up by 1 per chunk).
 
@@ -902,7 +902,7 @@ Legacy modes
 ~~~~~~~~~~~~
 
 Old repositories (which used AES-CTR mode) are supported read-only to be able to
-``borg transfer`` their archives to new repositories (which use AEAD modes).
+``bork transfer`` their archives to new repositories (which use AEAD modes).
 
 AES-CTR mode is not supported for new repositories and the related code will be
 removed in a future release.
@@ -927,7 +927,7 @@ Key files
 .. seealso:: The :ref:`key_encryption` section for an in-depth review of the key encryption.
 
 When initializing a repository with one of the "keyfile" encryption modes,
-Borg creates an associated key file in ``$HOME/.config/borg/keys``.
+Bork creates an associated key file in ``$HOME/.config/bork/keys``.
 
 The same key is also used in the "repokey" modes, which store it in the repository
 in the configuration file.
@@ -983,7 +983,7 @@ representation of the repository id.
 Compression
 -----------
 
-Borg supports the following compression methods, each identified by a ctype value
+Bork supports the following compression methods, each identified by a ctype value
 in the range between 0 and 255 (and augmented by a clevel 0..255 value for the
 compression level):
 
@@ -1020,12 +1020,12 @@ pointless).
 Compression is applied after deduplication, thus using different compression
 methods in one repo does not influence deduplication.
 
-See ``borg create --help`` about how to specify the compression level and its default.
+See ``bork create --help`` about how to specify the compression level and its default.
 
 Lock files
 ----------
 
-Borg uses locks to get (exclusive or shared) access to the cache and
+Bork uses locks to get (exclusive or shared) access to the cache and
 the repository.
 
 The locking system is based on renaming a temporary directory
@@ -1042,33 +1042,33 @@ to `lock.exclusive`, it has the lock for it. If renaming fails
 (because this directory already exists and its host/process/thread identifier
 denotes a thread on the host which is still alive), lock acquisition fails.
 
-The cache lock is usually in `~/.cache/borg/REPOID/lock.*`.
+The cache lock is usually in `~/.cache/bork/REPOID/lock.*`.
 The repository lock is in `repository/lock.*`.
 
-In case you run into troubles with the locks, you can use the ``borg break-lock``
-command after you first have made sure that no Borg process is
+In case you run into troubles with the locks, you can use the ``bork break-lock``
+command after you first have made sure that no Bork process is
 running on any machine that accesses this resource. Be very careful, the cache
 or repository might get damaged if multiple processes use it at the same time.
 
 Checksumming data structures
 ----------------------------
 
-As detailed in the previous sections, Borg generates and stores various files
+As detailed in the previous sections, Bork generates and stores various files
 containing important meta data, such as the repository index, repository hints,
 chunks caches and files cache.
 
 Data corruption in these files can damage the archive data in a repository,
-e.g. due to wrong reference counts in the chunks cache. Only some parts of Borg
+e.g. due to wrong reference counts in the chunks cache. Only some parts of Bork
 were designed to handle corrupted data structures, so a corrupted files cache
 may cause crashes or write incorrect archives.
 
-Therefore, Borg calculates checksums when writing these files and tests checksums
+Therefore, Bork calculates checksums when writing these files and tests checksums
 when reading them. Checksums are generally 64-bit XXH64 hashes.
 The canonical xxHash representation is used, i.e. big-endian.
 Checksums are stored as hexadecimal ASCII strings.
 
 For compatibility, checksums are not required and absent checksums do not trigger errors.
-The mechanisms have been designed to avoid false-positives when various Borg
+The mechanisms have been designed to avoid false-positives when various Bork
 versions are used alternately on the same repositories.
 
 Checksums are a data safety mechanism. They are not a security mechanism.
@@ -1079,7 +1079,7 @@ XXH64 has been chosen for its high speed on all platforms, which avoids performa
 degradation in CPU-limited parts (e.g. cache synchronization).
 Unlike CRC32, it neither requires hardware support (crc32c or CLMUL)
 nor vectorized code nor large, cache-unfriendly lookup tables to achieve good performance.
-This simplifies deployment of it considerably (cf. src/borg/algorithms/crc32...).
+This simplifies deployment of it considerably (cf. src/bork/algorithms/crc32...).
 
 Further, XXH64 is a non-linear hash function and thus has a "more or less" good
 chance to detect larger burst errors, unlike linear CRCs where the probability
@@ -1093,18 +1093,18 @@ Lower layer — file_integrity
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To accommodate the different transaction models used for the cache and repository,
-there is a lower layer (borg.crypto.file_integrity.IntegrityCheckedFile)
+there is a lower layer (bork.crypto.file_integrity.IntegrityCheckedFile)
 wrapping a file-like object, performing streaming calculation and comparison of checksums.
-Checksum errors are signalled by raising an exception (borg.crypto.file_integrity.FileIntegrityError)
+Checksum errors are signalled by raising an exception (bork.crypto.file_integrity.FileIntegrityError)
 at the earliest possible moment.
 
 .. rubric:: Calculating checksums
 
 Before feeding the checksum algorithm any data, the file name (i.e. without any path)
-is mixed into the checksum, since the name encodes the context of the data for Borg.
+is mixed into the checksum, since the name encodes the context of the data for Bork.
 
-The various indices used by Borg have separate header and main data parts.
-IntegrityCheckedFile allows borg to checksum them independently, which avoids
+The various indices used by Bork have separate header and main data parts.
+IntegrityCheckedFile allows bork to checksum them independently, which avoids
 even reading the data when the header is corrupted. When a part is signalled,
 the length of the part name is mixed into the checksum state first (encoded
 as an ASCII string via `%10d` printf format), then the name of the part
@@ -1170,15 +1170,15 @@ The ``[integrity]`` section is used:
     manifest = 10e...21c
     chunks = {"algorithm": "XXH64", "digests": {"HashHeader": "eab...39e3", "final": "e2a...b24"}}
 
-The manifest ID is duplicated in the integrity section due to the way all Borg
+The manifest ID is duplicated in the integrity section due to the way all Bork
 versions handle the config file. Instead of creating a "new" config file from
-an internal representation containing only the data understood by Borg,
+an internal representation containing only the data understood by Bork,
 the config file is read in entirety (using the Python ConfigParser) and modified.
-This preserves all sections and values not understood by the Borg version
+This preserves all sections and values not understood by the Bork version
 modifying it.
 
 Thus, if an older versions uses a cache with integrity data, it would preserve
-the integrity section and its contents. If a integrity-aware Borg version
+the integrity section and its contents. If a integrity-aware Bork version
 would read this cache, it would incorrectly report checksum errors, since
 the older version did not update the checksums.
 
@@ -1212,7 +1212,7 @@ transaction ID in the file names. Integrity data is stored in a third file
         'index': '{"algorithm": "XXH64", "digests": {"HashHeader": "846b7315f91b8e48", "final": "cb3e26cadc173e40"}}'
     }
 
-The *version* key started at 2, the same version used for the hints. Since Borg has
+The *version* key started at 2, the same version used for the hints. Since Bork has
 many versioned file formats, this keeps the number of different versions in use
 a bit lower.
 
@@ -1231,14 +1231,14 @@ since that might result in a different index (due to hash-table resizing) or hin
 (hash ordering, or the older version 1 format), while not invalidating the integrity file.
 
 For example, using 1.1 on a repository, noticing corruption or similar issues and then running
-``borg-1.0 check --repair``, which rewrites the index and hints, results in this situation.
-Borg 1.1 would erroneously report checksum errors in the hints and/or index files and trigger
+``bork-1.0 check --repair``, which rewrites the index and hints, results in this situation.
+Bork 1.1 would erroneously report checksum errors in the hints and/or index files and trigger
 an automatic rebuild of these files.
 
 HardLinkManager and the hlid concept
 ------------------------------------
 
-Dealing with hard links needs some extra care, implemented in borg within the HardLinkManager
+Dealing with hard links needs some extra care, implemented in bork within the HardLinkManager
 class:
 
 - At archive creation time, fs items with st_nlink > 1 indicate that they are a member of
@@ -1249,13 +1249,13 @@ class:
   of hardlinks, meaning that e.g. for regular files, each archived item will have a
   chunks list.
 - At extraction time, the presence of a hlid attribute indicates that there might be more
-  hardlinks coming, pointing to the same content (inode), thus borg will remember the "hlid
+  hardlinks coming, pointing to the same content (inode), thus bork will remember the "hlid
   to extracted path" mapping, so it will know the correct path for extracting (hardlinking)
   the next hardlink of that group / with the same hlid.
 - This symmetric approach (each item has all the information, e.g. the chunks list)
   simplifies dealing with such items a lot, especially for partial extraction, for the
   FUSE filesystem, etc.
-- This is different from the asymmetric approach of old borg versions (< 2.0) and also from
+- This is different from the asymmetric approach of old bork versions (< 2.0) and also from
   tar which have the concept of a main item (first hardlink, has the content) and content-less
   secondary items with by-name back references for each subsequent hardlink, causing lots
   of complications when dealing with them.

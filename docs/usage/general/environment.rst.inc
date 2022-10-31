@@ -1,7 +1,7 @@
 Environment Variables
 ~~~~~~~~~~~~~~~~~~~~~
 
-Borg uses some environment variables for automation:
+Bork uses some environment variables for automation:
 
 General:
     BORG_REPO
@@ -24,7 +24,7 @@ General:
         See also BORG_NEW_PASSPHRASE.
     BORG_PASSPHRASE_FD
         When set, specifies a file descriptor to read a passphrase
-        from. Programs starting borg may choose to open an anonymous pipe
+        from. Programs starting bork may choose to open an anonymous pipe
         and use it to pass a passphrase. This is safer than passing via
         BORG_PASSPHRASE, because on some systems (e.g. Linux) environment
         can be examined by other processes.
@@ -33,11 +33,11 @@ General:
         When set, use the value to answer the passphrase question when a **new** passphrase is asked for.
         This variable is checked first. If it is not set, BORG_PASSPHRASE and BORG_PASSCOMMAND will also
         be checked.
-        Main usecase for this is to fully automate ``borg change-passphrase``.
+        Main usecase for this is to fully automate ``bork change-passphrase``.
     BORG_DISPLAY_PASSPHRASE
         When set, use the value to answer the "display the passphrase for verification" question when defining a new passphrase for encrypted repositories.
     BORG_HOST_ID
-        Borg usually computes a host id from the FQDN plus the results of ``uuid.getnode()`` (which usually returns
+        Bork usually computes a host id from the FQDN plus the results of ``uuid.getnode()`` (which usually returns
         a unique id based on the MAC address of the network interface. Except if that MAC happens to be all-zero - in
         that case it returns a random value, which is not what we want (because it kills automatic stale lock removal).
         So, if you have a all-zero MAC address or other reasons to better externally control the host id, just set this
@@ -54,10 +54,10 @@ General:
         a custom identity file ``ssh -i /path/to/private/key``. See ``man ssh`` for other options. Using
         the ``--rsh CMD`` commandline option overrides the environment variable.
     BORG_REMOTE_PATH
-        When set, use the given path as borg executable on the remote (defaults to "borg" if unset).
+        When set, use the given path as bork executable on the remote (defaults to "bork" if unset).
         Using ``--remote-path PATH`` commandline option overrides the environment variable.
     BORG_FILES_CACHE_SUFFIX
-        When set to a value at least one character long, instructs borg to use a specifically named
+        When set to a value at least one character long, instructs bork to use a specifically named
         (based on the suffix) alternative files cache. This can be used to avoid loading and saving
         cache entries for backup sources other than the current sources.
     BORG_FILES_CACHE_TTL
@@ -69,7 +69,7 @@ General:
         exceptions is not shown.
         Please only use for good reasons as it makes issues harder to analyze.
     BORG_FUSE_IMPL
-        Choose the lowlevel FUSE implementation borg shall use for ``borg mount``.
+        Choose the lowlevel FUSE implementation bork shall use for ``bork mount``.
         This is a comma-separated list of implementation names, they are tried in the
         given order, e.g.:
 
@@ -79,22 +79,22 @@ General:
         - ``llfuse``: only try to load llfuse
         - ``none``: do not try to load an implementation
     BORG_SELFTEST
-        This can be used to influence borg's builtin self-tests. The default is to execute the tests
-        at the beginning of each borg command invocation.
+        This can be used to influence bork's builtin self-tests. The default is to execute the tests
+        at the beginning of each bork command invocation.
 
         BORG_SELFTEST=disabled can be used to switch off the tests and rather save some time.
-        Disabling is not recommended for normal borg users, but large scale borg storage providers can
-        use this to optimize production servers after at least doing a one-time test borg (with
-        selftests not disabled) when installing or upgrading machines / OS / borg.
+        Disabling is not recommended for normal bork users, but large scale bork storage providers can
+        use this to optimize production servers after at least doing a one-time test bork (with
+        selftests not disabled) when installing or upgrading machines / OS / bork.
     BORG_WORKAROUNDS
-        A list of comma separated strings that trigger workarounds in borg,
+        A list of comma separated strings that trigger workarounds in bork,
         e.g. to work around bugs in other software.
 
         Currently known strings are:
 
         basesyncfile
             Use the more simple BaseSyncFile code to avoid issues with sync_file_range.
-            You might need this to run borg on WSL (Windows Subsystem for Linux) or
+            You might need this to run bork on WSL (Windows Subsystem for Linux) or
             in systemd.nspawn containers on some architectures (e.g. ARM).
             Using this does not affect data safety, but might result in a more bursty
             write to disk behaviour (not continuously streaming to disk).
@@ -123,23 +123,23 @@ Some automatic "answerers" (if set, they automatically answer confirmation quest
 Directories and files:
     BORG_BASE_DIR
         Defaults to ``$HOME`` or ``~$USER`` or ``~`` (in that order).
-        If you want to move all borg-specific folders to a custom path at once, all you need to do is
+        If you want to move all bork-specific folders to a custom path at once, all you need to do is
         to modify ``BORG_BASE_DIR``: the other paths for cache, config etc. will adapt accordingly
         (assuming you didn't set them to a different custom value).
     BORG_CACHE_DIR
-        Defaults to ``$BORG_BASE_DIR/.cache/borg``. If ``BORG_BASE_DIR`` is not explicitly set while
-        `XDG env var`_ ``XDG_CACHE_HOME`` is set, then ``$XDG_CACHE_HOME/borg`` is being used instead.
+        Defaults to ``$BORG_BASE_DIR/.cache/bork``. If ``BORG_BASE_DIR`` is not explicitly set while
+        `XDG env var`_ ``XDG_CACHE_HOME`` is set, then ``$XDG_CACHE_HOME/bork`` is being used instead.
         This directory contains the local cache and might need a lot
         of space for dealing with big repositories. Make sure you're aware of the associated
         security aspects of the cache location: :ref:`cache_security`
     BORG_CONFIG_DIR
-        Defaults to ``$BORG_BASE_DIR/.config/borg``. If ``BORG_BASE_DIR`` is not explicitly set while
-        `XDG env var`_ ``XDG_CONFIG_HOME`` is set, then ``$XDG_CONFIG_HOME/borg`` is being used instead.
-        This directory contains all borg configuration directories, see the FAQ
-        for a security advisory about the data in this directory: :ref:`home_config_borg`
+        Defaults to ``$BORG_BASE_DIR/.config/bork``. If ``BORG_BASE_DIR`` is not explicitly set while
+        `XDG env var`_ ``XDG_CONFIG_HOME`` is set, then ``$XDG_CONFIG_HOME/bork`` is being used instead.
+        This directory contains all bork configuration directories, see the FAQ
+        for a security advisory about the data in this directory: :ref:`home_config_bork`
     BORG_SECURITY_DIR
         Defaults to ``$BORG_CONFIG_DIR/security``.
-        This directory contains information borg uses to track its usage of NONCES ("numbers used
+        This directory contains information bork uses to track its usage of NONCES ("numbers used
         once" - usually in encryption context) and other security relevant data.
     BORG_KEYS_DIR
         Defaults to ``$BORG_CONFIG_DIR/keys``.
@@ -154,13 +154,13 @@ Building:
     BORG_OPENSSL_PREFIX
         Adds given OpenSSL header file directory to the default locations (setup.py).
     BORG_LIBLZ4_PREFIX
-        Adds given prefix directory to the default locations. If a 'include/lz4.h' is found Borg
+        Adds given prefix directory to the default locations. If a 'include/lz4.h' is found Bork
         will be linked against the system liblz4 instead of a bundled implementation. (setup.py)
     BORG_LIBB2_PREFIX
-        Adds given prefix directory to the default locations. If a 'include/blake2.h' is found Borg
+        Adds given prefix directory to the default locations. If a 'include/blake2.h' is found Bork
         will be linked against the system libb2 instead of a bundled implementation. (setup.py)
     BORG_LIBZSTD_PREFIX
-        Adds given prefix directory to the default locations. If a 'include/zstd.h' is found Borg
+        Adds given prefix directory to the default locations. If a 'include/zstd.h' is found Bork
         will be linked against the system libzstd instead of a bundled implementation. (setup.py)
 
 Please note:

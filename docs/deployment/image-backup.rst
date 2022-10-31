@@ -4,8 +4,8 @@
 Backing up entire disk images
 =============================
 
-Backing up disk images can still be efficient with Borg because its `deduplication`_
-technique makes sure only the modified parts of the file are stored. Borg also has
+Backing up disk images can still be efficient with Bork because its `deduplication`_
+technique makes sure only the modified parts of the file are stored. Bork also has
 optional simple sparse file support for extract.
 
 Decreasing the size of image backups
@@ -28,28 +28,28 @@ deduplicating. For backup, save the disk header and the contents of each partiti
 
     HEADER_SIZE=$(sfdisk -lo Start $DISK | grep -A1 -P 'Start$' | tail -n1 | xargs echo)
     PARTITIONS=$(sfdisk -lo Device,Type $DISK | sed -e '1,/Device\s*Type/d')
-    dd if=$DISK count=$HEADER_SIZE | borg create repo::hostname-partinfo -
+    dd if=$DISK count=$HEADER_SIZE | bork create repo::hostname-partinfo -
     echo "$PARTITIONS" | grep NTFS | cut -d' ' -f1 | while read x; do
         PARTNUM=$(echo $x | grep -Eo "[0-9]+$")
-        ntfsclone -so - $x | borg create repo::hostname-part$PARTNUM -
+        ntfsclone -so - $x | bork create repo::hostname-part$PARTNUM -
     done
     # to backup non-NTFS partitions as well:
     echo "$PARTITIONS" | grep -v NTFS | cut -d' ' -f1 | while read x; do
         PARTNUM=$(echo $x | grep -Eo "[0-9]+$")
-        borg create --read-special repo::hostname-part$PARTNUM $x
+        bork create --read-special repo::hostname-part$PARTNUM $x
     done
 
 Restoration is a similar process::
 
-    borg extract --stdout repo::hostname-partinfo | dd of=$DISK && partprobe
+    bork extract --stdout repo::hostname-partinfo | dd of=$DISK && partprobe
     PARTITIONS=$(sfdisk -lo Device,Type $DISK | sed -e '1,/Device\s*Type/d')
-    borg list --format {archive}{NL} repo | grep 'part[0-9]*$' | while read x; do
+    bork list --format {archive}{NL} repo | grep 'part[0-9]*$' | while read x; do
         PARTNUM=$(echo $x | grep -Eo "[0-9]+$")
         PARTITION=$(echo "$PARTITIONS" | grep -E "$DISKp?$PARTNUM" | head -n1)
         if echo "$PARTITION" | cut -d' ' -f2- | grep -q NTFS; then
-            borg extract --stdout repo::$x | ntfsclone -rO $(echo "$PARTITION" | cut -d' ' -f1) -
+            bork extract --stdout repo::$x | ntfsclone -rO $(echo "$PARTITION" | cut -d' ' -f1) -
         else
-            borg extract --stdout repo::$x | dd of=$(echo "$PARTITION" | cut -d' ' -f1)
+            bork extract --stdout repo::$x | dd of=$(echo "$PARTITION" | cut -d' ' -f1)
         fi
     done
 
@@ -70,11 +70,11 @@ except it works in place, zeroing the original partition. This makes the backup 
 a bit simpler::
 
     sfdisk -lo Device,Type $DISK | sed -e '1,/Device\s*Type/d' | grep Linux | cut -d' ' -f1 | xargs -n1 zerofree
-    borg create --read-special repo::hostname-disk $DISK
+    bork create --read-special repo::hostname-disk $DISK
 
 Because the partitions were zeroed in place, restoration is only one command::
 
-    borg extract --stdout repo::hostname-disk | dd of=$DISK
+    bork extract --stdout repo::hostname-disk | dd of=$DISK
 
 .. note:: The "traditional" way to zero out space on a partition, especially one already
           mounted, is to simply ``dd`` from ``/dev/zero`` to a temporary file and delete
@@ -87,10 +87,10 @@ Because the partitions were zeroed in place, restoration is only one command::
 Virtual machines
 ----------------
 
-If you use non-snapshotting backup tools like Borg to back up virtual machines, then
+If you use non-snapshotting backup tools like Bork to back up virtual machines, then
 the VMs should be turned off for the duration of the backup. Backing up live VMs can
 (and will) result in corrupted or inconsistent backup contents: a VM image is just a
-regular file to Borg with the same issues as regular files when it comes to concurrent
+regular file to Bork with the same issues as regular files when it comes to concurrent
 reading and writing from the same file.
 
 For backing up live VMs use filesystem snapshots on the VM host, which establishes
@@ -103,7 +103,7 @@ contents are normally not journaled. Notable exceptions are ext4 in data=journal
 ZFS and btrfs (unless nodatacow is used).
 
 Applications designed with crash-consistency in mind (most relational databases like
-PostgreSQL, SQLite etc. but also for example Borg repositories) should always be able
+PostgreSQL, SQLite etc. but also for example Bork repositories) should always be able
 to recover to a consistent state from a backup created with crash-consistent snapshots
 (even on ext4 with data=writeback or XFS). Other applications may require a lot of work
 to reach application-consistency; it's a broad and complex issue that cannot be explained
@@ -114,6 +114,6 @@ can be a better alternative to pure file system based snapshots of the VM's disk
 no state is lost. Depending on the application this can be the easiest and most reliable
 way to create application-consistent backups.
 
-Borg doesn't intend to address these issues due to their huge complexity and
-platform/software dependency. Combining Borg with the mechanisms provided by the platform
+Bork doesn't intend to address these issues due to their huge complexity and
+platform/software dependency. Combining Bork with the mechanisms provided by the platform
 (snapshots, hypervisor features) will be the best approach to start tackling them.

@@ -1,27 +1,27 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_rcompress:
+.. _bork_rcompress:
 
-borg rcompress
+bork rcompress
 --------------
 .. code-block:: none
 
-    borg [common options] rcompress [options]
+    bork [common options] rcompress [options]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
     | **optional arguments**                                                                                                                                                                                       |
     +-------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
-    |                                                       | ``-C COMPRESSION``, ``--compression COMPRESSION`` | select compression algorithm, see the output of the "borg help compression" command for details. |
+    |                                                       | ``-C COMPRESSION``, ``--compression COMPRESSION`` | select compression algorithm, see the output of the "bork help compression" command for details. |
     +-------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
     |                                                       | ``-s``, ``--stats``                               | print statistics                                                                                 |
     +-------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
     |                                                       | ``-c SECONDS``, ``--checkpoint-interval SECONDS`` | write checkpoint every SECONDS seconds (Default: 1800)                                           |
     +-------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                                               |
+    | .. class:: bork-common-opt-ref                                                                                                                                                                               |
     |                                                                                                                                                                                                              |
     | :ref:`common_options`                                                                                                                                                                                        |
     +-------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
@@ -30,7 +30,7 @@ borg rcompress
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -39,7 +39,7 @@ borg rcompress
 
 
     optional arguments
-        -C COMPRESSION, --compression COMPRESSION    select compression algorithm, see the output of the "borg help compression" command for details.
+        -C COMPRESSION, --compression COMPRESSION    select compression algorithm, see the output of the "bork help compression" command for details.
         -s, --stats     print statistics
         -c SECONDS, --checkpoint-interval SECONDS    write checkpoint every SECONDS seconds (Default: 1800)
 
@@ -69,10 +69,10 @@ slower progress due to higher overhead (and vice versa).
 Please note that this command can not work in low (or zero) free disk space
 conditions.
 
-If the ``borg rcompress`` process receives a SIGINT signal (Ctrl-C), the repo
-will be committed and compacted and borg will terminate cleanly afterwards.
+If the ``bork rcompress`` process receives a SIGINT signal (Ctrl-C), the repo
+will be committed and compacted and bork will terminate cleanly afterwards.
 
-Both ``--progress`` and ``--stats`` are recommended when ``borg rcompress``
+Both ``--progress`` and ``--stats`` are recommended when ``bork rcompress``
 is used interactively.
 
-You do **not** need to run ``borg compact`` after ``borg rcompress``.
+You do **not** need to run ``bork compact`` after ``bork rcompress``.

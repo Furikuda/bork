@@ -1,23 +1,23 @@
 Resource Usage
 ~~~~~~~~~~~~~~
 
-Borg might use a lot of resources depending on the size of the data set it is dealing with.
+Bork might use a lot of resources depending on the size of the data set it is dealing with.
 
-If one uses Borg in a client/server way (with a ssh: repository),
+If one uses Bork in a client/server way (with a ssh: repository),
 the resource usage occurs in part on the client and in another part on the
 server.
 
-If one uses Borg as a single process (with a filesystem repo),
+If one uses Bork as a single process (with a filesystem repo),
 all the resource usage occurs in that one process, so just add up client +
 server to get the approximate resource usage.
 
 CPU client:
-    - **borg create:** does chunking, hashing, compression, crypto (high CPU usage)
+    - **bork create:** does chunking, hashing, compression, crypto (high CPU usage)
     - **chunks cache sync:** quite heavy on CPU, doing lots of hashtable operations.
-    - **borg extract:** crypto, decompression (medium to high CPU usage)
-    - **borg check:** similar to extract, but depends on options given.
-    - **borg prune / borg delete archive:** low to medium CPU usage
-    - **borg delete repo:** done on the server
+    - **bork extract:** crypto, decompression (medium to high CPU usage)
+    - **bork check:** similar to extract, but depends on options given.
+    - **bork prune / bork delete archive:** low to medium CPU usage
+    - **bork delete repo:** done on the server
 
     It won't go beyond 100% of 1 core as the code is currently single-threaded.
     Especially higher zlib and lzma compression levels use significant amounts
@@ -28,12 +28,12 @@ CPU server:
     It usually doesn't need much CPU, it just deals with the key/value store
     (repository) and uses the repository index for that.
 
-    borg check: the repository check computes the checksums of all chunks
+    bork check: the repository check computes the checksums of all chunks
     (medium CPU usage)
-    borg delete repo: low CPU usage
+    bork delete repo: low CPU usage
 
 CPU (only for client/server operation):
-    When using borg in a client/server way with a ssh:-type repo, the ssh
+    When using bork in a client/server way with a ssh:-type repo, the ssh
     processes used for the transport layer will need some CPU on the client and
     on the server due to the crypto they are doing - esp. if you are pumping
     big amounts of data.

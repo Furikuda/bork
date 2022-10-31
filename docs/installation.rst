@@ -5,7 +5,7 @@
 Installation
 ============
 
-There are different ways to install Borg:
+There are different ways to install Bork:
 
 - :ref:`distribution-package` - easy and fast if a package is
   available from your distribution.
@@ -25,15 +25,15 @@ There are different ways to install Borg:
 Distribution Package
 --------------------
 
-Some distributions might offer a ready-to-use ``borgbackup``
+Some distributions might offer a ready-to-use ``borkbackup``
 package which can be installed with the package manager.
 
 .. important:: Those packages may not be up to date with the latest
-               Borg releases. Before submitting a bug
+               Bork releases. Before submitting a bug
                report, check the package version and compare that to
                our latest release then review :doc:`changes` to see if
                the bug has been fixed. Report bugs to the package
-               maintainer rather than directly to Borg if the
+               maintainer rather than directly to Bork if the
                package is out of date in the distribution.
 
 .. keep this list in alphabetical order
@@ -41,45 +41,45 @@ package which can be installed with the package manager.
 ============ ============================================= =======
 Distribution Source                                        Command
 ============ ============================================= =======
-Alpine Linux `Alpine repository`_                          ``apk add borgbackup``
-Arch Linux   `[community]`_                                ``pacman -S borg``
-Debian       `Debian packages`_                            ``apt install borgbackup``
-Gentoo       `ebuild`_                                     ``emerge borgbackup``
-GNU Guix     `GNU Guix`_                                   ``guix package --install borg``
-Fedora/RHEL  `Fedora official repository`_                 ``dnf install borgbackup``
-FreeBSD      `FreeBSD ports`_                              ``cd /usr/ports/archivers/py-borgbackup && make install clean``
-macOS        `Homebrew`_                                   | ``brew install borgbackup`` (official formula, **no** FUSE support)
+Alpine Linux `Alpine repository`_                          ``apk add borkbackup``
+Arch Linux   `[community]`_                                ``pacman -S bork``
+Debian       `Debian packages`_                            ``apt install borkbackup``
+Gentoo       `ebuild`_                                     ``emerge borkbackup``
+GNU Guix     `GNU Guix`_                                   ``guix package --install bork``
+Fedora/RHEL  `Fedora official repository`_                 ``dnf install borkbackup``
+FreeBSD      `FreeBSD ports`_                              ``cd /usr/ports/archivers/py-borkbackup && make install clean``
+macOS        `Homebrew`_                                   | ``brew install borkbackup`` (official formula, **no** FUSE support)
                                                            | **or**
                                                            | ``brew install --cask macfuse`` (`private Tap`_, FUSE support)
-                                                           | ``brew install borgbackup/tap/borgbackup-fuse``
-Mageia       `cauldron`_                                   ``urpmi borgbackup``
-NetBSD       `pkgsrc`_                                     ``pkg_add py-borgbackup``
-NixOS        `.nix file`_                                  ``nix-env -i borgbackup``
-OpenBSD      `OpenBSD ports`_                              ``pkg_add borgbackup``
-OpenIndiana  `OpenIndiana hipster repository`_             ``pkg install borg``
-openSUSE     `openSUSE official repository`_               ``zypper in borgbackup``
-Raspbian     `Raspbian testing`_                           ``apt install borgbackup``
-Ubuntu       `Ubuntu packages`_, `Ubuntu PPA`_             ``apt install borgbackup``
+                                                           | ``brew install borkbackup/tap/borkbackup-fuse``
+Mageia       `cauldron`_                                   ``urpmi borkbackup``
+NetBSD       `pkgsrc`_                                     ``pkg_add py-borkbackup``
+NixOS        `.nix file`_                                  ``nix-env -i borkbackup``
+OpenBSD      `OpenBSD ports`_                              ``pkg_add borkbackup``
+OpenIndiana  `OpenIndiana hipster repository`_             ``pkg install bork``
+openSUSE     `openSUSE official repository`_               ``zypper in borkbackup``
+Raspbian     `Raspbian testing`_                           ``apt install borkbackup``
+Ubuntu       `Ubuntu packages`_, `Ubuntu PPA`_             ``apt install borkbackup``
 ============ ============================================= =======
 
-.. _Alpine repository: https://pkgs.alpinelinux.org/packages?name=borgbackup
-.. _[community]: https://www.archlinux.org/packages/?name=borg
-.. _Debian packages: https://packages.debian.org/search?keywords=borgbackup&searchon=names&exact=1&suite=all&section=all
-.. _Fedora official repository: https://apps.fedoraproject.org/packages/borgbackup
-.. _FreeBSD ports: https://www.freshports.org/archivers/py-borgbackup/
-.. _ebuild: https://packages.gentoo.org/packages/app-backup/borgbackup
-.. _GNU Guix: https://www.gnu.org/software/guix/package-list.html#borg
-.. _pkgsrc: http://pkgsrc.se/sysutils/py-borgbackup
-.. _cauldron: http://madb.mageia.org/package/show/application/0/release/cauldron/name/borgbackup
-.. _.nix file: https://github.com/NixOS/nixpkgs/blob/master/pkgs/tools/backup/borgbackup/default.nix
-.. _OpenBSD ports: https://cvsweb.openbsd.org/cgi-bin/cvsweb/ports/sysutils/borgbackup/
-.. _OpenIndiana hipster repository: https://pkg.openindiana.org/hipster/en/search.shtml?token=borg&action=Search
-.. _openSUSE official repository: https://software.opensuse.org/package/borgbackup
-.. _Homebrew: https://formulae.brew.sh/formula/borgbackup
-.. _private Tap: https://github.com/borgbackup/homebrew-tap
-.. _Raspbian testing: https://archive.raspbian.org/raspbian/pool/main/b/borgbackup/
-.. _Ubuntu packages: https://launchpad.net/ubuntu/+source/borgbackup
-.. _Ubuntu PPA: https://launchpad.net/~costamagnagianfranco/+archive/ubuntu/borgbackup
+.. _Alpine repository: https://pkgs.alpinelinux.org/packages?name=borkbackup
+.. _[community]: https://www.archlinux.org/packages/?name=bork
+.. _Debian packages: https://packages.debian.org/search?keywords=borkbackup&searchon=names&exact=1&suite=all&section=all
+.. _Fedora official repository: https://apps.fedoraproject.org/packages/borkbackup
+.. _FreeBSD ports: https://www.freshports.org/archivers/py-borkbackup/
+.. _ebuild: https://packages.gentoo.org/packages/app-backup/borkbackup
+.. _GNU Guix: https://www.gnu.org/software/guix/package-list.html#bork
+.. _pkgsrc: http://pkgsrc.se/sysutils/py-borkbackup
+.. _cauldron: http://madb.mageia.org/package/show/application/0/release/cauldron/name/borkbackup
+.. _.nix file: https://github.com/NixOS/nixpkgs/blob/master/pkgs/tools/backup/borkbackup/default.nix
+.. _OpenBSD ports: https://cvsweb.openbsd.org/cgi-bin/cvsweb/ports/sysutils/borkbackup/
+.. _OpenIndiana hipster repository: https://pkg.openindiana.org/hipster/en/search.shtml?token=bork&action=Search
+.. _openSUSE official repository: https://software.opensuse.org/package/borkbackup
+.. _Homebrew: https://formulae.brew.sh/formula/borkbackup
+.. _private Tap: https://github.com/borkbackup/homebrew-tap
+.. _Raspbian testing: https://archive.raspbian.org/raspbian/pool/main/b/borkbackup/
+.. _Ubuntu packages: https://launchpad.net/ubuntu/+source/borkbackup
+.. _Ubuntu PPA: https://launchpad.net/~costamagnagianfranco/+archive/ubuntu/borkbackup
 
 Please ask package maintainers to build a package or, if you can package /
 submit it yourself, please help us with that! See :issue:`105` on
@@ -91,9 +91,9 @@ github to followup on packaging efforts.
 
 |Packaging status|
 
-.. |Packaging status| image:: https://repology.org/badge/vertical-allrepos/borgbackup.svg
+.. |Packaging status| image:: https://repology.org/badge/vertical-allrepos/borkbackup.svg
         :alt: Packaging status
-        :target: https://repology.org/project/borgbackup/versions
+        :target: https://repology.org/project/borkbackup/versions
 
 .. end-badges
 
@@ -105,40 +105,40 @@ Standalone Binary
 .. note:: Releases are signed with an OpenPGP key, see
           :ref:`security-contact` for more instructions.
 
-Borg x86/x64 amd/intel compatible binaries (generated with `pyinstaller`_)
+Bork x86/x64 amd/intel compatible binaries (generated with `pyinstaller`_)
 are available on the releases_ page for the following platforms:
 
 * **Linux**: glibc >= 2.28 (ok for most supported Linux releases).
   Older glibc releases are untested and may not work.
 * **MacOS**: 10.12 or newer (To avoid signing issues download the file via
   command line **or** remove the ``quarantine`` attribute after downloading:
-  ``$ xattr -dr com.apple.quarantine borg-macosx64.tgz``)
+  ``$ xattr -dr com.apple.quarantine bork-macosx64.tgz``)
 * **FreeBSD**: 12.1 (unknown whether it works for older releases)
 
-ARM binaries are built by Johann Bauer, see: https://borg.bauerj.eu/
+ARM binaries are built by Johann Bauer, see: https://bork.bauerj.eu/
 
 To install such a binary, just drop it into a directory in your ``PATH``,
-make borg readable and executable for its users and then you can run ``borg``::
+make bork readable and executable for its users and then you can run ``bork``::
 
-    sudo cp borg-linux64 /usr/local/bin/borg
-    sudo chown root:root /usr/local/bin/borg
-    sudo chmod 755 /usr/local/bin/borg
+    sudo cp bork-linux64 /usr/local/bin/bork
+    sudo chown root:root /usr/local/bin/bork
+    sudo chmod 755 /usr/local/bin/bork
 
-Optionally you can create a symlink to have ``borgfs`` available, which is an
-alias for ``borg mount``::
+Optionally you can create a symlink to have ``borkfs`` available, which is an
+alias for ``bork mount``::
 
-    ln -s /usr/local/bin/borg /usr/local/bin/borgfs
+    ln -s /usr/local/bin/bork /usr/local/bin/borkfs
 
-Note that the binary uses /tmp to unpack Borg with all dependencies. It will
+Note that the binary uses /tmp to unpack Bork with all dependencies. It will
 fail if /tmp has not enough free space or is mounted with the ``noexec``
 option. You can change the temporary directory by setting the ``TEMP``
-environment variable before running Borg.
+environment variable before running Bork.
 
 If a new version is released, you will have to manually download it and replace
 the old version using the same steps as shown above.
 
 .. _pyinstaller: http://www.pyinstaller.org
-.. _releases: https://github.com/borgbackup/borg/releases
+.. _releases: https://github.com/furikuda/bork/releases
 
 .. _source-install:
 
@@ -149,14 +149,14 @@ From Source
 
   Some older Linux systems (like RHEL/CentOS 5) and Python interpreter binaries
   compiled to be able to run on such systems (like Python installed via Anaconda)
-  might miss functions required by Borg.
+  might miss functions required by Bork.
 
-  This issue will be detected early and Borg will abort with a fatal error.
+  This issue will be detected early and Bork will abort with a fatal error.
 
 Dependencies
 ~~~~~~~~~~~~
 
-To install Borg from a source package (including pip), you have to install the
+To install Bork from a source package (including pip), you have to install the
 following dependencies first:
 
 * `Python 3`_ >= 3.9.0, plus development headers.
@@ -167,7 +167,7 @@ following dependencies first:
   - liblz4_ >= 1.7.0 (r129)
   - libzstd_ >= 1.3.0
   - libxxhash >= 0.8.1 (0.8.0 might work also)
-* pkg-config (cli tool) and pkgconfig python package (borg uses these to
+* pkg-config (cli tool) and pkgconfig python package (bork uses these to
   discover header and library location - if it can't import pkgconfig and
   is not pointed to header/library locations via env vars [see setup.py],
   it will raise a fatal error).
@@ -230,7 +230,7 @@ openSUSE Tumbleweed / Leap
 
 Install the dependencies automatically using zypper::
 
-    sudo zypper source-install --build-deps-only borgbackup
+    sudo zypper source-install --build-deps-only borkbackup
 
 Alternatively, you can enumerate all build dependencies in the command line::
 
@@ -257,15 +257,15 @@ macFUSE, which is available via `github
 
     brew install --cask macfuse
 
-When installing Borg via ``pip``, be sure to install the ``llfuse`` extra,
+When installing Bork via ``pip``, be sure to install the ``llfuse`` extra,
 since macFUSE only supports FUSE API v2. Also, since Homebrew won't link
 the installed ``openssl`` formula, point pkg-config to the correct path::
 
-    PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig" pip install borgbackup[llfuse]
+    PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig" pip install borkbackup[llfuse]
 
 For OS X Catalina and later, be aware that you must authorize full disk access.
-It is no longer sufficient to run borg backups as root. If you have not yet
-granted full disk access, and you run Borg backup from cron, you will see
+It is no longer sufficient to run bork backups as root. If you have not yet
+granted full disk access, and you run Bork backup from cron, you will see
 messages such as::
 
     /Users/you/Pictures/Photos Library.photoslibrary: scandir: [Errno 1] Operation not permitted:
@@ -277,7 +277,7 @@ Terminal application. More information `can be found here
 FreeBSD
 ++++++++
 
-Listed below are packages you will need to install Borg, its dependencies,
+Listed below are packages you will need to install Bork, its dependencies,
 and commands to make FUSE work for using the mount command.
 
 ::
@@ -323,47 +323,47 @@ Use the Cygwin installer to install the dependencies::
 Using pip
 ~~~~~~~~~
 
-Virtualenv_ can be used to build and install Borg without affecting
+Virtualenv_ can be used to build and install Bork without affecting
 the system Python or requiring root access.  Using a virtual environment is
 optional, but recommended except for the most simple use cases.
 
 .. note::
     If you install into a virtual environment, you need to **activate** it
-    first (``source borg-env/bin/activate``), before running ``borg``.
-    Alternatively, symlink ``borg-env/bin/borg`` into some directory that is in
-    your ``PATH`` so you can just run ``borg``.
+    first (``source bork-env/bin/activate``), before running ``bork``.
+    Alternatively, symlink ``bork-env/bin/bork`` into some directory that is in
+    your ``PATH`` so you can just run ``bork``.
 
 This will use ``pip`` to install the latest release from PyPi::
 
-    virtualenv --python=python3 borg-env
-    source borg-env/bin/activate
+    virtualenv --python=python3 bork-env
+    source bork-env/bin/activate
 
     # might be required if your tools are outdated
     pip install -U pip setuptools wheel
 
-    # pkgconfig MUST be available before borg is installed!
+    # pkgconfig MUST be available before bork is installed!
     pip install pkgconfig
 
-    # install Borg + Python dependencies into virtualenv
-    pip install borgbackup
+    # install Bork + Python dependencies into virtualenv
+    pip install borkbackup
     # or alternatively (if you want FUSE support):
-    pip install borgbackup[llfuse]  # to use llfuse
-    pip install borgbackup[pyfuse3]  # to use pyfuse3
+    pip install borkbackup[llfuse]  # to use llfuse
+    pip install borkbackup[pyfuse3]  # to use pyfuse3
 
-To upgrade Borg to a new version later, run the following after
+To upgrade Bork to a new version later, run the following after
 activating your virtual environment::
 
-    pip install -U borgbackup  # or ... borgbackup[llfuse/pyfuse3]
+    pip install -U borkbackup  # or ... borkbackup[llfuse/pyfuse3]
 
 When doing manual pip installation, man pages are not automatically
 installed.  You can run these commands to install the man pages
 locally::
 
-    # get borg from github
-    git clone https://github.com/borgbackup/borg.git borg
+    # get bork from github
+    git clone https://github.com/furikuda/bork.git bork
 
     # Install the files with proper permissions
-    install -D -m 0644 borg/docs/man/borg*.1* $HOME/.local/share/man/man1/borg.1
+    install -D -m 0644 bork/docs/man/bork*.1* $HOME/.local/share/man/man1/bork.1
 
     # Update the man page cache
     mandb
@@ -378,15 +378,15 @@ While we try not to break master, there are no guarantees on anything.
 
 ::
 
-    # get borg from github
-    git clone https://github.com/borgbackup/borg.git
+    # get bork from github
+    git clone https://github.com/furikuda/bork.git
 
     # create a virtual environment
-    virtualenv --python=$(which python3) borg-env
-    source borg-env/bin/activate   # always before using!
+    virtualenv --python=$(which python3) bork-env
+    source bork-env/bin/activate   # always before using!
 
-    # install borg + dependencies into virtualenv
-    cd borg
+    # install bork + dependencies into virtualenv
+    cd bork
     pip install -r requirements.d/development.txt
     pip install -r requirements.d/docs.txt  # optional, to build the docs
 
@@ -410,8 +410,8 @@ If you need to use a different version of Python you can install this using ``py
     pyenv install 3.9.0  # minimum, preferably use something more recent!
     pyenv global 3.9.0
     pyenv local 3.9.0
-    virtualenv --python=${pyenv which python} borg-env
-    source borg-env/bin/activate   # always before using!
+    virtualenv --python=${pyenv which python} bork-env
+    source bork-env/bin/activate   # always before using!
     ...
 
 .. note:: As a developer or power user, you always want to use a virtual environment.

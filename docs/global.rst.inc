@@ -1,10 +1,10 @@
 .. highlight:: bash
-.. |package_dirname| replace:: borgbackup-|version|
+.. |package_dirname| replace:: borkbackup-|version|
 .. |package_filename| replace:: |package_dirname|.tar.gz
-.. |package_url| replace:: https://pypi.python.org/packages/source/b/borgbackup/|package_filename|
-.. |git_url| replace:: https://github.com/borgbackup/borg.git
-.. _github: https://github.com/borgbackup/borg
-.. _issue tracker: https://github.com/borgbackup/borg/issues
+.. |package_url| replace:: https://pypi.python.org/packages/source/b/borkbackup/|package_filename|
+.. |git_url| replace:: https://github.com/furikuda/bork.git
+.. _github: https://github.com/furikuda/bork
+.. _issue tracker: https://github.com/furikuda/bork/issues
 .. _deduplication: https://en.wikipedia.org/wiki/Data_deduplication
 .. _AES: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 .. _HMAC-SHA256: https://en.wikipedia.org/wiki/HMAC

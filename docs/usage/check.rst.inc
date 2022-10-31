@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_check:
+.. _bork_check:
 
-borg check
+bork check
 ----------
 .. code-block:: none
 
-    borg [common options] check [options]
+    bork [common options] check [options]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-----------------------------------------------------------------------------+----------------------------------------------+--------------------------------------------------------------------------------------------------+
     | **optional arguments**                                                                                                                                                                                                        |
@@ -27,13 +27,13 @@ borg check
     +-----------------------------------------------------------------------------+----------------------------------------------+--------------------------------------------------------------------------------------------------+
     |                                                                             | ``--max-duration SECONDS``                   | do only a partial repo check for max. SECONDS seconds (Default: unlimited)                       |
     +-----------------------------------------------------------------------------+----------------------------------------------+--------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                                                                |
+    | .. class:: bork-common-opt-ref                                                                                                                                                                                                |
     |                                                                                                                                                                                                                               |
     | :ref:`common_options`                                                                                                                                                                                                         |
     +-----------------------------------------------------------------------------+----------------------------------------------+--------------------------------------------------------------------------------------------------+
     | **Archive filters** — Archive filters can be applied to repository targets.                                                                                                                                                   |
     +-----------------------------------------------------------------------------+----------------------------------------------+--------------------------------------------------------------------------------------------------+
-    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN`` | only consider archive names matching the pattern. see "borg help match-archives".                |
+    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN`` | only consider archive names matching the pattern. see "bork help match-archives".                |
     +-----------------------------------------------------------------------------+----------------------------------------------+--------------------------------------------------------------------------------------------------+
     |                                                                             | ``--sort-by KEYS``                           | Comma-separated list of sorting keys; valid keys are: timestamp, name, id; default is: timestamp |
     +-----------------------------------------------------------------------------+----------------------------------------------+--------------------------------------------------------------------------------------------------+
@@ -46,7 +46,7 @@ borg check
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -67,7 +67,7 @@ borg check
         |
 
     Archive filters
-        -a PATTERN, --match-archives PATTERN     only consider archive names matching the pattern. see "borg help match-archives".
+        -a PATTERN, --match-archives PATTERN     only consider archive names matching the pattern. see "bork help match-archives".
         --sort-by KEYS                           Comma-separated list of sorting keys; valid keys are: timestamp, name, id; default is: timestamp
         --first N                                consider first N archives after other filters were applied
         --last N                                 consider last N archives after other filters were applied

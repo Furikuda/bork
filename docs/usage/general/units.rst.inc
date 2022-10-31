@@ -1,7 +1,7 @@
 Units
 ~~~~~
 
-To display quantities, Borg takes care of respecting the
+To display quantities, Bork takes care of respecting the
 usual conventions of scale. Disk sizes are displayed in `decimal
 <https://en.wikipedia.org/wiki/Decimal>`_, using powers of ten (so
 ``kB`` means 1000 bytes). For memory usage, `binary prefixes

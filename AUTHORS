@@ -1,9 +1,9 @@
 E-mail addresses listed here are not intended for support, please see
 the `support section`_ instead.
 
-.. _support section: https://borgbackup.readthedocs.io/en/stable/support.html
+.. _support section: https://borkbackup.readthedocs.io/en/stable/support.html
 
-Borg authors ("The Borg Collective")
+Bork authors ("The Bork Collective")
 ------------------------------------
 
 - Thomas Waldmann <tw@waldmann-edv.de>
@@ -24,16 +24,16 @@ Retired
 
 - Antoine Beaupré <anarcat@debian.org>
 
-Borg is a fork of Attic.
+Bork is a fork of Attic.
 
 Attic authors
 -------------
 
-Attic is written and maintained by Jonas Borgström and various contributors:
+Attic is written and maintained by Jonas Borkström and various contributors:
 
 Attic Development Lead
 ``````````````````````
-- Jonas Borgström <jonas@borgstrom.se>
+- Jonas Borkström <jonas@borkstrom.se>
 
 Attic Patches and Suggestions
 `````````````````````````````

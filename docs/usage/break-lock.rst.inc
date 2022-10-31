@@ -1,19 +1,19 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_break-lock:
+.. _bork_break-lock:
 
-borg break-lock
+bork break-lock
 ---------------
 .. code-block:: none
 
-    borg [common options] break-lock [options]
+    bork [common options] break-lock [options]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                        |
+    | .. class:: bork-common-opt-ref                        |
     |                                                       |
     | :ref:`common_options`                                 |
     +-------------------------------------------------------+
@@ -22,7 +22,7 @@ borg break-lock
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -37,5 +37,5 @@ Description
 ~~~~~~~~~~~
 
 This command breaks the repository and cache locks.
-Please use carefully and only while no borg process (on any machine) is
+Please use carefully and only while no bork process (on any machine) is
 trying to access the Cache or the Repository.

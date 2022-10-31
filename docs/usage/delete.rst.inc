@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_delete:
+.. _bork_delete:
 
-borg delete
+bork delete
 -----------
 .. code-block:: none
 
-    borg [common options] delete [options]
+    bork [common options] delete [options]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-----------------------------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
     | **optional arguments**                                                                                                                                                                                                             |
@@ -31,13 +31,13 @@ borg delete
     +-----------------------------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
     |                                                                             | ``-c SECONDS``, ``--checkpoint-interval SECONDS`` | write checkpoint every SECONDS seconds (Default: 1800)                                           |
     +-----------------------------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                                                                     |
+    | .. class:: bork-common-opt-ref                                                                                                                                                                                                     |
     |                                                                                                                                                                                                                                    |
     | :ref:`common_options`                                                                                                                                                                                                              |
     +-----------------------------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
     | **Archive filters** — Archive filters can be applied to repository targets.                                                                                                                                                        |
     +-----------------------------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
-    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN``      | only consider archive names matching the pattern. see "borg help match-archives".                |
+    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN``      | only consider archive names matching the pattern. see "bork help match-archives".                |
     +-----------------------------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
     |                                                                             | ``--sort-by KEYS``                                | Comma-separated list of sorting keys; valid keys are: timestamp, name, id; default is: timestamp |
     +-----------------------------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
@@ -50,7 +50,7 @@ borg delete
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -73,7 +73,7 @@ borg delete
         |
 
     Archive filters
-        -a PATTERN, --match-archives PATTERN     only consider archive names matching the pattern. see "borg help match-archives".
+        -a PATTERN, --match-archives PATTERN     only consider archive names matching the pattern. see "bork help match-archives".
         --sort-by KEYS                           Comma-separated list of sorting keys; valid keys are: timestamp, name, id; default is: timestamp
         --first N                                consider first N archives after other filters were applied
         --last N                                 consider last N archives after other filters were applied
@@ -85,7 +85,7 @@ Description
 This command deletes archives from the repository.
 
 Important: When deleting archives, repository disk space is **not** freed until
-you run ``borg compact``.
+you run ``bork compact``.
 
 When in doubt, use ``--dry-run --list`` to see what would be deleted.
 
@@ -96,6 +96,6 @@ Please note that the "All archives" stats refer to the state after deletion.
 
 You can delete multiple archives by specifying a matching pattern,
 using the ``--match-archives PATTERN`` option (for more info on these patterns,
-see :ref:`borg_patterns`).
+see :ref:`bork_patterns`).
 
 Always first use ``--dry-run --list`` to see what would be deleted.

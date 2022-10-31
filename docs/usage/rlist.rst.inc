@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_rlist:
+.. _bork_rlist:
 
-borg rlist
+bork rlist
 ----------
 .. code-block:: none
 
-    borg [common options] rlist [options]
+    bork [common options] rlist [options]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-----------------------------------------------------------------------------+----------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | **optional arguments**                                                                                                                                                                                                                                                                                                                                    |
@@ -23,13 +23,13 @@ borg rlist
     +-----------------------------------------------------------------------------+----------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                                             | ``--json``                                   | Format output as JSON. The form of ``--format`` is ignored, but keys used in it are added to the JSON output. Some keys are always present. Note: JSON can only represent text. A "barchive" key is therefore not available. |
     +-----------------------------------------------------------------------------+----------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                                                                                                                                                                                            |
+    | .. class:: bork-common-opt-ref                                                                                                                                                                                                                                                                                                                            |
     |                                                                                                                                                                                                                                                                                                                                                           |
     | :ref:`common_options`                                                                                                                                                                                                                                                                                                                                     |
     +-----------------------------------------------------------------------------+----------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | **Archive filters** — Archive filters can be applied to repository targets.                                                                                                                                                                                                                                                                               |
     +-----------------------------------------------------------------------------+----------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN`` | only consider archive names matching the pattern. see "borg help match-archives".                                                                                                                                            |
+    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN`` | only consider archive names matching the pattern. see "bork help match-archives".                                                                                                                                            |
     +-----------------------------------------------------------------------------+----------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                                             | ``--sort-by KEYS``                           | Comma-separated list of sorting keys; valid keys are: timestamp, name, id; default is: timestamp                                                                                                                             |
     +-----------------------------------------------------------------------------+----------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -42,7 +42,7 @@ borg rlist
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -61,7 +61,7 @@ borg rlist
         |
 
     Archive filters
-        -a PATTERN, --match-archives PATTERN     only consider archive names matching the pattern. see "borg help match-archives".
+        -a PATTERN, --match-archives PATTERN     only consider archive names matching the pattern. see "bork help match-archives".
         --sort-by KEYS                           Comma-separated list of sorting keys; valid keys are: timestamp, name, id; default is: timestamp
         --first N                                consider first N archives after other filters were applied
         --last N                                 consider last N archives after other filters were applied
@@ -83,7 +83,7 @@ The ``--format`` option uses python's `format string syntax
 Examples:
 ::
 
-    $ borg rlist --format '{archive}{NL}'
+    $ bork rlist --format '{archive}{NL}'
     ArchiveFoo
     ArchiveBar
     ...
@@ -91,7 +91,7 @@ Examples:
     # {VAR:NUMBER} - pad to NUMBER columns.
     # Strings are left-aligned, numbers are right-aligned.
     # Note: time columns except ``isomtime``, ``isoctime`` and ``isoatime`` cannot be padded.
-    $ borg rlist --format '{archive:36} {time} [{id}]{NL}' /path/to/repo
+    $ bork rlist --format '{archive:36} {time} [{id}]{NL}' /path/to/repo
     ArchiveFoo                           Thu, 2021-12-09 10:22:28 [0b8e9a312bef3f2f6e2d0fc110c196827786c15eba0188738e81697a7fa3b274]
     ...
 

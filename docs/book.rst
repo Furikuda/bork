@@ -2,7 +2,7 @@
 
 .. include:: global.rst.inc
 
-Borg documentation
+Bork documentation
 ==================
 
 .. when you add an element here, do not forget to add it to index.rst

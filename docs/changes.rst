@@ -29,49 +29,49 @@ Compatibility notes:
   improvements, getting rid of legacy crap / design limitations, having less and
   simpler code to maintain.
 
-  You can use "borg transfer" to transfer archives from borg 1.1/1.2 repos to
-  a new borg 2.0 repo, but it will need some time and space.
+  You can use "bork transfer" to transfer archives from bork 1.1/1.2 repos to
+  a new bork 2.0 repo, but it will need some time and space.
 
 - command line syntax was changed, scripts and wrappers will need changes:
 
   - you will usually either export BORG_REPO=<MYREPO> into your environment or
-    call borg like: "borg -r <MYREPO> <COMMAND>".
+    call bork like: "bork -r <MYREPO> <COMMAND>".
     in the docs, we usually omit "-r ..." for brevity.
   - the scp-style REPO syntax was removed, please use ssh://..., #6697
   - ssh:// URLs: removed support for /~otheruser/, #6855.
     If you used this, just replace it by: ssh://user@host:port/home/otheruser/
   - -P / --prefix option was removed, please use the similar -a / --glob-archives.
   - the archive name is always given separately from the repository
-    (differently than with borg 1.x you must not give repo::archive).
+    (differently than with bork 1.x you must not give repo::archive).
   - the archive name is either given as a positional parameter, like:
 
-    - borg create myarchive2 /some/path
-    - borg diff myarchive1 myarchive2
+    - bork create myarchive2 /some/path
+    - bork diff myarchive1 myarchive2
   - or, if the command makes sense for an arbitrary amount of archives, archives
     can be selected using a glob pattern, like:
 
-    - borg delete -a 'myarchive*'
-    - borg recreate -a 'myarchive*'
-  - some borg 1.x commands that supported working on a repo AND on an archive
+    - bork delete -a 'myarchive*'
+    - bork recreate -a 'myarchive*'
+  - some bork 1.x commands that supported working on a repo AND on an archive
     were split into 2 commands, some others were renamed:
 
-    - borg 2 repo commands:
+    - bork 2 repo commands:
 
-      - borg rcreate  # "repo create", was: borg init
-      - borg rlist  # "repo list"
-      - borg rinfo  # "repo info"
-      - borg rdelete  # "repo delete"
-    - borg 2 archive commands:
+      - bork rcreate  # "repo create", was: bork init
+      - bork rlist  # "repo list"
+      - bork rinfo  # "repo info"
+      - bork rdelete  # "repo delete"
+    - bork 2 archive commands:
 
-      - borg create ARCHIVE ...
-      - borg list ARCHIVE
-      - borg extract ARCHIVE ...
-      - borg diff ARCH1 ARCH2
-      - borg rename OLDNAME NEWNAME
-      - borg info -a ARCH_GLOB
-      - borg delete -a ARCH_GLOB
-      - borg recreate -a ARCH_GLOB ...
-      - borg mount -a ARCH_GLOB mountpoint ...
+      - bork create ARCHIVE ...
+      - bork list ARCHIVE
+      - bork extract ARCHIVE ...
+      - bork diff ARCH1 ARCH2
+      - bork rename OLDNAME NEWNAME
+      - bork info -a ARCH_GLOB
+      - bork delete -a ARCH_GLOB
+      - bork recreate -a ARCH_GLOB ...
+      - bork mount -a ARCH_GLOB mountpoint ...
 
     For more details, please consult the docs or --help option output.
   - create/recreate/import-tar --timestamp: defaults to local timezone
@@ -91,13 +91,13 @@ Compatibility notes:
 
   So you might need to edit your scripts like e.g.::
 
-      borg 1.x: --glob-archives 'myserver-*'
-      borg 2.0: --match-archives 'sh:myserver-*'
+      bork 1.x: --glob-archives 'myserver-*'
+      bork 2.0: --match-archives 'sh:myserver-*'
 
 
 Fixes:
 
-- transfer/upgrade: fix borg < 1.2 chunker_params, #7079
+- transfer/upgrade: fix bork < 1.2 chunker_params, #7079
 - transfer/upgrade: do not access Item._dict, #7077
 - archive.save(): always use metadata from stats, #7072
 - benchmark: fixed TypeError in compression benchmarks, #7075
@@ -113,7 +113,7 @@ Version 2.0.0b3 (2022-10-02)
 
 Fixes:
 
-- transfer: fix user/group == None crash with borg1 archives
+- transfer: fix user/group == None crash with bork1 archives
 - compressors: avoid memoryview related TypeError
 - check: fix uninitialised variable if repo is completely empty, #7034
 - do not use version_tuple placeholder in setuptools_scm template, #7024
@@ -131,7 +131,7 @@ Other:
 - metadata: differentiate between empty/zero and unknown, #6908
 - CI: test pyfuse3 with python 3.11
 - use more relative imports
-- make borg.testsuite.archiver a package, split archiver tests into many modules
+- make bork.testsuite.archiver a package, split archiver tests into many modules
 - support reading new, improved hashindex header format, #6960.
   added version number and num_empty to the HashHeader, fixed alignment.
 - vagrant: upgrade pyinstaller 4.10 -> 5.4.1, use python 3.9.14 for binary build
@@ -149,7 +149,7 @@ Bug fixes:
 New features:
 
 - support archive timestamps with utc offsets, adapt them when using
-  borg transfer to transfer from borg 1.x repos (append +00:00 for UTC).
+  bork transfer to transfer from bork 1.x repos (append +00:00 for UTC).
 - create/recreate/import-tar --timestamp: accept giving timezone via
   its utc offset. defaults to local timezone, if no utc offset is given.
 
@@ -191,7 +191,7 @@ Fixes:
 Other changes:
 
 - new crypto does not need to call ._assert_id(), update code and docs.
-  https://github.com/borgbackup/borg/pull/6463#discussion_r925436156
+  https://github.com/furikuda/bork/pull/6463#discussion_r925436156
 - check: --verify-data does not need to decompress with new crypto modes
 - Key: crypt_key instead of enc_key + enc_hmac_key, #6611
 - misc. docs updates and improvements
@@ -227,16 +227,16 @@ Version 2.0.0a3 (2022-07-04)
 Fixes:
 
 - check repo version, accept old repos only for --other-repo (e.g. rcreate/transfer).
-  v2 is the default repo version for borg 2.0. v1 repos must only be used in a
-  read-only way, e.g. for --other-repo=V1_REPO with borg init and borg transfer!
+  v2 is the default repo version for bork 2.0. v1 repos must only be used in a
+  read-only way, e.g. for --other-repo=V1_REPO with bork init and bork transfer!
 
 New features:
 
 - transfer: --upgrader=NoOp is the default.
-  This is to support general-purpose transfer of archives between related borg2
+  This is to support general-purpose transfer of archives between related bork2
   repos.
 - transfer: --upgrader=From12To20 must be used to transfer (and convert) archives
-  from borg 1.2 repos to borg 2.0 repos.
+  from bork 1.2 repos to bork 2.0 repos.
 
 Other changes:
 
@@ -255,27 +255,27 @@ Changes:
 - split repo and archive name into separate args, #948
 
   - use -r or --repo or BORG_REPO env var to give the repository
-  - use --other-repo or BORG_OTHER_REPO to give another repo (e.g. borg transfer)
+  - use --other-repo or BORG_OTHER_REPO to give another repo (e.g. bork transfer)
   - use positional argument for archive name or `-a ARCH_GLOB`
 - remove support for scp-style repo specification, use ssh://...
 - simplify stats output: repo ops -> repo stats, archive ops -> archive stats
 - repository index: add payload size (==csize) and flags to NSIndex entries
 - repository index: set/query flags, iteration over flagged items (NSIndex)
 - repository: sync write file in get_fd
-- stats: deduplicated size now, was deduplicated compressed size in borg 1.x
+- stats: deduplicated size now, was deduplicated compressed size in bork 1.x
 - remove csize support at most places in the code (chunks index, stats, get_size,
   Item.chunks)
-- replace problematic/ugly hardlink_master approach of borg 1.x by:
+- replace problematic/ugly hardlink_master approach of bork 1.x by:
 
   - symmetric hlid (all hardlinks pointing to same inode have same hlid)
   - all archived hardlinked regular files have a chunks list
-- borg rcreate --other-repo=OTHER_REPO: reuse key material from OTHER_REPO, #6554.
-  This is useful if you want to use borg transfer to transfer archives from an
-  existing borg 1.1/1.2 repo. If the chunker secret and the id key and algorithm
+- bork rcreate --other-repo=OTHER_REPO: reuse key material from OTHER_REPO, #6554.
+  This is useful if you want to use bork transfer to transfer archives from an
+  existing bork 1.1/1.2 repo. If the chunker secret and the id key and algorithm
   stay the same, the deduplication will also work between past and future backups.
-- borg transfer:
+- bork transfer:
 
-  - efficiently copy archives from a borg 1.1/1.2 repo to a new repo.
+  - efficiently copy archives from a bork 1.1/1.2 repo to a new repo.
     uses deduplication and does not decompress/recompress file content data.
   - does some cleanups / fixes / conversions:
 
@@ -291,7 +291,7 @@ Changes:
     - removes the csize element from the tuples in the Item.chunks list
     - clean item of attic 0.13 'acl' bug remnants
 - crypto: see 1.3.0a1 log entry
-- removed "borg upgrade" command (not needed any more)
+- removed "bork upgrade" command (not needed any more)
 - compact: removed --cleanup-commits option
 - docs: fixed quickstart and usage docs with new cli command syntax
 - docs: removed the parts talking about potential AES-CTR mode issues
@@ -317,10 +317,10 @@ New features:
   - Solves the potential AES-CTR mode counter management issues of the legacy crypto.
 - init: --key-algorithm=argon2 (new default KDF, older pbkdf2 also still available)
 
-  borg key change-passphrase / change-location keeps the key algorithm unchanged.
+  bork key change-passphrase / change-location keeps the key algorithm unchanged.
 - key change-algorithm: to upgrade existing keys to argon2 or downgrade to pbkdf2.
 
-  We recommend you to upgrade unless you have to keep the key compatible with older versions of borg.
+  We recommend you to upgrade unless you have to keep the key compatible with older versions of bork.
 - key change-location: usable for repokey <-> keyfile location change
 - benchmark cpu: display benchmarks of cpu bound stuff
 - export-tar: new --tar-format=PAX (default: GNU)
@@ -337,8 +337,8 @@ Other changes:
 - use libdeflate.crc32 (Linux and all others) or zlib.crc32 (macOS)
 - repository: code cleanups / simplifications
 - internal crypto api: speedups / cleanups / refactorings / modernisation
-- remove "borg upgrade" support for "attic backup" repos
-- remove PassphraseKey code and borg key migrate-to-repokey command
-- OpenBSD: build borg with OpenSSL (not: LibreSSL), #6474
+- remove "bork upgrade" support for "attic backup" repos
+- remove PassphraseKey code and bork key migrate-to-repokey command
+- OpenBSD: build bork with OpenSSL (not: LibreSSL), #6474
 - remove support for LibreSSL, #6474
 - remove support for OpenSSL < 1.1.1

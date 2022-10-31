@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_config:
+.. _bork_config:
 
-borg config
+bork config
 -----------
 .. code-block:: none
 
-    borg [common options] config [options] [NAME] [VALUE]
+    bork [common options] config [options] [NAME] [VALUE]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+----------------------+----------------------------------------+
     | **positional arguments**                                                                                              |
@@ -27,7 +27,7 @@ borg config
     +-------------------------------------------------------+----------------------+----------------------------------------+
     |                                                       | ``-l``, ``--list``   | list the configuration of the repo     |
     +-------------------------------------------------------+----------------------+----------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                        |
+    | .. class:: bork-common-opt-ref                                                                                        |
     |                                                                                                                       |
     | :ref:`common_options`                                                                                                 |
     +-------------------------------------------------------+----------------------+----------------------------------------+
@@ -36,7 +36,7 @@ borg config
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -71,5 +71,5 @@ simply "name"; the section will default to "repository" and "cache" for
 the repo and cache configs, respectively.
 
 
-By default, borg config manipulates the repository config file. Using ``--cache``
+By default, bork config manipulates the repository config file. Using ``--cache``
 edits the repository cache's config file instead.

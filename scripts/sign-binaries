@@ -13,7 +13,7 @@ else
     GPG=qubes-gpg-client-wrapper
 fi
 
-for file in dist/borg-*; do
+for file in dist/bork-*; do
     $GPG --local-user "Thomas Waldmann" --armor --detach-sign --output "$file.asc" "$file"
 done
 

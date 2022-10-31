@@ -6,19 +6,19 @@
 All about JSON: How to develop frontends
 ========================================
 
-Borg does not have a public API on the Python level. That does not keep you from writing :code:`import borg`,
+Bork does not have a public API on the Python level. That does not keep you from writing :code:`import bork`,
 but does mean that there are no release-to-release guarantees on what you might find in that package, not
 even for point releases (1.1.x), and there is no documentation beyond the code and the internals documents.
 
-Borg does on the other hand provide an API on a command-line level. In other words, a frontend should
-(for example) create a backup archive just invoke :ref:`borg_create`, give commandline parameters/options
-as needed and parse JSON output from borg.
+Bork does on the other hand provide an API on a command-line level. In other words, a frontend should
+(for example) create a backup archive just invoke :ref:`bork_create`, give commandline parameters/options
+as needed and parse JSON output from bork.
 
-Important: JSON output is expected to be UTF-8, but currently borg depends on the locale being configured
+Important: JSON output is expected to be UTF-8, but currently bork depends on the locale being configured
 for that (must be a UTF-8 locale and *not* "C" or "ascii"), so that Python will choose to encode to UTF-8.
-The same applies to any inputs read by borg, they are expected to be UTF-8 encoded also.
+The same applies to any inputs read by bork, they are expected to be UTF-8 encoded also.
 
-We consider this a bug (see :issue:`2273`) and might fix it later, so borg will use UTF-8 independent of
+We consider this a bug (see :issue:`2273`) and might fix it later, so bork will use UTF-8 independent of
 the locale.
 
 On POSIX systems, you can usually set environment vars to choose a UTF-8 locale:
@@ -33,7 +33,7 @@ Logging
 -------
 
 Especially for graphical frontends it is important to be able to convey and reformat progress information
-in meaningful ways. The ``--log-json`` option turns the stderr stream of Borg into a stream of JSON lines,
+in meaningful ways. The ``--log-json`` option turns the stderr stream of Bork into a stream of JSON lines,
 where each line is a JSON object. The *type* key of the object determines its other contents.
 
 .. warning:: JSON logging requires successful argument parsing. Even with ``--log-json`` specified, a
@@ -46,7 +46,7 @@ The following types are in use. Progress information is governed by the usual ru
 it is not produced unless ``--progress`` is specified.
 
 archive_progress
-    Output during operations creating archives (:ref:`borg_create` and :ref:`borg_recreate`).
+    Output during operations creating archives (:ref:`bork_create` and :ref:`bork_recreate`).
     The following keys exist, each represents the current progress.
 
     original_size
@@ -105,7 +105,7 @@ progress_percent
         Unix timestamp (float)
 
 file_status
-    This is only output by :ref:`borg_create` and :ref:`borg_recreate` if ``--list`` is specified. The usual
+    This is only output by :ref:`bork_create` and :ref:`bork_recreate` if ``--list`` is specified. The usual
     rules for the file listing applies, including the ``--filter`` option.
 
     status
@@ -132,22 +132,22 @@ See Prompts_ for the types used by prompts.
 .. rubric:: Examples (reformatted, each object would be on exactly one line)
 .. highlight:: json
 
-:ref:`borg_extract` progress::
+:ref:`bork_extract` progress::
 
-    {"message": "100.0% Extracting: src/borgbackup.egg-info/entry_points.txt",
-     "current": 13000228, "total": 13004993, "info": ["src/borgbackup.egg-info/entry_points.txt"],
+    {"message": "100.0% Extracting: src/borkbackup.egg-info/entry_points.txt",
+     "current": 13000228, "total": 13004993, "info": ["src/borkbackup.egg-info/entry_points.txt"],
      "operation": 1, "msgid": "extract", "type": "progress_percent", "finished": false}
-    {"message": "100.0% Extracting: src/borgbackup.egg-info/SOURCES.txt",
-     "current": 13004993, "total": 13004993, "info": ["src/borgbackup.egg-info/SOURCES.txt"],
+    {"message": "100.0% Extracting: src/borkbackup.egg-info/SOURCES.txt",
+     "current": 13004993, "total": 13004993, "info": ["src/borkbackup.egg-info/SOURCES.txt"],
      "operation": 1, "msgid": "extract", "type": "progress_percent", "finished": false}
     {"operation": 1, "msgid": "extract", "type": "progress_percent", "finished": true}
 
-:ref:`borg_create` file listing with progress::
+:ref:`bork_create` file listing with progress::
 
     {"original_size": 0, "compressed_size": 0, "deduplicated_size": 0, "nfiles": 0, "type": "archive_progress", "path": "src"}
-    {"type": "file_status", "status": "U", "path": "src/borgbackup.egg-info/entry_points.txt"}
-    {"type": "file_status", "status": "U", "path": "src/borgbackup.egg-info/SOURCES.txt"}
-    {"type": "file_status", "status": "d", "path": "src/borgbackup.egg-info"}
+    {"type": "file_status", "status": "U", "path": "src/borkbackup.egg-info/entry_points.txt"}
+    {"type": "file_status", "status": "U", "path": "src/borkbackup.egg-info/SOURCES.txt"}
+    {"type": "file_status", "status": "d", "path": "src/borkbackup.egg-info"}
     {"type": "file_status", "status": "d", "path": "src"}
     {"original_size": 13176040, "compressed_size": 11386863, "deduplicated_size": 503, "nfiles": 277, "type": "archive_progress", "path": ""}
 
@@ -161,7 +161,7 @@ Internal transaction progress::
 A debug log message::
 
     {"message": "35 self tests completed in 0.08 seconds",
-     "type": "log_message", "created": 1488278449.5575905, "levelname": "DEBUG", "name": "borg.archiver"}
+     "type": "log_message", "created": 1488278449.5575905, "levelname": "DEBUG", "name": "bork.archiver"}
 
 Prompts
 -------
@@ -210,11 +210,11 @@ Passphrase prompts
 ------------------
 
 Passphrase prompts should be handled differently. Use the environment variables *BORG_PASSPHRASE*
-and *BORG_NEW_PASSPHRASE* (see :ref:`env_vars` for reference) to pass passphrases to Borg, don't
+and *BORG_NEW_PASSPHRASE* (see :ref:`env_vars` for reference) to pass passphrases to Bork, don't
 use the interactive passphrase prompts.
 
-When setting a new passphrase (:ref:`borg_rcreate`, :ref:`borg_key_change-passphrase`) normally
-Borg prompts whether it should display the passphrase. This can be suppressed by setting
+When setting a new passphrase (:ref:`bork_rcreate`, :ref:`bork_key_change-passphrase`) normally
+Bork prompts whether it should display the passphrase. This can be suppressed by setting
 the environment variable *BORG_DISPLAY_PASSPHRASE* to *no*.
 
 When "confronted" with an unknown repository, where the application does not know whether
@@ -222,7 +222,7 @@ the repository is encrypted, the following algorithm can be followed to detect e
 
 1. Set *BORG_PASSPHRASE* to gibberish (for example a freshly generated UUID4, which cannot
    possibly be the passphrase)
-2. Invoke ``borg list repository ...``
+2. Invoke ``bork list repository ...``
 3. If this fails, due the repository being encrypted and the passphrase obviously being
    wrong, you'll get an error with the *PassphraseWrong* msgid.
 
@@ -233,10 +233,10 @@ the repository is encrypted, the following algorithm can be followed to detect e
 Standard output
 ---------------
 
-*stdout* is different and more command-dependent than logging. Commands like :ref:`borg_info`, :ref:`borg_create`
-and :ref:`borg_list` implement a ``--json`` option which turns their regular output into a single JSON object.
+*stdout* is different and more command-dependent than logging. Commands like :ref:`bork_info`, :ref:`bork_create`
+and :ref:`bork_list` implement a ``--json`` option which turns their regular output into a single JSON object.
 
-Some commands, like :ref:`borg_list` and :ref:`borg_diff`, can produce *a lot* of JSON. Since many JSON implementations
+Some commands, like :ref:`bork_list` and :ref:`bork_diff`, can produce *a lot* of JSON. Since many JSON implementations
 don't support a streaming mode of operation, which is pretty much required to deal with this amount of JSON, these
 commands implement a ``--json-lines`` option which generates output in the `JSON lines <http://jsonlines.org/>`_ format,
 which is simply a number of JSON objects separated by new lines.
@@ -252,12 +252,12 @@ id
 location
     Canonicalized repository path, thus this may be different from what is specified on the command line
 last_modified
-    Date when the repository was last modified by the Borg client
+    Date when the repository was last modified by the Bork client
 
 The *encryption* key, if present, contains:
 
 mode
-    Textual encryption mode name (same as :ref:`borg_rcreate` ``--encryption`` names)
+    Textual encryption mode name (same as :ref:`bork_rcreate` ``--encryption`` names)
 keyfile
     Path to the local key file used for access. Depending on *mode* this key may be absent.
 
@@ -279,11 +279,11 @@ stats
 
 .. highlight: json
 
-Example *borg info* output::
+Example *bork info* output::
 
     {
         "cache": {
-            "path": "/home/user/.cache/borg/0cbe6166b46627fd26b97f8831e2ca97584280a46714ef84d2b668daf8271a23",
+            "path": "/home/user/.cache/bork/0cbe6166b46627fd26b97f8831e2ca97584280a46714ef84d2b668daf8271a23",
             "stats": {
                 "total_chunks": 511533,
                 "total_size": 22635749792,
@@ -299,22 +299,22 @@ Example *borg info* output::
             "last_modified": "2017-08-07T12:27:20.789123",
             "location": "/home/user/testrepo"
         },
-        "security_dir": "/home/user/.config/borg/security/0cbe6166b46627fd26b97f8831e2ca97584280a46714ef84d2b668daf8271a23",
+        "security_dir": "/home/user/.config/bork/security/0cbe6166b46627fd26b97f8831e2ca97584280a46714ef84d2b668daf8271a23",
         "archives": []
     }
 
 Archive formats
 +++++++++++++++
 
-:ref:`borg_info` uses an extended format for archives, which is more expensive to retrieve, while
-:ref:`borg_list` uses a simpler format that is faster to retrieve. Either return archives in an
-array under the *archives* key, while :ref:`borg_create` returns a single archive object under the
+:ref:`bork_info` uses an extended format for archives, which is more expensive to retrieve, while
+:ref:`bork_list` uses a simpler format that is faster to retrieve. Either return archives in an
+array under the *archives* key, while :ref:`bork_create` returns a single archive object under the
 *archive* key.
 
 Both formats contain a *name* key with the archive name, the *id* key with the hexadecimal archive ID,
 and the *start* key with the start timestamp.
 
-*borg info* and *borg create* further have:
+*bork info* and *bork create* further have:
 
 end
     End timestamp
@@ -338,7 +338,7 @@ command_line
 chunker_params
     The chunker parameters the archive has been created with.
 
-:ref:`borg_info` further has:
+:ref:`bork_info` further has:
 
 hostname
     Hostname of the creating host
@@ -348,16 +348,16 @@ comment
     Archive comment, if any
 
 Some keys/values are more expensive to compute than others (e.g. because it requires opening the archive,
-not just the manifest). To optimize for speed, `borg list repo` does not determine these values except
+not just the manifest). To optimize for speed, `bork list repo` does not determine these values except
 when they are requested. The `--format` option is used for that (for normal mode as well as for `--json`
 mode), so, to have the comment included in the json output, you will need:
 
 ::
 
-    borg list repo --format "{name}{comment}" --json`
+    bork list repo --format "{name}{comment}" --json`
 
 
-Example of a simple archive listing (``borg list --last 1 --json``)::
+Example of a simple archive listing (``bork list --last 1 --json``)::
 
     {
         "archives": [
@@ -377,7 +377,7 @@ Example of a simple archive listing (``borg list --last 1 --json``)::
         }
     }
 
-The same archive with more information (``borg info --last 1 --json``)::
+The same archive with more information (``bork info --last 1 --json``)::
 
     {
         "archives": [
@@ -390,7 +390,7 @@ The same archive with more information (``borg info --last 1 --json``)::
                     4095
                 ],
                 "command_line": [
-                    "/home/user/.local/bin/borg",
+                    "/home/user/.local/bin/bork",
                     "create",
                     "/home/user/repository",
                     "..."
@@ -412,7 +412,7 @@ The same archive with more information (``borg info --last 1 --json``)::
             }
         ],
         "cache": {
-            "path": "/home/user/.cache/borg/0cbe6166b46627fd26b97f8831e2ca97584280a46714ef84d2b668daf8271a23",
+            "path": "/home/user/.cache/bork/0cbe6166b46627fd26b97f8831e2ca97584280a46714ef84d2b668daf8271a23",
             "stats": {
                 "total_chunks": 511533,
                 "total_size": 22635749792,
@@ -433,10 +433,10 @@ The same archive with more information (``borg info --last 1 --json``)::
 File listings
 +++++++++++++
 
-Each archive item (file, directory, ...) is described by one object in the :ref:`borg_list` output.
-Refer to the *borg list* documentation for the available keys and their meaning.
+Each archive item (file, directory, ...) is described by one object in the :ref:`bork_list` output.
+Refer to the *bork list* documentation for the available keys and their meaning.
 
-Example (excerpt) of ``borg list --json-lines``::
+Example (excerpt) of ``bork list --json-lines``::
 
     {"type": "d", "mode": "drwxr-xr-x", "user": "user", "group": "user", "uid": 1000, "gid": 1000, "path": "linux", "healthy": true, "source": "", "linktarget": "", "flags": null, "mtime": "2017-02-27T12:27:20.023407", "size": 0}
     {"type": "d", "mode": "drwxr-xr-x", "user": "user", "group": "user", "uid": 1000, "gid": 1000, "path": "linux/baz", "healthy": true, "source": "", "linktarget": "", "flags": null, "mtime": "2017-02-27T12:27:20.585407", "size": 0}
@@ -444,7 +444,7 @@ Example (excerpt) of ``borg list --json-lines``::
 Archive Differencing
 ++++++++++++++++++++
 
-Each archive difference item (file contents, user/group/mode) output by :ref:`borg_diff` is represented by an *ItemDiff* object.
+Each archive difference item (file contents, user/group/mode) output by :ref:`bork_diff` is represented by an *ItemDiff* object.
 The properties of an *ItemDiff* object are:
 
 path:
@@ -505,7 +505,7 @@ new_group:
     See **old_user** property.
 
 
-Example (excerpt) of ``borg diff --json-lines``::
+Example (excerpt) of ``bork diff --json-lines``::
 
     {"path": "file1", "changes": [{"path": "file1", "changes": [{"type": "modified", "added": 17, "removed": 5}, {"type": "mode", "old_mode": "-rw-r--r--", "new_mode": "-rwxr-xr-x"}]}]}
     {"path": "file2", "changes": [{"type": "modified", "added": 135, "removed": 252}]}
@@ -546,7 +546,7 @@ Errors
     Buffer.MemoryLimitExceeded
         Requested buffer size {} is above the limit of {}.
     ExtensionModuleError
-        The Borg binary extension modules do not seem to be properly installed
+        The Bork binary extension modules do not seem to be properly installed
     IntegrityError
         Data integrity error: {}
     NoManifestError
@@ -569,8 +569,8 @@ Errors
         Unsupported manifest envelope. A newer version is required to access this repository.
     UnsupportedPayloadError
         Unsupported payload type {}. A newer version is required to access this repository.
-    NotABorgKeyFile
-        This file is not a borg key backup, aborting.
+    NotABorkKeyFile
+        This file is not a bork key backup, aborting.
     RepoIdMismatch
         This key backup seems to be for a different backup repository, aborting.
     UnencryptedRepo
@@ -588,16 +588,16 @@ Errors
     PathNotAllowed
         Repository path not allowed
     RemoteRepository.RPCServerOutdated
-        Borg server is too old for {}. Required version {}
+        Bork server is too old for {}. Required version {}
     UnexpectedRPCDataFormatFromClient
-        Borg {}: Got unexpected RPC data format from client.
+        Bork {}: Got unexpected RPC data format from client.
     UnexpectedRPCDataFormatFromServer
         Got unexpected RPC data format from server:
         {}
     Repository.AlreadyExists
         Repository {} already exists.
     Repository.CheckNeeded
-        Inconsistency detected. Please run "borg check {}".
+        Inconsistency detected. Please run "bork check {}".
     Repository.DoesNotExist
         Repository {} does not exist.
     Repository.InsufficientFreeSpaceError
@@ -605,13 +605,13 @@ Errors
     Repository.InvalidRepository
         {} is not a valid repository. Check repo config.
     Repository.AtticRepository
-        Attic repository detected. Please run "borg upgrade {}".
+        Attic repository detected. Please run "bork upgrade {}".
     Repository.ObjectNotFound
         Object with key {} not found in repository {}.
 
 Operations
     - cache.begin_transaction
-    - cache.download_chunks, appears with ``borg create --no-cache-sync``
+    - cache.download_chunks, appears with ``bork create --no-cache-sync``
     - cache.commit
     - cache.sync
 

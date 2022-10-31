@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_rdelete:
+.. _bork_rdelete:
 
-borg rdelete
+bork rdelete
 ------------
 .. code-block:: none
 
-    borg [common options] rdelete [options]
+    bork [common options] rdelete [options]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+--------------------------+--------------------------------------------------------------------------------------------------+
     | **optional arguments**                                                                                                                                                              |
@@ -25,7 +25,7 @@ borg rdelete
     +-------------------------------------------------------+--------------------------+--------------------------------------------------------------------------------------------------+
     |                                                       | ``--keep-security-info`` | keep the local security info when deleting a repository                                          |
     +-------------------------------------------------------+--------------------------+--------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                      |
+    | .. class:: bork-common-opt-ref                                                                                                                                                      |
     |                                                                                                                                                                                     |
     | :ref:`common_options`                                                                                                                                                               |
     +-------------------------------------------------------+--------------------------+--------------------------------------------------------------------------------------------------+
@@ -34,7 +34,7 @@ borg rdelete
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 

@@ -16,7 +16,7 @@ import sys, os
 
 sys.path.insert(0, os.path.abspath("../src"))
 
-from borg import __version__ as sw_version
+from bork import __version__ as sw_version
 
 # -- General configuration -----------------------------------------------------
 
@@ -40,8 +40,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "Borg - Deduplicating Archiver"
-copyright = "2010-2014 Jonas Borgström, 2015-2022 The Borg Collective (see AUTHORS file)"
+project = "Bork - Deduplicating Archiver"
+copyright = "2010-2014 Jonas Borkström, 2015-2022 The Bork Collective (see AUTHORS file)"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -72,7 +72,7 @@ exclude_patterns = ["_build"]
 # The reST default role (used for this markup: `text`) to use for all documents.
 # default_role = None
 
-# The Borg docs contain no or very little Python docs.
+# The Bork docs contain no or very little Python docs.
 # Thus, the primary domain is rst.
 primary_domain = "rst"
 
@@ -109,14 +109,14 @@ def set_rst_settings(app):
 
 
 def setup(app):
-    app.add_css_file("css/borg.css")
+    app.add_css_file("css/bork.css")
     app.connect("builder-inited", set_rst_settings)
 
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {"project_nav_name": "Borg %s" % version}
+html_theme_options = {"project_nav_name": "Bork %s" % version}
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = ['_themes']
@@ -140,9 +140,9 @@ html_favicon = "_static/favicon.ico"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["borg_theme"]
+html_static_path = ["bork_theme"]
 
-html_extra_path = ["../src/borg/paperkey.html"]
+html_extra_path = ["../src/bork/paperkey.html"]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -187,14 +187,14 @@ html_show_copyright = False
 # html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "borgdoc"
+htmlhelp_basename = "borkdoc"
 
 
 # -- Options for LaTeX output --------------------------------------------------
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
-latex_documents = [("book", "Borg.tex", "Borg Documentation", "The Borg Collective", "manual")]
+latex_documents = [("book", "Bork.tex", "Bork Documentation", "The Bork Collective", "manual")]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -229,9 +229,9 @@ latex_appendices = ["support", "resources", "changes", "authors"]
 man_pages = [
     (
         "usage",
-        "borg",
-        "BorgBackup is a deduplicating backup program with optional compression and authenticated encryption.",
-        ["The Borg Collective (see AUTHORS file)"],
+        "bork",
+        "BorkBackup is a deduplicating backup program with optional compression and authenticated encryption.",
+        ["The Bork Collective (see AUTHORS file)"],
         1,
     )
 ]
@@ -245,6 +245,6 @@ extensions = [
 ]
 
 extlinks = {
-    "issue": ("https://github.com/borgbackup/borg/issues/%s", "#"),
-    "targz_url": ("https://pypi.python.org/packages/source/b/borgbackup/%%s-%s.tar.gz" % version, None),
+    "issue": ("https://github.com/furikuda/bork/issues/%s", "#"),
+    "targz_url": ("https://pypi.python.org/packages/source/b/borkbackup/%%s-%s.tar.gz" % version, None),
 }

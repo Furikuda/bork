@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_prune:
+.. _bork_prune:
 
-borg prune
+bork prune
 ----------
 .. code-block:: none
 
-    borg [common options] prune [options]
+    bork [common options] prune [options]
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-----------------------------------------------------------------------------+---------------------------------------------------+-------------------------------------------------------------------------------------------------+
     | **optional arguments**                                                                                                                                                                                                            |
@@ -43,20 +43,20 @@ borg prune
     +-----------------------------------------------------------------------------+---------------------------------------------------+-------------------------------------------------------------------------------------------------+
     |                                                                             | ``-c SECONDS``, ``--checkpoint-interval SECONDS`` | write checkpoint every SECONDS seconds (Default: 1800)                                          |
     +-----------------------------------------------------------------------------+---------------------------------------------------+-------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                                                                    |
+    | .. class:: bork-common-opt-ref                                                                                                                                                                                                    |
     |                                                                                                                                                                                                                                   |
     | :ref:`common_options`                                                                                                                                                                                                             |
     +-----------------------------------------------------------------------------+---------------------------------------------------+-------------------------------------------------------------------------------------------------+
     | **Archive filters** — Archive filters can be applied to repository targets.                                                                                                                                                       |
     +-----------------------------------------------------------------------------+---------------------------------------------------+-------------------------------------------------------------------------------------------------+
-    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN``      | only consider archive names matching the pattern. see "borg help match-archives".               |
+    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN``      | only consider archive names matching the pattern. see "bork help match-archives".               |
     +-----------------------------------------------------------------------------+---------------------------------------------------+-------------------------------------------------------------------------------------------------+
 
     .. raw:: html
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -85,7 +85,7 @@ borg prune
         |
 
     Archive filters
-        -a PATTERN, --match-archives PATTERN     only consider archive names matching the pattern. see "borg help match-archives".
+        -a PATTERN, --match-archives PATTERN     only consider archive names matching the pattern. see "bork help match-archives".
 
 
 Description
@@ -94,7 +94,7 @@ Description
 The prune command prunes a repository by deleting all archives not matching
 any of the specified retention options.
 
-Important: Repository disk space is **not** freed until you run ``borg compact``.
+Important: Repository disk space is **not** freed until you run ``bork compact``.
 
 This command is normally used by automated backup scripts wanting to keep a
 certain number of historic backups. This retention policy is commonly referred to as
@@ -131,8 +131,8 @@ The rules are applied from secondly to yearly, and backups selected by previous
 rules do not count towards those of later rules. The time that each backup
 starts is used for pruning purposes. Dates and times are interpreted in
 the local timezone, and weeks go from Monday to Sunday. Specifying a
-negative number of archives to keep means that there is no limit. As of borg
-1.2.0, borg will retain the oldest archive if any of the secondly, minutely,
+negative number of archives to keep means that there is no limit. As of bork
+1.2.0, bork will retain the oldest archive if any of the secondly, minutely,
 hourly, daily, weekly, monthly, or yearly rules was not otherwise able to meet
 its retention target. This enables the first chronological archive to continue
 aging until it is replaced by a newer archive that meets the retention criteria.

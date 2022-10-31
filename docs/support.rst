@@ -6,7 +6,7 @@ Support
 Support and Services
 --------------------
 
-Please see https://www.borgbackup.org/ for free and paid support and service options.
+Please see https://www.borkbackup.org/ for free and paid support and service options.
 
 
 .. _security-contact:
@@ -27,7 +27,7 @@ use the **full fingerprint** to check that you got the correct key.
 Verifying signed releases
 -------------------------
 
-`Releases <https://github.com/borgbackup/borg/releases>`_ are signed with the
+`Releases <https://github.com/furikuda/bork/releases>`_ are signed with the
 same GPG key and a .asc file is provided for each binary.
 
 To verify a signature, the public key needs to be known to GPG. It can be
@@ -41,9 +41,9 @@ If GPG successfully imported the key, the output should include (among other thi
       gpg: Total number processed: 1
       ...
 
-To verify for example the signature of the borg-linux64 binary::
+To verify for example the signature of the bork-linux64 binary::
 
-      gpg --verify borg-linux64.asc
+      gpg --verify bork-linux64.asc
 
 GPG outputs if it finds a good signature. The output should look similar to this::
 

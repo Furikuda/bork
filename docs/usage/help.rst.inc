@@ -1,12 +1,12 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_patterns:
+.. _bork_patterns:
 
-borg help patterns
+bork help patterns
 ~~~~~~~~~~~~~~~~~~
 
 
-When specifying one or more file paths in a Borg command that supports
+When specifying one or more file paths in a Bork command that supports
 patterns for the respective option or argument, you can apply the
 patterns described here to include only desired files and/or exclude
 unwanted ones. Patterns can be used
@@ -17,12 +17,12 @@ unwanted ones. Patterns can be used
 - in the file given with ``--patterns-from`` option and
 - for ``PATH`` arguments that explicitly support them.
 
-Borg always stores all file paths normalized and relative to the
+Bork always stores all file paths normalized and relative to the
 current recursion root. The recursion root is also named ``PATH`` in
-Borg commands like `borg create` that do a file discovery, so do not
-confuse the root with the ``PATH`` argument of e.g. `borg extract`.
+Bork commands like `bork create` that do a file discovery, so do not
+confuse the root with the ``PATH`` argument of e.g. `bork extract`.
 
-Starting with Borg 1.2, paths that are matched against patterns always
+Starting with Bork 1.2, paths that are matched against patterns always
 appear relative. If you give ``/absolute/`` as root, the paths going
 into the matcher will look relative like ``absolute/.../file.ext``.
 If you give ``../some/path`` as root, the paths will look like
@@ -106,26 +106,26 @@ whitespace removal, paths with whitespace at the beginning or end can only be
 excluded using regular expressions.
 
 To test your exclusion patterns without performing an actual backup you can
-run ``borg create --list --dry-run ...``.
+run ``bork create --list --dry-run ...``.
 
 Examples::
 
     # Exclude '/home/user/file.o' but not '/home/user/file.odt':
-    $ borg create -e '*.o' archive /
+    $ bork create -e '*.o' archive /
 
     # Exclude '/home/user/junk' and '/home/user/subdir/junk' but
     # not '/home/user/importantjunk' or '/etc/junk':
-    $ borg create -e 'home/*/junk' archive /
+    $ bork create -e 'home/*/junk' archive /
 
     # Exclude the contents of '/home/user/cache' but not the directory itself:
-    $ borg create -e home/user/cache/ archive /
+    $ bork create -e home/user/cache/ archive /
 
     # The file '/home/user/cache/important' is *not* backed up:
-    $ borg create -e home/user/cache/ archive / /home/user/cache/important
+    $ bork create -e home/user/cache/ archive / /home/user/cache/important
 
     # The contents of directories in '/home' are not backed up when their name
     # ends in '.tmp'
-    $ borg create --exclude 're:^home/[^/]+\.tmp/' archive /
+    $ bork create --exclude 're:^home/[^/]+\.tmp/' archive /
 
     # Load exclusions from file
     $ cat >exclude.txt <<EOF
@@ -135,10 +135,10 @@ Examples::
     fm:aa:something/*
     re:^home/[^/]+\.tmp/
     sh:home/*/.thumbnails
-    # Example with spaces, no need to escape as it is processed by borg
+    # Example with spaces, no need to escape as it is processed by bork
     some file with spaces.txt
     EOF
-    $ borg create --exclude-from exclude.txt archive /
+    $ bork create --exclude-from exclude.txt archive /
 
 A more general and easier to use way to define filename matching patterns
 exists with the ``--pattern`` and ``--patterns-from`` options. Using
@@ -177,11 +177,11 @@ will not match - use normal excludes for such use cases.
 
 **Tip: You can easily test your patterns with --dry-run and  --list**::
 
-    $ borg create --dry-run --list --patterns-from patterns.txt archive
+    $ bork create --dry-run --list --patterns-from patterns.txt archive
 
 This will list the considered files one per line, prefixed with a
 character that indicates the action (e.g. 'x' for excluding, see
-**Item flags** in `borg create` usage docs).
+**Item flags** in `bork create` usage docs).
 
 .. note::
 
@@ -197,16 +197,16 @@ Examples::
 
     # backup pics, but not the ones from 2018, except the good ones:
     # note: using = is essential to avoid cmdline argument parsing issues.
-    borg create --pattern=+pics/2018/good --pattern=-pics/2018 archive pics
+    bork create --pattern=+pics/2018/good --pattern=-pics/2018 archive pics
 
     # backup only JPG/JPEG files (case insensitive) in all home directories:
-    borg create --pattern '+ re:\.jpe?g(?i)$' archive /home
+    bork create --pattern '+ re:\.jpe?g(?i)$' archive /home
 
     # backup homes, but exclude big downloads (like .ISO files) or hidden files:
-    borg create --exclude 're:\.iso(?i)$' --exclude 'sh:home/**/.*' archive /home
+    bork create --exclude 're:\.iso(?i)$' --exclude 'sh:home/**/.*' archive /home
 
     # use a file with patterns (recursion root '/' via command line):
-    borg create --patterns-from patterns.lst archive /
+    bork create --patterns-from patterns.lst archive /
 
 The patterns.lst file could look like that::
 
@@ -225,8 +225,8 @@ The patterns.lst file could look like that::
 You can specify recursion roots either on the command line or in a patternfile::
 
     # these two commands do the same thing
-    borg create --exclude home/bobby/junk archive /home/bobby /home/susan
-    borg create --patterns-from patternfile.lst archive
+    bork create --exclude home/bobby/junk archive /home/bobby /home/susan
+    bork create --patterns-from patternfile.lst archive
 
 patternfile.lst::
 
@@ -240,16 +240,16 @@ patternfile.lst::
 This allows you to share the same patterns between multiple repositories
 without needing to specify them on the command line.
 
-.. _borg_match-archives:
+.. _bork_match-archives:
 
-borg help match-archives
+bork help match-archives
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 The ``--match-archives`` option matches a given pattern against the list of all archive
 names in the repository.
 
-It uses pattern styles similar to the ones described by ``borg help patterns``:
+It uses pattern styles similar to the ones described by ``bork help patterns``:
 
 Identical match pattern, selector ``id:`` (default)
     Simple string match, must fully match exactly as given.
@@ -264,19 +264,19 @@ Shell-style patterns, selector ``sh:``
 Examples::
 
     # id: style
-    borg delete --match-archives 'id:archive-with-crap'
-    borg delete -a 'id:archive-with-crap'  # same, using short option
-    borg delete -a 'archive-with-crap'  # same, because 'id:' is the default
+    bork delete --match-archives 'id:archive-with-crap'
+    bork delete -a 'id:archive-with-crap'  # same, using short option
+    bork delete -a 'archive-with-crap'  # same, because 'id:' is the default
 
     # sh: style
-    borg delete -a 'sh:home-kenny-*'
+    bork delete -a 'sh:home-kenny-*'
 
     # re: style
-    borg delete -a 're:pc[123]-home-(user1|user2)-2022-09-.*'
+    bork delete -a 're:pc[123]-home-(user1|user2)-2022-09-.*'
 
-.. _borg_placeholders:
+.. _bork_placeholders:
 
-borg help placeholders
+bork help placeholders
 ~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -301,46 +301,46 @@ and ``--remote-path`` values support these placeholders:
     You can also supply your own `format string <https://docs.python.org/3.9/library/datetime.html#strftime-and-strptime-behavior>`_, e.g. {utcnow:%Y-%m-%d_%H:%M:%S}
 
 {user}
-    The user name (or UID, if no name is available) of the user running borg.
+    The user name (or UID, if no name is available) of the user running bork.
 
 {pid}
     The current process ID.
 
-{borgversion}
-    The version of borg, e.g.: 1.0.8rc1
+{borkversion}
+    The version of bork, e.g.: 1.0.8rc1
 
-{borgmajor}
-    The version of borg, only the major version, e.g.: 1
+{borkmajor}
+    The version of bork, only the major version, e.g.: 1
 
-{borgminor}
-    The version of borg, only major and minor version, e.g.: 1.0
+{borkminor}
+    The version of bork, only major and minor version, e.g.: 1.0
 
-{borgpatch}
-    The version of borg, only major, minor and patch version, e.g.: 1.0.8
+{borkpatch}
+    The version of bork, only major, minor and patch version, e.g.: 1.0.8
 
 If literal curly braces need to be used, double them for escaping::
 
-    borg create /path/to/repo::{{literal_text}}
+    bork create /path/to/repo::{{literal_text}}
 
 Examples::
 
-    borg create /path/to/repo::{hostname}-{user}-{utcnow} ...
-    borg create /path/to/repo::{hostname}-{now:%Y-%m-%d_%H:%M:%S%z} ...
-    borg prune -a 'sh:{hostname}-*' ...
+    bork create /path/to/repo::{hostname}-{user}-{utcnow} ...
+    bork create /path/to/repo::{hostname}-{now:%Y-%m-%d_%H:%M:%S%z} ...
+    bork prune -a 'sh:{hostname}-*' ...
 
 .. note::
     systemd uses a difficult, non-standard syntax for command lines in unit files (refer to
     the `systemd.unit(5)` manual page).
 
-    When invoking borg from unit files, pay particular attention to escaping,
+    When invoking bork from unit files, pay particular attention to escaping,
     especially when using the now/utcnow placeholders, since systemd performs its own
     %-based variable replacement even in quoted text. To avoid interference from systemd,
     double all percent signs (``{hostname}-{now:%Y-%m-%d_%H:%M:%S}``
     becomes ``{hostname}-{now:%%Y-%%m-%%d_%%H:%%M:%%S}``).
 
-.. _borg_compression:
+.. _bork_compression:
 
-borg help compression
+bork help compression
 ~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -351,7 +351,7 @@ or encrypted data).
 If some specific chunk was once compressed and stored into the repo, creating
 another backup that also uses this chunk will not change the stored chunk.
 So if you use different compression specs for the backups, whichever stores a
-chunk first determines its compression. See also borg recreate.
+chunk first determines its compression. See also bork recreate.
 
 Compression is lz4 by default. If you want something else, you have to specify what you want.
 
@@ -367,7 +367,7 @@ zstd[,L]
     Use zstd ("zstandard") compression, a modern wide-range algorithm.
     If you do not explicitly give the compression level L (ranging from 1
     to 22), it will use level 3.
-    Archives compressed with zstd are not compatible with borg < 1.1.4.
+    Archives compressed with zstd are not compatible with bork < 1.1.4.
 
 zlib[,L]
     Use zlib ("gz") compression. Medium speed, medium compression.
@@ -381,7 +381,7 @@ lzma[,L]
     If you do not explicitly give the compression level L (ranging from 0
     to 9), it will use level 6.
     Giving levels above 6 is pointless and counterproductive because it does
-    not compress better due to the buffer size used by borg - but it wastes
+    not compress better due to the buffer size used by bork - but it wastes
     lots of CPU cycles and RAM.
 
 auto,C[,L]
@@ -419,14 +419,14 @@ obfuscate,SPEC,C[,L]
 
 Examples::
 
-    borg create --compression lz4 REPO::ARCHIVE data
-    borg create --compression zstd REPO::ARCHIVE data
-    borg create --compression zstd,10 REPO::ARCHIVE data
-    borg create --compression zlib REPO::ARCHIVE data
-    borg create --compression zlib,1 REPO::ARCHIVE data
-    borg create --compression auto,lzma,6 REPO::ARCHIVE data
-    borg create --compression auto,lzma ...
-    borg create --compression obfuscate,3,none ...
-    borg create --compression obfuscate,3,auto,zstd,10 ...
-    borg create --compression obfuscate,2,zstd,6 ...
+    bork create --compression lz4 REPO::ARCHIVE data
+    bork create --compression zstd REPO::ARCHIVE data
+    bork create --compression zstd,10 REPO::ARCHIVE data
+    bork create --compression zlib REPO::ARCHIVE data
+    bork create --compression zlib,1 REPO::ARCHIVE data
+    bork create --compression auto,lzma,6 REPO::ARCHIVE data
+    bork create --compression auto,lzma ...
+    bork create --compression obfuscate,3,none ...
+    bork create --compression obfuscate,3,auto,zstd,10 ...
+    bork create --compression obfuscate,2,zstd,6 ...
 

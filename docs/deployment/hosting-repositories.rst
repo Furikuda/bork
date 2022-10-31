@@ -15,7 +15,7 @@ however, separating them is better. Separate logins increase isolation
 and are thus an additional layer of security and safety for both the
 provider and the users.
 
-For example, if a user manages to breach ``borg serve`` then she can
+For example, if a user manages to breach ``bork serve`` then she can
 only damage her own data (assuming that the system does not have further
 vulnerabilities).
 
@@ -30,7 +30,7 @@ SSH access to safe operations only.
 
 ::
 
-  command="borg serve --restrict-to-repository /home/<user>/repository",restrict
+  command="bork serve --restrict-to-repository /home/<user>/repository",restrict
   <key type> <key> <key host>
 
 .. note:: The text shown above needs to be written on a **single** line!
@@ -49,7 +49,7 @@ If any future restriction capabilities are added to authorized_keys
 files they will be included in this set.
 
 The ``command`` keyword forces execution of the specified command line
-upon login. This must be ``borg serve``. The ``--restrict-to-repository``
+upon login. This must be ``bork serve``. The ``--restrict-to-repository``
 option permits access to exactly **one** repository. It can be given
 multiple times to permit access to more than one repository.
 
@@ -57,22 +57,22 @@ The repository may not exist yet; it can be initialized by the user,
 which allows for encryption.
 
 **Storage quotas** can be enabled by adding the ``--storage-quota`` option
-to the ``borg serve`` command line::
+to the ``bork serve`` command line::
 
-    restrict,command="borg serve --storage-quota 20G ..." ...
+    restrict,command="bork serve --storage-quota 20G ..." ...
 
 The storage quotas of repositories are completely independent. If a
 client is able to access multiple repositories, each repository
 can be filled to the specified quota.
 
-If storage quotas are used, ensure that all deployed Borg releases
+If storage quotas are used, ensure that all deployed Bork releases
 support storage quotas.
 
 Refer to :ref:`internals_storage_quota` for more details on storage quotas.
 
 **Specificities: Append-only repositories**
 
-Running ``borg init`` via a ``borg serve --append-only`` server will **not**
+Running ``bork init`` via a ``bork serve --append-only`` server will **not**
 create a repository that is configured to be append-only by its repository
 config.
 
@@ -82,4 +82,4 @@ basis.
 
 Refer to the `sshd(8) <https://www.openbsd.org/cgi-bin/man.cgi/OpenBSD-current/man8/sshd.8>`_
 man page for more details on SSH options.
-See also :ref:`borg_serve`
+See also :ref:`bork_serve`

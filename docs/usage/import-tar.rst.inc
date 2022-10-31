@@ -1,16 +1,16 @@
-.. IMPORTANT: this file is auto-generated from borg's built-in help, do not edit!
+.. IMPORTANT: this file is auto-generated from bork's built-in help, do not edit!
 
-.. _borg_import-tar:
+.. _bork_import-tar:
 
-borg import-tar
+bork import-tar
 ---------------
 .. code-block:: none
 
-    borg [common options] import-tar [options] NAME TARFILE
+    bork [common options] import-tar [options] NAME TARFILE
 
 .. only:: html
 
-    .. class:: borg-options-table
+    .. class:: bork-options-table
 
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | **positional arguments**                                                                                                                                                                                                                                                                                      |
@@ -31,7 +31,7 @@ borg import-tar
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--json``                                        | output stats as JSON (implies --stats)                                                                                                                                                            |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                                                                                                                                                |
+    | .. class:: bork-common-opt-ref                                                                                                                                                                                                                                                                                |
     |                                                                                                                                                                                                                                                                                                               |
     | :ref:`common_options`                                                                                                                                                                                                                                                                                         |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -45,14 +45,14 @@ borg import-tar
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--chunker-params PARAMS``                       | specify the chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, HASH_MASK_BITS, HASH_WINDOW_SIZE). default: buzhash,19,23,21,4095                                                             |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    |                                                       | ``-C COMPRESSION``, ``--compression COMPRESSION`` | select compression algorithm, see the output of the "borg help compression" command for details.                                                                                                  |
+    |                                                       | ``-C COMPRESSION``, ``--compression COMPRESSION`` | select compression algorithm, see the output of the "bork help compression" command for details.                                                                                                  |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
     .. raw:: html
 
         <script type='text/javascript'>
         $(document).ready(function () {
-            $('.borg-options-table colgroup').remove();
+            $('.bork-options-table colgroup').remove();
         })
         </script>
 
@@ -80,7 +80,7 @@ borg import-tar
         --timestamp TIMESTAMP                         manually specify the archive creation date/time (yyyy-mm-ddThh:mm:ss[(+|-)HH:MM] format, (+|-)HH:MM is the UTC offset, default: local time zone). Alternatively, give a reference file/directory.
         -c SECONDS, --checkpoint-interval SECONDS     write checkpoint every SECONDS seconds (Default: 1800)
         --chunker-params PARAMS                       specify the chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, HASH_MASK_BITS, HASH_WINDOW_SIZE). default: buzhash,19,23,21,4095
-        -C COMPRESSION, --compression COMPRESSION     select compression algorithm, see the output of the "borg help compression" command for details.
+        -C COMPRESSION, --compression COMPRESSION     select compression algorithm, see the output of the "bork help compression" command for details.
 
 
 Description
@@ -88,9 +88,9 @@ Description
 
 This command creates a backup archive from a tarball.
 
-When giving '-' as path, Borg will read a tar stream from standard input.
+When giving '-' as path, Bork will read a tar stream from standard input.
 
-By default (--tar-filter=auto) Borg will detect whether the file is compressed
+By default (--tar-filter=auto) Bork will detect whether the file is compressed
 based on its file extension and pipe the file through an appropriate filter:
 
 - .tar.gz or .tgz: gzip -d
@@ -103,16 +103,16 @@ Alternatively, a --tar-filter program may be explicitly specified. It should
 read compressed data from stdin and output an uncompressed tar stream on
 stdout.
 
-Most documentation of borg create applies. Note that this command does not
+Most documentation of bork create applies. Note that this command does not
 support excluding files.
 
-A ``--sparse`` option (as found in borg create) is not supported.
+A ``--sparse`` option (as found in bork create) is not supported.
 
-About tar formats and metadata conservation or loss, please see ``borg export-tar``.
+About tar formats and metadata conservation or loss, please see ``bork export-tar``.
 
 import-tar reads these tar formats:
 
-- BORG: borg specific (PAX-based)
+- BORG: bork specific (PAX-based)
 - PAX: POSIX.1-2001
 - GNU: GNU tar
 - POSIX.1-1988 (ustar)
