@@ -46,7 +46,7 @@ Nowadays, UTF-8 encoded paths (which decode to valid unicode) are the usual thin
 still have paths from the past, when other, non-unicode codings were used. Especially old Samba shares often
 have wild mixtures of misc. encodings, sometimes even very broken stuff.
 
-borg deals with such non-unicode paths ("with funny/broken characters") by decoding such byte sequences using
+bork deals with such non-unicode paths ("with funny/broken characters") by decoding such byte sequences using
 UTF-8 coding and "surrogateescape" error handling mode, which maps invalid bytes to special unicode code points
 (surrogate escapes). When encoding such a unicode string back to a byte sequence, the original byte sequence
 will be reproduced exactly.
@@ -54,7 +54,7 @@ will be reproduced exactly.
 JSON should only contain valid unicode text without any surrogate escapes, so we can't just directly have a
 surrogate-escaped path in JSON ("path" is only one example, this also affects other text-like content).
 
-Borg deals with this situation like this (since borg 2.0):
+Bork deals with this situation like this (since bork 2.0):
 
 For a valid unicode path (no surrogate escapes), the JSON will only have "path": path.
 
@@ -227,23 +227,23 @@ messages pertaining to the same prompt.
 
 Providing an invalid answer::
 
-    {"type": "question_prompt", "msgid": "BORG_CHECK_I_KNOW_WHAT_I_AM_DOING",
+    {"type": "question_prompt", "msgid": "BORK_CHECK_I_KNOW_WHAT_I_AM_DOING",
      "message": "... Type 'YES' if you understand this and want to continue: "}
     incorrect answer  # input on stdin
-    {"type": "question_invalid_answer", "msgid": "BORG_CHECK_I_KNOW_WHAT_I_AM_DOING", "is_prompt": false,
+    {"type": "question_invalid_answer", "msgid": "BORK_CHECK_I_KNOW_WHAT_I_AM_DOING", "is_prompt": false,
      "message": "Invalid answer, aborting."}
 
 Providing a false (negative) answer::
 
-    {"type": "question_prompt", "msgid": "BORG_CHECK_I_KNOW_WHAT_I_AM_DOING",
+    {"type": "question_prompt", "msgid": "BORK_CHECK_I_KNOW_WHAT_I_AM_DOING",
      "message": "... Type 'YES' if you understand this and want to continue: "}
     NO  # input on stdin
-    {"type": "question_accepted_false", "msgid": "BORG_CHECK_I_KNOW_WHAT_I_AM_DOING",
+    {"type": "question_accepted_false", "msgid": "BORK_CHECK_I_KNOW_WHAT_I_AM_DOING",
      "message": "Aborting.", "is_prompt": false}
 
 Providing a true (affirmative) answer::
 
-    {"type": "question_prompt", "msgid": "BORG_CHECK_I_KNOW_WHAT_I_AM_DOING",
+    {"type": "question_prompt", "msgid": "BORK_CHECK_I_KNOW_WHAT_I_AM_DOING",
      "message": "... Type 'YES' if you understand this and want to continue: "}
     YES  # input on stdin
     # no further output, just like the prompt without --log-json
@@ -251,18 +251,18 @@ Providing a true (affirmative) answer::
 Passphrase prompts
 ------------------
 
-Passphrase prompts should be handled differently. Use the environment variables *BORG_PASSPHRASE*
-and *BORG_NEW_PASSPHRASE* (see :ref:`env_vars` for reference) to pass passphrases to Bork, don't
+Passphrase prompts should be handled differently. Use the environment variables *BORK_PASSPHRASE*
+and *BORK_NEW_PASSPHRASE* (see :ref:`env_vars` for reference) to pass passphrases to Bork, don't
 use the interactive passphrase prompts.
 
 When setting a new passphrase (:ref:`bork_rcreate`, :ref:`bork_key_change-passphrase`) normally
 Bork prompts whether it should display the passphrase. This can be suppressed by setting
-the environment variable *BORG_DISPLAY_PASSPHRASE* to *no*.
+the environment variable *BORK_DISPLAY_PASSPHRASE* to *no*.
 
 When "confronted" with an unknown repository, where the application does not know whether
 the repository is encrypted, the following algorithm can be followed to detect encryption:
 
-1. Set *BORG_PASSPHRASE* to gibberish (for example a freshly generated UUID4, which cannot
+1. Set *BORK_PASSPHRASE* to gibberish (for example a freshly generated UUID4, which cannot
    possibly be the passphrase)
 2. Invoke ``bork list repository ...``
 3. If this fails, due the repository being encrypted and the passphrase obviously being
@@ -589,7 +589,7 @@ Errors
     Buffer.MemoryLimitExceeded
         Requested buffer size {} is above the limit of {}.
     ExtensionModuleError
-        The Borg binary extension modules do not seem to be installed properly
+        The Bork binary extension modules do not seem to be installed properly
     IntegrityError
         Data integrity error: {}
     NoManifestError
@@ -603,7 +603,7 @@ Errors
     KeyfileNotFoundError
         No key file for repository {} found in {}.
     PassphraseWrong
-        passphrase supplied in BORG_PASSPHRASE is incorrect
+        passphrase supplied in BORK_PASSPHRASE is incorrect
     PasswordRetriesExceeded
         exceeded the maximum password retries
     RepoKeyNotFoundError
@@ -674,11 +674,11 @@ Operations
     - upgrade.convert_segments
 
 Prompts
-    BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK
+    BORK_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK
         For "Warning: Attempting to access a previously unknown unencrypted repository"
-    BORG_RELOCATED_REPO_ACCESS_IS_OK
+    BORK_RELOCATED_REPO_ACCESS_IS_OK
         For "Warning: The repository at location ... was previously located at ..."
-    BORG_CHECK_I_KNOW_WHAT_I_AM_DOING
+    BORK_CHECK_I_KNOW_WHAT_I_AM_DOING
         For "This is a potentially dangerous function..." (check --repair)
-    BORG_DELETE_I_KNOW_WHAT_I_AM_DOING
+    BORK_DELETE_I_KNOW_WHAT_I_AM_DOING
         For "You requested to DELETE the repository completely *including* all archives it contains:"

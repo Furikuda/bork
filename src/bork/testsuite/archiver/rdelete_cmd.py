@@ -13,10 +13,10 @@ def test_delete_repo(archivers, request):
     cmd(archiver, "rcreate", RK_ENCRYPTION)
     cmd(archiver, "create", "test", "input")
     cmd(archiver, "create", "test.2", "input")
-    os.environ["BORG_DELETE_I_KNOW_WHAT_I_AM_DOING"] = "no"
+    os.environ["BORK_DELETE_I_KNOW_WHAT_I_AM_DOING"] = "no"
     cmd(archiver, "rdelete", exit_code=2)
     assert os.path.exists(archiver.repository_path)
-    os.environ["BORG_DELETE_I_KNOW_WHAT_I_AM_DOING"] = "YES"
+    os.environ["BORK_DELETE_I_KNOW_WHAT_I_AM_DOING"] = "YES"
     cmd(archiver, "rdelete")
     # Make sure the repo is gone
     assert not os.path.exists(archiver.repository_path)

@@ -30,7 +30,7 @@ from .parseformat import format_archive, parse_stringified_list, clean_lines
 from .parseformat import location_validator, archivename_validator, comment_validator
 from .parseformat import BaseFormatter, ArchiveFormatter, ItemFormatter, DiffFormatter, file_status
 from .parseformat import swidth_slice, ellipsis_truncate
-from .parseformat import BorgJsonEncoder, basic_json_data, json_print, json_dump, prepare_dump_dict
+from .parseformat import BorkJsonEncoder, basic_json_data, json_print, json_dump, prepare_dump_dict
 from .parseformat import Highlander, MakePathSafeAction
 from .process import daemonize, daemonizing
 from .process import signal_handler, raising_signal_handler, sig_int, ignore_sigint, SigHup, SigTerm
@@ -44,9 +44,9 @@ from .msgpack import is_slow_msgpack, is_supported_msgpack, get_limited_unpacker
 from . import msgpack
 
 # generic mechanism to enable users to invoke workarounds by setting the
-# BORG_WORKAROUNDS environment variable to a list of comma-separated strings.
+# BORK_WORKAROUNDS environment variable to a list of comma-separated strings.
 # see the docs for a list of known workaround strings.
-workarounds = tuple(os.environ.get("BORG_WORKAROUNDS", "").split(","))
+workarounds = tuple(os.environ.get("BORK_WORKAROUNDS", "").split(","))
 
 """
 The global exit_code variable is used so that modules other than archiver can increase the program exit code if a

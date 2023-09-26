@@ -13,7 +13,7 @@ If you want to capture the log output to a file, just redirect it:
     bork create repo::archive myfiles 2>> logfile
 
 
-Custom logging configurations can be implemented via BORG_LOGGING_CONF.
+Custom logging configurations can be implemented via BORK_LOGGING_CONF.
 
 The log level of the builtin logging configuration defaults to WARNING.
 This is because we want Bork to be mostly silent and only output

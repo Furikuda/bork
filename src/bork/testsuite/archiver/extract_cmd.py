@@ -78,7 +78,7 @@ def test_directory_timestamps1(archivers, request):
         cmd(archiver, "extract", "test")
     # extracting a file inside a directory touches the directory mtime
     assert os.path.exists("output/input/dir2/file2")
-    # make sure borg fixes the directory mtime after touching it
+    # make sure bork fixes the directory mtime after touching it
     sti = os.stat("input/dir2")
     sto = os.stat("output/input/dir2")
     assert same_ts_ns(sti.st_mtime_ns, sto.st_mtime_ns)
@@ -96,7 +96,7 @@ def test_directory_timestamps2(archivers, request):
         cmd(archiver, "extract", "test")
     # extracting a file inside a directory touches the directory mtime
     assert os.path.exists("output/input/dir2/file2")
-    # make sure borg fixes the directory mtime after touching it
+    # make sure bork fixes the directory mtime after touching it
     sti = os.stat("input/dir2")
     sto = os.stat("output/input/dir2")
     assert same_ts_ns(sti.st_mtime_ns, sto.st_mtime_ns)
@@ -114,7 +114,7 @@ def test_directory_timestamps3(archivers, request):
         cmd(archiver, "extract", "test")
     # extracting a file inside a directory touches the directory mtime
     assert os.path.exists("output/input/dir2/file2")
-    # make sure borg fixes the directory mtime after touching it
+    # make sure bork fixes the directory mtime after touching it
     sti = os.stat("input/dir2")
     sto = os.stat("output/input/dir2")
     assert same_ts_ns(sti.st_mtime_ns, sto.st_mtime_ns)
@@ -628,7 +628,7 @@ def test_overwrite(archivers, request):
 # derived from test_extract_xattrs_errors()
 @pytest.mark.skipif(not xattr.XATTR_FAKEROOT, reason="xattr not supported on this system, or this version of fakeroot")
 def test_do_not_fail_when_percent_is_in_xattr_name(archivers, request):
-    """https://github.com/borgbackup/borg/issues/6063"""
+    """https://github.com/borkbackup/bork/issues/6063"""
     archiver = request.getfixturevalue(archivers)
     if archiver.EXE:
         pytest.skip("Skipping binary test due to patch objects")
@@ -648,7 +648,7 @@ def test_do_not_fail_when_percent_is_in_xattr_name(archivers, request):
 # derived from test_extract_xattrs_errors()
 @pytest.mark.skipif(not xattr.XATTR_FAKEROOT, reason="xattr not supported on this system, or this version of fakeroot")
 def test_do_not_fail_when_percent_is_in_file_name(archivers, request):
-    """https://github.com/borgbackup/borg/issues/6063"""
+    """https://github.com/borkbackup/bork/issues/6063"""
     archiver = request.getfixturevalue(archivers)
     if archiver.EXE:
         pytest.skip("Skipping binary test due to patch objects")

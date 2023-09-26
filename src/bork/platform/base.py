@@ -293,8 +293,8 @@ hostname = hostname.split(".")[0]
 
 # uuid.getnode() is problematic in some environments (e.g. OpenVZ, see #3968) where the virtual MAC address
 # is all-zero. uuid.getnode falls back to returning a random value in that case, which is not what we want.
-# thus, we offer BORG_HOST_ID where a user can set an own, unique id for each of his hosts.
-hostid = os.environ.get("BORG_HOST_ID")
+# thus, we offer BORK_HOST_ID where a user can set an own, unique id for each of his hosts.
+hostid = os.environ.get("BORK_HOST_ID")
 if not hostid:
     hostid = f"{fqdn}@{uuid.getnode()}"
 

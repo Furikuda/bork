@@ -59,8 +59,8 @@ class SelfTestResult(TestResult):
 
 
 def selftest(logger):
-    if os.environ.get("BORG_SELFTEST") == "disabled":
-        logger.debug("bork selftest disabled via BORG_SELFTEST env variable")
+    if os.environ.get("BORK_SELFTEST") == "disabled":
+        logger.debug("bork selftest disabled via BORK_SELFTEST env variable")
         return
     selftest_started = time.perf_counter()
     result = SelfTestResult()

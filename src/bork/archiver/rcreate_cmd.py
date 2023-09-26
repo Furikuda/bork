@@ -115,7 +115,7 @@ class RCreateMixIn:
         the key will be stored in the repository (in ``repo_dir/config``).
 
         `keyfile` modes: if you want "passphrase and having-the-key" security -
-        the key will be stored in your home directory (in ``~/.config/borg/keys``).
+        the key will be stored in your home directory (in ``~/.config/bork/keys``).
 
         The following table is roughly sorted in order of preference, the better ones are
         in the upper part of the table, in the lower part is the old and/or unsafe(r) stuff:
@@ -149,12 +149,12 @@ class RCreateMixIn:
         If you do **not** want to encrypt the contents of your backups, but still want to detect
         malicious tampering use an `authenticated` mode. It's like `repokey` minus encryption.
         To normally work with ``authenticated`` repos, you will need the passphrase, but
-        there is an emergency workaround, see ``BORG_WORKAROUNDS=authenticated_no_key`` docs.
+        there is an emergency workaround, see ``BORK_WORKAROUNDS=authenticated_no_key`` docs.
 
         Creating a related repository
         +++++++++++++++++++++++++++++
 
-        You can use ``borg rcreate --other-repo ORIG_REPO ...`` to create a related repository
+        You can use ``bork rcreate --other-repo ORIG_REPO ...`` to create a related repository
         that uses the same secret key material as the given other/original repository.
 
         By default, only the ID key and chunker secret will be the same (these are important

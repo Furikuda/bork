@@ -49,13 +49,13 @@ bork prune
     +-----------------------------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------+
     |                                                                             | ``-c SECONDS``, ``--checkpoint-interval SECONDS`` | write checkpoint every SECONDS seconds (Default: 1800)                                            |
     +-----------------------------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                                                                      |
+    | .. class:: bork-common-opt-ref                                                                                                                                                                                                      |
     |                                                                                                                                                                                                                                     |
     | :ref:`common_options`                                                                                                                                                                                                               |
     +-----------------------------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------+
     | **Archive filters** — Archive filters can be applied to repository targets.                                                                                                                                                         |
     +-----------------------------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------+
-    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN``      | only consider archive names matching the pattern. see "borg help match-archives".                 |
+    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN``      | only consider archive names matching the pattern. see "bork help match-archives".                 |
     +-----------------------------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------+
     |                                                                             | ``--oldest TIMESPAN``                             | consider archives between the oldest archive's timestamp and (oldest + TIMESPAN), e.g. 7d or 12m. |
     +-----------------------------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------+
@@ -102,7 +102,7 @@ bork prune
         |
 
     Archive filters
-        -a PATTERN, --match-archives PATTERN     only consider archive names matching the pattern. see "borg help match-archives".
+        -a PATTERN, --match-archives PATTERN     only consider archive names matching the pattern. see "bork help match-archives".
         --oldest TIMESPAN                        consider archives between the oldest archive's timestamp and (oldest + TIMESPAN), e.g. 7d or 12m.
         --newest TIMESPAN                        consider archives between the newest archive's timestamp and (newest - TIMESPAN), e.g. 7d or 12m.
         --older TIMESPAN                         consider archives older than (now - TIMESPAN), e.g. 7d oder 12m.
@@ -151,9 +151,9 @@ up to 7 most recent days with backups (days without backups do not count).
 The rules are applied from secondly to yearly, and backups selected by previous
 rules do not count towards those of later rules. The time that each backup
 starts is used for pruning purposes. Dates and times are interpreted in the local
-timezone of the system where borg prune runs, and weeks go from Monday to Sunday.
+timezone of the system where bork prune runs, and weeks go from Monday to Sunday.
 Specifying a negative number of archives to keep means that there is no limit.
-As of borg 1.2.0, borg will retain the oldest archive if any of the secondly,
+As of bork 1.2.0, bork will retain the oldest archive if any of the secondly,
 minutely, hourly, daily, weekly, monthly, or yearly rules was not otherwise able to
 meet its retention target. This enables the first chronological archive to continue
 aging until it is replaced by a newer archive that meets the retention criteria.
@@ -169,4 +169,4 @@ Please note that the "All archives" stats refer to the state after pruning.
 
 You can influence how the ``--list`` output is formatted by using the ``--short``
 option (less wide output) or by giving a custom format using ``--format`` (see
-the ``borg rlist`` description for more details about the format string).
+the ``bork rlist`` description for more details about the format string).

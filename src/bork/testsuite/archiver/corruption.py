@@ -55,7 +55,7 @@ def test_cache_files(archiver):
     cmd(archiver, "create", "test", "input")
     corrupt(os.path.join(archiver.cache_path, "files"))
     out = cmd(archiver, "create", "test1", "input")
-    # borg warns about the corrupt files cache, but then continues without files cache.
+    # bork warns about the corrupt files cache, but then continues without files cache.
     assert "files cache is corrupted" in out
 
 
@@ -101,4 +101,4 @@ def test_old_version_interfered(archiver):
     with open(config_path, "w") as fd:
         config.write(fd)
     out = cmd(archiver, "rinfo")
-    assert "Cache integrity data not available: old Borg version modified the cache." in out
+    assert "Cache integrity data not available: old Bork version modified the cache." in out

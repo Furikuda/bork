@@ -149,7 +149,7 @@ Continuous Integration
 All pull requests go through `GitHub Actions`_, which runs the tests on misc.
 Python versions and on misc. platforms as well as some additional checks.
 
-.. _GitHub Actions: https://github.com/borgbackup/borg/actions
+.. _GitHub Actions: https://github.com/borkbackup/bork/actions
 
 Output and Logging
 ------------------
@@ -351,7 +351,7 @@ Checklist:
 
   Note: the signature is not uploaded to PyPi any more, but we upload it to
   github releases.
-- Put binaries into dist/borg-OSNAME and sign them:
+- Put binaries into dist/bork-OSNAME and sign them:
 
   ::
 

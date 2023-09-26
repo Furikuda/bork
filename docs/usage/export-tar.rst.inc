@@ -27,7 +27,7 @@ bork export-tar
     +-------------------------------------------------------+---------------------------------------+-----------------------------------------------------------------------------------------------------------+
     |                                                       | ``--list``                            | output verbose list of items (files, dirs, ...)                                                           |
     +-------------------------------------------------------+---------------------------------------+-----------------------------------------------------------------------------------------------------------+
-    |                                                       | ``--tar-format FMT``                  | select tar format: BORG, PAX or GNU                                                                       |
+    |                                                       | ``--tar-format FMT``                  | select tar format: BORK, PAX or GNU                                                                       |
     +-------------------------------------------------------+---------------------------------------+-----------------------------------------------------------------------------------------------------------+
     | .. class:: bork-common-opt-ref                                                                                                                                                                            |
     |                                                                                                                                                                                                           |
@@ -67,7 +67,7 @@ bork export-tar
     options
         --tar-filter         filter program to pipe data through
         --list               output verbose list of items (files, dirs, ...)
-        --tar-format FMT     select tar format: BORG, PAX or GNU
+        --tar-format FMT     select tar format: BORK, PAX or GNU
 
 
     :ref:`common_options`
@@ -107,7 +107,7 @@ Depending on the ``-tar-format`` option, these formats are created:
 +--------------+---------------------------+----------------------------+
 | --tar-format | Specification             | Metadata                   |
 +--------------+---------------------------+----------------------------+
-| BORG         | BORG specific, like PAX   | all as supported by bork   |
+| BORK         | BORK specific, like PAX   | all as supported by bork   |
 +--------------+---------------------------+----------------------------+
 | PAX          | POSIX.1-2001 (pax) format | GNU + atime/ctime/mtime ns |
 +--------------+---------------------------+----------------------------+

@@ -31,7 +31,7 @@ from .crypto.file_integrity import IntegrityCheckedFile, FileIntegrityError
 
 logger = create_logger(__name__)
 
-MAGIC = b"BORG_SEG"
+MAGIC = b"BORK_SEG"
 MAGIC_LEN = len(MAGIC)
 
 TAG_PUT = 0
@@ -184,7 +184,7 @@ class Repository:
         self._location = Location("file://%s" % self.path)
         self.version = None
         # long-running repository methods which emit log or progress output are responsible for calling
-        # the ._send_log method periodically to get log and progress output transferred to the borg client
+        # the ._send_log method periodically to get log and progress output transferred to the bork client
         # in a timely manner, in case we have a RemoteRepository.
         # for local repositories ._send_log can be called also (it will just do nothing in that case).
         self._send_log = send_log_cb or (lambda: None)
@@ -885,7 +885,7 @@ class Repository:
                         # happen, and only if the FS materialization of these deletes is reordered or parts dropped
                         # this can happen.
                         # In this case it doesn't cause outright corruption, 'just' an index count mismatch, which
-                        # will be fixed by borg-check --repair.
+                        # will be fixed by bork-check --repair.
                         #
                         # Note that in this check the index state is the proxy for a "most definitely settled"
                         # repository state, i.e. the assumption is that *all* operations on segments <= index state

@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-DIFF" 1 "2023-09-14" "" "borg backup tool"
+.TH "BORK-DIFF" 1 "2023-09-14" "" "bork backup tool"
 .SH NAME
 bork-diff \- Diff contents of two archives
 .SH SYNOPSIS
@@ -121,13 +121,13 @@ Examples:
 .sp
 .nf
 .ft C
-$ borg diff \-\-format \(aq{content:30} {path}{NL}\(aq ArchiveFoo ArchiveBar
+$ bork diff \-\-format \(aq{content:30} {path}{NL}\(aq ArchiveFoo ArchiveBar
 modified:  +4.1 kB  \-1.0 kB    file\-diff
 \&...
 
 # {VAR:<NUMBER} \- pad to NUMBER columns left\-aligned.
 # {VAR:>NUMBER} \- pad to NUMBER columns right\-aligned.
-$ borg diff \-\-format \(aq{content:>30} {path}{NL}\(aq ArchiveFoo ArchiveBar
+$ bork diff \-\-format \(aq{content:>30} {path}{NL}\(aq ArchiveFoo ArchiveBar
    modified:  +4.1 kB  \-1.0 kB file\-diff
 \&...
 .ft P

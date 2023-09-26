@@ -1,14 +1,14 @@
 [project]
-name = "borgbackup"
+name = "borkbackup"
 dynamic = ["version"]
-authors = [{name="The Borg Collective (see AUTHORS file)"}]
+authors = [{name="The Bork Collective (see AUTHORS file)"}]
 maintainers = [
     {name="Thomas Waldmann", email="tw@waldmann-edv.de"},
 ]
 description = "Deduplicated, encrypted, authenticated and compressed backups"
 readme = "README.rst"
 requires-python = ">=3.9"
-keywords = ["backup", "borgbackup"]
+keywords = ["backup", "borkbackup"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -43,15 +43,15 @@ pyfuse3 = ["pyfuse3 >= 3.1.1"]
 nofuse = []
 
 [project.urls]
-"Homepage" = "https://borgbackup.org/"
-"Bug Tracker" = "https://github.com/borgbackup/borg/issues"
-"Documentation" = "https://borgbackup.readthedocs.io/"
-"Repository" = "https://github.com/borgbackup/borg"
-"Changelog" = "https://github.com/borgbackup/borg/blob/master/docs/changes.rst"
+"Homepage" = "https://borkbackup.org/"
+"Bug Tracker" = "https://github.com/borkbackup/bork/issues"
+"Documentation" = "https://borkbackup.readthedocs.io/"
+"Repository" = "https://github.com/borkbackup/bork"
+"Changelog" = "https://github.com/borkbackup/bork/blob/master/docs/changes.rst"
 
 [project.scripts]
-borg = "borg.archiver:main"
-borgfs = "borg.archiver:main"
+bork = "bork.archiver:main"
+borkfs = "bork.archiver:main"
 
 [tool.setuptools]
 # See also the MANIFEST.in file.
@@ -94,7 +94,7 @@ select = ["E", "F"]
 #   F405 undefined or defined from star imports
 #   F811 redef of unused var
 
-# borg code style guidelines:
+# bork code style guidelines:
 # Ignoring E203 due to https://github.com/PyCQA/pycodestyle/issues/373
 ignore = ["E203", "F405", "E402"]
 
@@ -125,15 +125,15 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 # ruff failures that appear with your change.
 [tool.ruff.per-file-ignores]
 "setup_docs.py" = ["E501"]
-"src/borg/archive.py" = ["E501"]
-"src/borg/archiver/help_cmd.py" = ["E501"]
-"src/borg/cache.py" = ["E501"]
-"src/borg/helpers/__init__.py" = ["F401"]
-"src/borg/platform/__init__.py" = ["F401"]
-"src/borg/testsuite/archiver/disk_full.py" = ["F811"]
-"src/borg/testsuite/archiver/return_codes.py" = ["F811"]
-"src/borg/testsuite/benchmark.py" = ["F811"]
-"src/borg/testsuite/platform.py" = ["F811"]
+"src/bork/archive.py" = ["E501"]
+"src/bork/archiver/help_cmd.py" = ["E501"]
+"src/bork/cache.py" = ["E501"]
+"src/bork/helpers/__init__.py" = ["F401"]
+"src/bork/platform/__init__.py" = ["F401"]
+"src/bork/testsuite/archiver/disk_full.py" = ["F811"]
+"src/bork/testsuite/archiver/return_codes.py" = ["F811"]
+"src/bork/testsuite/benchmark.py" = ["F811"]
+"src/bork/testsuite/platform.py" = ["F811"]
 
 [tool.pytest.ini_options]
 python_files = "testsuite/*.py"
@@ -146,7 +146,7 @@ python_version = "3.9"
 strict_optional = false
 local_partial_types = true
 show_error_codes = true
-files = "src/borg/**/*.py"
+files = "src/bork/**/*.py"
 
 [[tool.mypy.overrides]]
 module = [
@@ -154,7 +154,7 @@ module = [
     "llfuse",
     "pyfuse3",
     "trio",
-    "borg.crypto.low_level",
-    "borg.platform.*",
+    "bork.crypto.low_level",
+    "bork.platform.*",
 ]
 ignore_missing_imports = true

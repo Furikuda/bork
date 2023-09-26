@@ -20,8 +20,8 @@ What is BorkBackup?
 BorkBackup (short: Bork) is a deduplicating backup program.
 Optionally, it supports compression and authenticated encryption.
 
-The main goal of Borg is to provide an efficient and secure way to back up data.
-The data deduplication technique used makes Borg suitable for daily backups
+The main goal of Bork is to provide an efficient and secure way to back up data.
+The data deduplication technique used makes Bork suitable for daily backups
 since only changes are stored.
 The authenticated encryption technique makes it suitable for backups to targets not
 fully trusted.
@@ -113,9 +113,9 @@ Main features
 Easy to use
 ~~~~~~~~~~~
 
-For ease of use, set the BORG_REPO environment variable::
+For ease of use, set the BORK_REPO environment variable::
 
-    $ export BORG_REPO=/path/to/repo
+    $ export BORK_REPO=/path/to/repo
 
 Create a new backup repository (see ``bork rcreate --help`` for encryption options)::
 

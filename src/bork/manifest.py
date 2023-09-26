@@ -261,8 +261,8 @@ class Manifest:
         manifest.config = m.config
         # valid item keys are whatever is known in the repo or every key we know
         manifest.item_keys = ITEM_KEYS
-        manifest.item_keys |= frozenset(m.config.get("item_keys", []))  # new location of item_keys since borg2
-        manifest.item_keys |= frozenset(m.get("item_keys", []))  # legacy: borg 1.x: item_keys not in config yet
+        manifest.item_keys |= frozenset(m.config.get("item_keys", []))  # new location of item_keys since bork2
+        manifest.item_keys |= frozenset(m.get("item_keys", []))  # legacy: bork 1.x: item_keys not in config yet
         manifest.check_repository_compatibility(operations)
         return manifest
 

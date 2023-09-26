@@ -22,7 +22,7 @@ class RListMixIn:
         elif args.short:
             format = "{archive}{NL}"
         else:
-            format = os.environ.get("BORG_RLIST_FORMAT", "{archive:<36} {time} [{id}]{NL}")
+            format = os.environ.get("BORK_RLIST_FORMAT", "{archive:<36} {time} [{id}]{NL}")
         formatter = ArchiveFormatter(format, repository, manifest, manifest.key, iec=args.iec)
 
         output_data = []
@@ -65,7 +65,7 @@ class RListMixIn:
             # {VAR:NUMBER} - pad to NUMBER columns.
             # Strings are left-aligned, numbers are right-aligned.
             # Note: time columns except ``isomtime``, ``isoctime`` and ``isoatime`` cannot be padded.
-            $ borg rlist --format '{archive:36} {time} [{id}]{NL}' /path/to/repo
+            $ bork rlist --format '{archive:36} {time} [{id}]{NL}' /path/to/repo
             ArchiveFoo                           Thu, 2021-12-09 10:22:28 [0b8e9...3b274]
             ...
 

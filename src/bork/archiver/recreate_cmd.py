@@ -190,7 +190,7 @@ class RecreateMixIn:
             type=CompressionSpec,
             default=CompressionSpec("lz4"),
             action=Highlander,
-            help="select compression algorithm, see the output of the " '"borg help compression" command for details.',
+            help="select compression algorithm, see the output of the " '"bork help compression" command for details.',
         )
         archive_group.add_argument(
             "--chunker-params",

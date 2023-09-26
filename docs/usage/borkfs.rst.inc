@@ -125,7 +125,7 @@ supported by bork:
   replaced with runs of zeros by bork check ``--repair``) are not readable and
   return EIO (I/O error). Set this option to read such files.
 
-The BORG_MOUNT_DATA_CACHE_ENTRIES environment variable is meant for advanced users
+The BORK_MOUNT_DATA_CACHE_ENTRIES environment variable is meant for advanced users
 to tweak the performance. It sets the number of cached data chunks; additional
 memory usage can be up to ~8 MiB times this number. The default is the number
 of CPU cores.

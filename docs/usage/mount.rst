@@ -27,7 +27,7 @@ Examples
     # Archive filters are supported.
     # These are especially handy for the "versions view",
     # which does not support lazy processing of archives.
-    $ borg mount -o versions --match-archives 'sh:*-my-home' --last 10 /tmp/mymountpoint
+    $ bork mount -o versions --match-archives 'sh:*-my-home' --last 10 /tmp/mymountpoint
 
     # Exclusion options are supported.
     # These can speed up mounting and lower memory needs significantly.
@@ -47,7 +47,7 @@ borkfs
 
 .. Note::
 
-    ``borgfs`` will be automatically provided if you used a distribution
-    package, ``pip`` or ``setup.py`` to install Borg. Users of the
+    ``borkfs`` will be automatically provided if you used a distribution
+    package, ``pip`` or ``setup.py`` to install Bork. Users of the
     standalone binary will have to create a symlink manually (see
     :ref:`pyinstaller-binary`).

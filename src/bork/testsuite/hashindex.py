@@ -441,7 +441,7 @@ class HashIndexIntegrityTestCase(HashIndexDataTestCase):
 class HashIndexCompactTestCase(HashIndexDataTestCase):
     def index(self, num_entries, num_buckets, num_empty):
         index_data = io.BytesIO()
-        index_data.write(b"BORG2IDX")
+        index_data.write(b"BORK2IDX")
         # version
         index_data.write((2).to_bytes(4, "little"))
         # num_entries

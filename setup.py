@@ -30,7 +30,7 @@ cpu_threads = multiprocessing.cpu_count() if multiprocessing and multiprocessing
 
 # How the build process finds the system libs:
 #
-# 1. if BORG_{LIBXXX,OPENSSL}_PREFIX is set, it will use headers and libs from there.
+# 1. if BORK_{LIBXXX,OPENSSL}_PREFIX is set, it will use headers and libs from there.
 # 2. if not and pkg-config can locate the lib, the lib located by
 #    pkg-config will be used. We use the pkg-config tool via the pkgconfig
 #    python package, which must be installed before invoking setup.py.
@@ -156,7 +156,7 @@ if not on_rtd:
 
     crypto_extra_objects = []
     if is_win32:
-        crypto_ext_lib = lib_ext_kwargs(pc, "BORG_OPENSSL_PREFIX", "libcrypto", "libcrypto", ">=1.1.1", lib_subdir="")
+        crypto_ext_lib = lib_ext_kwargs(pc, "BORK_OPENSSL_PREFIX", "libcrypto", "libcrypto", ">=1.1.1", lib_subdir="")
     elif is_openbsd:
         # Use openssl (not libressl) because we need AES-OCB via EVP api. Link
         # it statically to avoid conflicting with shared libcrypto from the base
@@ -164,7 +164,7 @@ if not on_rtd:
         crypto_ext_lib = {"include_dirs": ["/usr/local/include/eopenssl30"]}
         crypto_extra_objects += ["/usr/local/lib/eopenssl30/libcrypto.a"]
     else:
-        crypto_ext_lib = lib_ext_kwargs(pc, "BORG_OPENSSL_PREFIX", "crypto", "libcrypto", ">=1.1.1")
+        crypto_ext_lib = lib_ext_kwargs(pc, "BORK_OPENSSL_PREFIX", "crypto", "libcrypto", ">=1.1.1")
 
     crypto_ext_kwargs = members_appended(
         dict(sources=[crypto_ll_source]),
@@ -175,26 +175,26 @@ if not on_rtd:
 
     compress_ext_kwargs = members_appended(
         dict(sources=[compress_source]),
-        lib_ext_kwargs(pc, "BORG_LIBLZ4_PREFIX", "lz4", "liblz4", ">= 1.7.0"),
-        lib_ext_kwargs(pc, "BORG_LIBZSTD_PREFIX", "zstd", "libzstd", ">= 1.3.0"),
+        lib_ext_kwargs(pc, "BORK_LIBLZ4_PREFIX", "lz4", "liblz4", ">= 1.7.0"),
+        lib_ext_kwargs(pc, "BORK_LIBZSTD_PREFIX", "zstd", "libzstd", ">= 1.3.0"),
         dict(extra_compile_args=cflags),
     )
 
     checksums_ext_kwargs = members_appended(
         dict(sources=[checksums_source]),
-        lib_ext_kwargs(pc, "BORG_LIBXXHASH_PREFIX", "xxhash", "libxxhash", ">= 0.7.3"),
+        lib_ext_kwargs(pc, "BORK_LIBXXHASH_PREFIX", "xxhash", "libxxhash", ">= 0.7.3"),
         dict(extra_compile_args=cflags),
     )
 
     # note: _chunker.c and _hashindex.c are relatively complex/large pieces of handwritten C code,
     # thus we undef NDEBUG for them, so the compiled code will contain and execute assert().
     ext_modules += [
-        Extension("borg.crypto.low_level", **crypto_ext_kwargs),
-        Extension("borg.compress", **compress_ext_kwargs),
-        Extension("borg.hashindex", [hashindex_source], extra_compile_args=cflags, undef_macros=["NDEBUG"]),
-        Extension("borg.item", [item_source], extra_compile_args=cflags),
-        Extension("borg.chunker", [chunker_source], extra_compile_args=cflags, undef_macros=["NDEBUG"]),
-        Extension("borg.checksums", **checksums_ext_kwargs),
+        Extension("bork.crypto.low_level", **crypto_ext_kwargs),
+        Extension("bork.compress", **compress_ext_kwargs),
+        Extension("bork.hashindex", [hashindex_source], extra_compile_args=cflags, undef_macros=["NDEBUG"]),
+        Extension("bork.item", [item_source], extra_compile_args=cflags),
+        Extension("bork.chunker", [chunker_source], extra_compile_args=cflags, undef_macros=["NDEBUG"]),
+        Extension("bork.checksums", **checksums_ext_kwargs),
     ]
 
     posix_ext = Extension("bork.platform.posix", [platform_posix_source], extra_compile_args=cflags)

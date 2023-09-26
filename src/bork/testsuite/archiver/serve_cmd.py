@@ -12,18 +12,18 @@ from ...helpers import get_runtime_dir
 
 
 def have_a_short_runtime_dir(mp):
-    # under pytest, we use BORG_BASE_DIR to keep stuff away from the user's normal borg dirs.
+    # under pytest, we use BORK_BASE_DIR to keep stuff away from the user's normal bork dirs.
     # this leads to a very long get_runtime_dir() path - too long for a socket file!
-    # thus, we override that again via BORG_RUNTIME_DIR to get a shorter path.
-    mp.setenv("BORG_RUNTIME_DIR", os.path.join(platformdirs.user_runtime_dir(), "pytest"))
+    # thus, we override that again via BORK_RUNTIME_DIR to get a shorter path.
+    mp.setenv("BORK_RUNTIME_DIR", os.path.join(platformdirs.user_runtime_dir(), "pytest"))
 
 
 @pytest.fixture
 def serve_socket(monkeypatch):
     have_a_short_runtime_dir(monkeypatch)
     # use a random unique socket filename, so tests can run in parallel.
-    socket_file = tempfile.mktemp(suffix=".sock", prefix="borg-", dir=get_runtime_dir())
-    with subprocess.Popen(["borg", "serve", f"--socket={socket_file}"]) as p:
+    socket_file = tempfile.mktemp(suffix=".sock", prefix="bork-", dir=get_runtime_dir())
+    with subprocess.Popen(["bork", "serve", f"--socket={socket_file}"]) as p:
         while not os.path.exists(socket_file):
             time.sleep(0.01)  # wait until socket server has started
         yield socket_file
@@ -42,7 +42,7 @@ def test_with_socket(serve_socket, tmpdir, monkeypatch):
     assert ret == 0
     assert "Repository ID: " in output
 
-    monkeypatch.setenv("BORG_DELETE_I_KNOW_WHAT_I_AM_DOING", "YES")
+    monkeypatch.setenv("BORK_DELETE_I_KNOW_WHAT_I_AM_DOING", "YES")
     ret, output = exec_cmd(f"--socket={serve_socket}", f"--repo=socket://{repo_path}", "rdelete")
     assert ret == 0
 

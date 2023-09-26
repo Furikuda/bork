@@ -6,8 +6,8 @@ Here is some example of bork benchmark crud output.
 I ran it on my laptop, Core i5-4200u, 8GB RAM, SATA SSD, Linux, ext4 fs.
 "src" as well as repo is local, on this SSD.
 
-$ BORG_PASSPHRASE=secret bork init --encryption repokey-blake2 repo
-$ BORG_PASSPHRASE=secret bork benchmark crud repo src
+$ BORK_PASSPHRASE=secret bork init --encryption repokey-blake2 repo
+$ BORK_PASSPHRASE=secret bork benchmark crud repo src
 
 C-Z-BIG         116.06 MB/s (10 * 100.00 MB all-zero files: 8.62s)
 R-Z-BIG         197.00 MB/s (10 * 100.00 MB all-zero files: 5.08s)

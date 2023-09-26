@@ -24,7 +24,7 @@ sudo chmod 755 /usr/local/bin/bork
 # Now check it: (possibly needs a terminal restart)
 bork -V
 
-# That's it! Now check out the other screencasts to see how to use borgbackup.
+# That's it! Now check out the other screencasts to see how to use borkbackup.
 }]
 
 # wget may be slow

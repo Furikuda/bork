@@ -209,12 +209,12 @@ def test_import_concatenated_tar_without_ignore_zeros(archivers, request):
     assert os.listdir("output") == ["file1"]
 
 
-def test_roundtrip_pax_borg(archivers, request):
+def test_roundtrip_pax_bork(archivers, request):
     archiver = request.getfixturevalue(archivers)
     create_test_files(archiver.input_path)
     cmd(archiver, "rcreate", "--encryption=none")
     cmd(archiver, "create", "src", "input")
-    cmd(archiver, "export-tar", "src", "simple.tar", "--tar-format=BORG")
+    cmd(archiver, "export-tar", "src", "simple.tar", "--tar-format=BORK")
     cmd(archiver, "import-tar", "dst", "simple.tar")
     with changedir(archiver.output_path):
         cmd(archiver, "extract", "dst")

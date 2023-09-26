@@ -131,7 +131,7 @@ class SecurityManager:
                 false_msg="Aborting.",
                 invalid_msg="Invalid answer, aborting.",
                 retry=False,
-                env_var_override="BORG_RELOCATED_REPO_ACCESS_IS_OK",
+                env_var_override="BORK_RELOCATED_REPO_ACCESS_IS_OK",
             ):
                 raise Cache.RepositoryAccessAborted()
             # adapt on-disk config immediately if the new location was accepted
@@ -205,7 +205,7 @@ class SecurityManager:
                 false_msg="Aborting.",
                 invalid_msg="Invalid answer, aborting.",
                 retry=False,
-                env_var_override="BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK",
+                env_var_override="BORK_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK",
             )
             if allow_access:
                 if warn_if_unencrypted:
@@ -250,7 +250,7 @@ def cache_dir(repository, path=None):
 
 
 def files_cache_name():
-    suffix = os.environ.get("BORG_FILES_CACHE_SUFFIX", "")
+    suffix = os.environ.get("BORK_FILES_CACHE_SUFFIX", "")
     return "files." + suffix if suffix else "files"
 
 
@@ -463,7 +463,7 @@ Total chunks: {0.total_chunks}
 
         # XXX: this should really be moved down to `hashindex.pyx`
         total_size, unique_size, total_unique_chunks, total_chunks = self.chunks.summarize()
-        # since borg 1.2 we have new archive metadata telling the total size per archive,
+        # since bork 1.2 we have new archive metadata telling the total size per archive,
         # so we can just sum up all archives to get the "all archives" stats:
         total_size = 0
         for archive_name in self.manifest.archives:
@@ -644,7 +644,7 @@ class LocalCache(CacheStatsMixin):
             if self._newest_cmtime is None:
                 # was never set because no files were modified/added
                 self._newest_cmtime = 2**63 - 1  # nanoseconds, good until y2262
-            ttl = int(os.environ.get("BORG_FILES_CACHE_TTL", 20))
+            ttl = int(os.environ.get("BORK_FILES_CACHE_TTL", 20))
             pi.output("Saving files cache")
             files_cache_logger.debug("FILES-CACHE-SAVE: starting...")
             with IntegrityCheckedFile(path=os.path.join(self.path, files_cache_name()), write=True) as fd:
@@ -652,7 +652,7 @@ class LocalCache(CacheStatsMixin):
                 for path_hash, item in self.files.items():
                     # Only keep files seen in this backup that are older than newest cmtime seen in this backup -
                     # this is to avoid issues with filesystem snapshots and cmtime granularity.
-                    # Also keep files from older backups that have not reached BORG_FILES_CACHE_TTL yet.
+                    # Also keep files from older backups that have not reached BORK_FILES_CACHE_TTL yet.
                     entry = FileCacheEntry(*msgpack.unpackb(item))
                     if (
                         entry.age == 0
@@ -858,7 +858,7 @@ class LocalCache(CacheStatsMixin):
                 )
                 archive_ids_to_names = get_archive_ids_to_names(archive_ids)
                 for archive_id, archive_name in archive_ids_to_names.items():
-                    pi.show(info=[remove_surrogates(archive_name)])  # legacy. borg2 always has pure unicode arch names.
+                    pi.show(info=[remove_surrogates(archive_name)])  # legacy. bork2 always has pure unicode arch names.
                     if self.do_cache:
                         if archive_id in cached_ids:
                             archive_chunk_idx = read_archive_index(archive_id, archive_name)
@@ -897,7 +897,7 @@ class LocalCache(CacheStatsMixin):
         self.begin_txn()
         with cache_if_remote(self.repository, decrypted_cache=self.repo_objs) as decrypted_repository:
             # TEMPORARY HACK:
-            # to avoid archive index caching, create a FILE named ~/.cache/borg/REPOID/chunks.archive.d -
+            # to avoid archive index caching, create a FILE named ~/.cache/bork/REPOID/chunks.archive.d -
             # this is only recommended if you have a fast, low latency connection to your repo (e.g. if repo is local).
             self.do_cache = os.path.isdir(archive_path)
             self.chunks = create_master_idx(self.chunks)

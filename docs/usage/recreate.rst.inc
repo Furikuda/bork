@@ -130,7 +130,7 @@ bork recreate
         --checkpoint-volume BYTES                     write checkpoint every BYTES bytes (Default: 0, meaning no volume based checkpointing)
         --comment COMMENT                             add a comment text to the archive
         --timestamp TIMESTAMP                         manually specify the archive creation date/time (yyyy-mm-ddThh:mm:ss[(+|-)HH:MM] format, (+|-)HH:MM is the UTC offset, default: local time zone). Alternatively, give a reference file/directory.
-        -C COMPRESSION, --compression COMPRESSION     select compression algorithm, see the output of the "borg help compression" command for details.
+        -C COMPRESSION, --compression COMPRESSION     select compression algorithm, see the output of the "bork help compression" command for details.
         --recompress MODE                             recompress data chunks according to `MODE` and ``--compression``. Possible modes are `if-different`: recompress if current compression is with a different compression algorithm or different level; `always`: recompress unconditionally; and `never`: do not recompress (use this option explicitly to prevent recompression). If no MODE is given, `if-different` will be used. Not passing --recompress is equivalent to "--recompress never".
         --chunker-params PARAMS                       rechunk using given chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, HASH_MASK_BITS, HASH_WINDOW_SIZE) or `default` to use the chunker defaults. default: do not rechunk
 

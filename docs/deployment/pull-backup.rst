@@ -211,7 +211,7 @@ socat
 In this setup a SSH connection from the backup server to the client is
 established that uses SSH reverse port forwarding to tunnel data
 transparently between UNIX domain sockets on the client and server and the socat
-tool to connect these with the borg client and server processes, respectively.
+tool to connect these with the bork client and server processes, respectively.
 
 The program socat has to be available on the backup server and on the client
 to be backed up.
@@ -278,7 +278,7 @@ forwarding can do this for us::
       Warning: remote port forwarding failed for listen path /run/bork/reponame.sock
 
    When you are done, you have to remove the socket file manually, otherwise
-   you may see an error like this when trying to execute borg commands::
+   you may see an error like this when trying to execute bork commands::
 
       Remote: YYYY/MM/DD HH:MM:SS socat[XXX] E connect(5, AF=1 "/run/bork/reponame.sock", 13): Connection refused
       Connection closed by remote host. Is bork working on the server?
@@ -290,9 +290,9 @@ data to the socket on *bork-server*.
 The next step is to tell bork on *bork-client* to use the unix socket to communicate with the
 ``bork serve`` command on *bork-server* via the socat socket instead of SSH::
 
-   bork-client:~$ export BORG_RSH="sh -c 'exec socat STDIO UNIX-CONNECT:/run/bork/reponame.sock'"
+   bork-client:~$ export BORK_RSH="sh -c 'exec socat STDIO UNIX-CONNECT:/run/bork/reponame.sock'"
 
-The default value for ``BORG_RSH`` is ``ssh``. By default Bork uses SSH to create
+The default value for ``BORK_RSH`` is ``ssh``. By default Bork uses SSH to create
 the connection to the backup server. Therefore Bork parses the repo URL
 and adds the server name (and other arguments) to the SSH command. Those
 arguments can not be handled by socat. We wrap the command with ``sh`` to
@@ -385,7 +385,7 @@ Initiating bork command execution from *bork-server* (e.g. init)::
     eval $(ssh-agent) > /dev/null
     ssh-add -q ~/.ssh/bork-client_key
     echo 'your secure bork key passphrase' | \
-      ssh -A -o StrictHostKeyChecking=no borkc@bork-client "BORG_PASSPHRASE=\$(cat) bork --rsh 'ssh -o StrictHostKeyChecking=no' init --encryption repokey ssh://borks@bork-server/~/repo"
+      ssh -A -o StrictHostKeyChecking=no borkc@bork-client "BORK_PASSPHRASE=\$(cat) bork --rsh 'ssh -o StrictHostKeyChecking=no' init --encryption repokey ssh://borks@bork-server/~/repo"
     kill "${SSH_AGENT_PID}"
   )
 
@@ -411,7 +411,7 @@ Parentheses are not needed when using a dedicated bash process.
   * The keys meant to be loaded into the agent must be specified explicitly, not from default locations.
   * The *bork-client*'s entry in *borks@bork-server:~/.ssh/authorized_keys* must be as restrictive as possible.
 
-``echo 'your secure bork key passphrase' | ssh -A -o StrictHostKeyChecking=no borkc@bork-client "BORG_PASSPHRASE=\$(cat) bork --rsh 'ssh -o StrictHostKeyChecking=no' init --encryption repokey ssh://borks@bork-server/~/repo"``
+``echo 'your secure bork key passphrase' | ssh -A -o StrictHostKeyChecking=no borkc@bork-client "BORK_PASSPHRASE=\$(cat) bork --rsh 'ssh -o StrictHostKeyChecking=no' init --encryption repokey ssh://borks@bork-server/~/repo"``
 
   Run the *bork init* command on *bork-client*.
 
@@ -443,7 +443,7 @@ A schematic approach is as follows
 
                                               1. Establish SSH remote forwarding  ----------->  SSH listen on local port
 
-                                                                                                2. Starting ``borg create`` establishes
+                                                                                                2. Starting ``bork create`` establishes
                                               3. SSH forwards to intermediate machine  <------- SSH connection to the local port
       4. Receives backup connection <-------  and further on to backup server
       via SSH
@@ -464,9 +464,9 @@ using ``localhost`` instead of ``mybackup``
 
 2. On machine ``myclient``
 
-``borg create -v --progress --stats ssh://backup@localhost:8022/home/backup/repos/myclient /``
+``bork create -v --progress --stats ssh://backup@localhost:8022/home/backup/repos/myclient /``
 
-Make sure to use port ``8022`` and ``localhost`` for the repository as this instructs borg on ``myclient`` to use the
+Make sure to use port ``8022`` and ``localhost`` for the repository as this instructs bork on ``myclient`` to use the
 remote forwarded ssh connection.
 
 SSH Keys
@@ -489,10 +489,10 @@ path and client-fqdn:
 
 ::
 
-  command="cd /home/backup/repos/<client fqdn>;borg serve --restrict-to-path /home/backup/repos/<client fqdn>"
+  command="cd /home/backup/repos/<client fqdn>;bork serve --restrict-to-path /home/backup/repos/<client fqdn>"
 
 
-All the additional security considerations for borg should be applied, see :ref:`central-backup-server` for some additional
+All the additional security considerations for bork should be applied, see :ref:`central-backup-server` for some additional
 hints.
 
 More information

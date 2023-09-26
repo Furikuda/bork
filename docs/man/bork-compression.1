@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-COMPRESSION" 1 "2023-09-14" "" "borg backup tool"
+.TH "BORK-COMPRESSION" 1 "2023-09-14" "" "bork backup tool"
 .SH NAME
 bork-compression \- Details regarding compression
 .SH DESCRIPTION
@@ -153,16 +153,16 @@ Examples:
 .sp
 .nf
 .ft C
-borg create \-\-compression lz4 REPO::ARCHIVE data
-borg create \-\-compression zstd REPO::ARCHIVE data
-borg create \-\-compression zstd,10 REPO::ARCHIVE data
-borg create \-\-compression zlib REPO::ARCHIVE data
-borg create \-\-compression zlib,1 REPO::ARCHIVE data
-borg create \-\-compression auto,lzma,6 REPO::ARCHIVE data
-borg create \-\-compression auto,lzma ...
-borg create \-\-compression obfuscate,110,none ...
-borg create \-\-compression obfuscate,3,auto,zstd,10 ...
-borg create \-\-compression obfuscate,2,zstd,6 ...
+bork create \-\-compression lz4 REPO::ARCHIVE data
+bork create \-\-compression zstd REPO::ARCHIVE data
+bork create \-\-compression zstd,10 REPO::ARCHIVE data
+bork create \-\-compression zlib REPO::ARCHIVE data
+bork create \-\-compression zlib,1 REPO::ARCHIVE data
+bork create \-\-compression auto,lzma,6 REPO::ARCHIVE data
+bork create \-\-compression auto,lzma ...
+bork create \-\-compression obfuscate,110,none ...
+bork create \-\-compression obfuscate,3,auto,zstd,10 ...
+bork create \-\-compression obfuscate,2,zstd,6 ...
 .ft P
 .fi
 .UNINDENT

@@ -88,7 +88,7 @@ class PruneMixIn:
         elif args.short:
             format = "{archive}"
         else:
-            format = os.environ.get("BORG_PRUNE_FORMAT", "{archive:<36} {time} [{id}]")
+            format = os.environ.get("BORK_PRUNE_FORMAT", "{archive:<36} {time} [{id}]")
         formatter = ArchiveFormatter(format, repository, manifest, manifest.key, iec=args.iec)
 
         checkpoint_re = r"\.checkpoint(\.\d+)?"
@@ -225,9 +225,9 @@ class PruneMixIn:
         The rules are applied from secondly to yearly, and backups selected by previous
         rules do not count towards those of later rules. The time that each backup
         starts is used for pruning purposes. Dates and times are interpreted in the local
-        timezone of the system where borg prune runs, and weeks go from Monday to Sunday.
+        timezone of the system where bork prune runs, and weeks go from Monday to Sunday.
         Specifying a negative number of archives to keep means that there is no limit.
-        As of borg 1.2.0, borg will retain the oldest archive if any of the secondly,
+        As of bork 1.2.0, bork will retain the oldest archive if any of the secondly,
         minutely, hourly, daily, weekly, monthly, or yearly rules was not otherwise able to
         meet its retention target. This enables the first chronological archive to continue
         aging until it is replaced by a newer archive that meets the retention criteria.
@@ -243,7 +243,7 @@ class PruneMixIn:
 
         You can influence how the ``--list`` output is formatted by using the ``--short``
         option (less wide output) or by giving a custom format using ``--format`` (see
-        the ``borg rlist`` description for more details about the format string).
+        the ``bork rlist`` description for more details about the format string).
         """
         )
         subparser = subparsers.add_parser(

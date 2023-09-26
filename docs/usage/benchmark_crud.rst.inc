@@ -52,7 +52,7 @@ Make sure you have free space there, you'll need about 1GB each (+ overhead).
 
 If your repository is encrypted and bork needs a passphrase to unlock the key, use::
 
-    BORG_PASSPHRASE=mysecret bork benchmark crud REPO PATH
+    BORK_PASSPHRASE=mysecret bork benchmark crud REPO PATH
 
 Measurements are done with different input file sizes and counts.
 The file contents are very artificial (either all zero or all random),

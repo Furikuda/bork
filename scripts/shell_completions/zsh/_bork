@@ -1,4 +1,4 @@
-#compdef bork borkfs -P -value-,BORG_*,-default-
+#compdef bork borkfs -P -value-,BORK_*,-default-
 
 # Zsh completion for Bork Backup 1.2.0a9 (2020-09-27).
 #
@@ -6,10 +6,10 @@
 #
 #   zstyle -e ':completion:*:*:bork-*:argument-rest:*' tag-order \
 #     '[[ $words[CURRENT] == -* ]] && reply=( "! archives archive-files" "-" )'
-#   zstyle ':completion:*:*:(bork|-value-,BORG_)*' sort false
+#   zstyle ':completion:*:*:(bork|-value-,BORK_)*' sort false
 #   zstyle ':completion:*:*:bork-config:argument-2:keys' list-grouped false
 #   zstyle ':completion:*:*:bork-*:*' gain-privileges true
-#   zstyle ':completion:*' fake-parameters 'BORG_REPO:scalar'
+#   zstyle ':completion:*' fake-parameters 'BORK_REPO:scalar'
 #
 # Custom styles:
 #
@@ -764,8 +764,8 @@ _bork_parameters() {
 
   case $name in
   (REPO)
-    local BORG_REPO
-    unset BORG_REPO
+    local BORK_REPO
+    unset BORK_REPO
     _bork_repository && ret=0
     ;;
   ((|NEW_)PASSPHRASE)
@@ -817,7 +817,7 @@ _bork_repository() {
   local -a alts opts qopts
   zparseopts -E -a opts S:
   qopts=( ${(q)opts} )
-  [[ -n $BORG_REPO ]] && alts+=( "default-repository: : __bork_default_repository $qopts" )
+  [[ -n $BORK_REPO ]] && alts+=( "default-repository: : __bork_default_repository $qopts" )
   alts+=( "cached-repositories:cached repositories:_bork_cached_repositories $qopts" )
   alts+=( 'directories: :_directories -r ":/ \t\n\-"' )
   alts+=( 'remote-repositories: : _bork_remote_repositories' )
@@ -829,7 +829,7 @@ __bork_default_repository() {
   local -a opts suf
   zparseopts -E -a opts S:
   (( $opts[(I)-S] )) && suf=( -S '' )
-  local -a default_repository=( "\:\::$BORG_REPO" )
+  local -a default_repository=( "\:\::$BORK_REPO" )
   _describe -t default-repository 'default repository' default_repository "$suf[@]"
 }
 
@@ -845,14 +845,14 @@ _bork_cached_repositories() {
     }
     p
   }'
-  local cachedir=${BORG_CACHE_DIR:-${XDG_CACHE_HOME:-${BORG_BASE_DIR:-$HOME}/.cache}/bork}
+  local cachedir=${BORK_CACHE_DIR:-${XDG_CACHE_HOME:-${BORK_BASE_DIR:-$HOME}/.cache}/bork}
   cached_repos=( ${(f)"$(_call_program -p cached-repositories sed -n -E ${(q)sed_script} \
     "${(q)cachedir}/*/config(#qN.om)" 2>/dev/null)"} )
 
   if [[ $compstate[quote] != (\'|\") ]]; then
-    # hide ~BORG_REPO and other scalars
-    local BORG_REPO
-    unset BORG_REPO sed_script cachedir
+    # hide ~BORK_REPO and other scalars
+    local BORK_REPO
+    unset BORK_REPO sed_script cachedir
     cached_repos=( "${(@D)cached_repos}" )
   fi
 
@@ -901,7 +901,7 @@ _bork_repository_or_archive() {
   if compset -P 1 '*::'; then
     local qrepo=$IPREFIX[1,-3]
     local -i def_repo=0
-    [[ -z $qrepo && -n $BORG_REPO ]] && qrepo=${(q)BORG_REPO} && def_repo=1
+    [[ -z $qrepo && -n $BORK_REPO ]] && qrepo=${(q)BORK_REPO} && def_repo=1
     if [[ -n $qrepo ]]; then
 
       if (( ! def_repo )); then
@@ -954,8 +954,8 @@ _bork_archive() {
   local qrepo=$1
 
   if [[ -z $qrepo ]]; then
-    if [[ -n $BORG_REPO ]]; then
-      qrepo=${(q)BORG_REPO}
+    if [[ -n $BORK_REPO ]]; then
+      qrepo=${(q)BORK_REPO}
     else
       _message 'no repository specified'
       return 1
@@ -1649,7 +1649,7 @@ _bork() {
       fi
       ;;
     esac
-  elif [[ $service == (#b)-value-,BORG_(*),-default- ]]; then
+  elif [[ $service == (#b)-value-,BORK_(*),-default- ]]; then
     _bork_parameters $match[1] && ret=0
   elif ! _call_function ret _$service; then
     _default && ret=0

@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-MOUNT" 1 "2023-09-14" "" "borg backup tool"
+.TH "BORK-MOUNT" 1 "2023-09-14" "" "bork backup tool"
 .SH NAME
 bork-mount \- Mount archive or an entire repository as a FUSE filesystem
 .SH SYNOPSIS
@@ -76,15 +76,15 @@ Additional mount options supported by bork:
 view of the files in the archives. EXPERIMENTAL, layout may change in future.
 .IP \(bu 2
 \fBallow_damaged_files\fP: by default damaged files (where missing chunks were
-replaced with runs of zeros by \fBborg check \-\-repair\fP) are not readable and
+replaced with runs of zeros by \fBbork check \-\-repair\fP) are not readable and
 return EIO (I/O error). Set this option to read such files.
 .IP \(bu 2
 \fBignore_permissions\fP: for security reasons the \fBdefault_permissions\fP mount
-option is internally enforced by borg. \fBignore_permissions\fP can be given to
+option is internally enforced by bork. \fBignore_permissions\fP can be given to
 not enforce \fBdefault_permissions\fP\&.
 .UNINDENT
 .sp
-The BORG_MOUNT_DATA_CACHE_ENTRIES environment variable is meant for advanced users
+The BORK_MOUNT_DATA_CACHE_ENTRIES environment variable is meant for advanced users
 to tweak the performance. It sets the number of cached data chunks; additional
 memory usage can be up to ~8 MiB times this number. The default is the number
 of CPU cores.

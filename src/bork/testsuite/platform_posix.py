@@ -7,7 +7,7 @@ pytestmark = skipif_not_posix
 
 
 def test_posix_swidth_ascii():
-    assert swidth("borg") == 4
+    assert swidth("bork") == 4
 
 
 def test_posix_swidth_cjk():
@@ -15,4 +15,4 @@ def test_posix_swidth_cjk():
 
 
 def test_posix_swidth_mixed():
-    assert swidth("borgバックアップ") == 4 + 6 * 2
+    assert swidth("borkバックアップ") == 4 + 6 * 2

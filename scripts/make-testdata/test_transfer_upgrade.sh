@@ -1,16 +1,16 @@
-# this scripts uses borg 1.2 to generate test data for "borg transfer --upgrader=From12To20"
-BORG=./borg-1.2.2
+# this scripts uses bork 1.2 to generate test data for "bork transfer --upgrader=From12To20"
+BORK=./bork-1.2.2
 # on macOS, gnu tar is available as gtar
 TAR=gtar
-SRC=/tmp/borgtest
-ARCHIVE=`pwd`/src/borg/testsuite/archiver/repo12.tar.gz
+SRC=/tmp/borktest
+ARCHIVE=`pwd`/src/bork/testsuite/archiver/repo12.tar.gz
 
-export BORG_REPO=/tmp/repo12
-META=$BORG_REPO/test_meta
-export BORG_PASSPHRASE="waytooeasyonlyfortests"
-export BORG_DELETE_I_KNOW_WHAT_I_AM_DOING=YES
+export BORK_REPO=/tmp/repo12
+META=$BORK_REPO/test_meta
+export BORK_PASSPHRASE="waytooeasyonlyfortests"
+export BORK_DELETE_I_KNOW_WHAT_I_AM_DOING=YES
 
-$BORG init -e repokey 2> /dev/null
+$BORK init -e repokey 2> /dev/null
 mkdir $META
 
 # archive1
@@ -43,8 +43,8 @@ chflags nodump with_flags
 
 popd >/dev/null
 
-$BORG create ::archive1 $SRC
-$BORG list ::archive1 --json-lines > $META/archive1_list.json
+$BORK create ::archive1 $SRC
+$BORK list ::archive1 --json-lines > $META/archive1_list.json
 rm -rf $SRC
 
 # archive2
@@ -60,17 +60,17 @@ sudo chown 54321:54321 root_stuff/strange_uid_gid
 
 popd >/dev/null
 
-$BORG create ::archive2 $SRC
-$BORG list ::archive2 --json-lines > $META/archive2_list.json
+$BORK create ::archive2 $SRC
+$BORK list ::archive2 --json-lines > $META/archive2_list.json
 sudo rm -rf $SRC/root_stuff
 rm -rf $SRC
 
 
-$BORG --version > $META/borg_version.txt
-$BORG list :: --json > $META/repo_list.json
+$BORK --version > $META/bork_version.txt
+$BORK list :: --json > $META/repo_list.json
 
-pushd $BORG_REPO >/dev/null
+pushd $BORK_REPO >/dev/null
 $TAR czf $ARCHIVE .
 popd >/dev/null
 
-$BORG delete :: 2> /dev/null
+$BORK delete :: 2> /dev/null

@@ -10,7 +10,7 @@ This section provides information about security and corruption issues.
 Pre-1.2.5 archives spoofing vulnerability (CVE-2023-36811)
 ----------------------------------------------------------
 
-A flaw in the cryptographic authentication scheme in Borg allowed an attacker to
+A flaw in the cryptographic authentication scheme in Bork allowed an attacker to
 fake archives and potentially indirectly cause backup data loss in the repository.
 
 The attack requires an attacker to be able to
@@ -25,33 +25,33 @@ Creating plausible fake archives may be feasible for empty or small archives,
 but is unlikely for large archives.
 
 The fix enforces checking the TAM authentication tag of archives at critical
-places. Borg now considers archives without TAM as garbage or an attack.
+places. Bork now considers archives without TAM as garbage or an attack.
 
 We are not aware of others having discovered, disclosed or exploited this vulnerability.
 
-Below, if we speak of borg 1.2.6, we mean a borg version >= 1.2.6 **or** a
-borg version that has the relevant security patches for this vulnerability applied
+Below, if we speak of bork 1.2.6, we mean a bork version >= 1.2.6 **or** a
+bork version that has the relevant security patches for this vulnerability applied
 (could be also an older version in that case).
 
 Steps you must take to upgrade a repository:
 
-1. Upgrade all clients using this repository to borg 1.2.6.
-   Note: it is not required to upgrade a server, except if the server-side borg
-   is also used as a client (and not just for "borg serve").
+1. Upgrade all clients using this repository to bork 1.2.6.
+   Note: it is not required to upgrade a server, except if the server-side bork
+   is also used as a client (and not just for "bork serve").
 
-   Do **not** run ``borg check`` with borg > 1.2.4 before completing the upgrade steps.
+   Do **not** run ``bork check`` with bork > 1.2.4 before completing the upgrade steps.
 
-2. Run ``BORG_WORKAROUNDS=ignore_invalid_archive_tam borg info --debug <repo> 2>&1 | grep TAM | grep -i manifest``.
+2. Run ``BORK_WORKAROUNDS=ignore_invalid_archive_tam bork info --debug <repo> 2>&1 | grep TAM | grep -i manifest``.
 
    a) If you get "TAM-verified manifest", continue with 3.
    b) If you get "Manifest TAM not found and not required", run
-      ``borg upgrade --tam --force <repository>`` *on every client*.
+      ``bork upgrade --tam --force <repository>`` *on every client*.
 
-3. Run ``BORG_WORKAROUNDS=ignore_invalid_archive_tam borg list --format='{name} {time} tam:{tam}{NL}' <repo>``.
+3. Run ``BORK_WORKAROUNDS=ignore_invalid_archive_tam bork list --format='{name} {time} tam:{tam}{NL}' <repo>``.
    "tam:verified" means that the archive has a valid TAM authentication.
-   "tam:none" is expected as output for archives created by borg <1.0.9.
-   "tam:none" is also expected for archives resulting from a borg rename
-   or borg recreate operation (see #7791).
+   "tam:none" is expected as output for archives created by bork <1.0.9.
+   "tam:none" is also expected for archives resulting from a bork rename
+   or bork recreate operation (see #7791).
    "tam:none" could also come from archives created by an attacker.
    You should verify that "tam:none" archives are authentic and not malicious
    (== have good content, have correct timestamp, can be extracted successfully).
@@ -60,12 +60,12 @@ Steps you must take to upgrade a repository:
    and just trust in everything being OK.
 
 4. If there are no tam:none archives left at this point, you can skip this step.
-   Run ``BORG_WORKAROUNDS=ignore_invalid_archive_tam borg upgrade --archives-tam <repo>``.
+   Run ``BORK_WORKAROUNDS=ignore_invalid_archive_tam bork upgrade --archives-tam <repo>``.
    This will unconditionally add a correct archive TAM to all archives not having one.
-   ``borg check`` would consider TAM-less or invalid-TAM archives as garbage or a potential attack.
-   To see that all archives now are "tam:verified" run: ``borg list --format='{name} {time} tam:{tam}{NL}' <repo>``
+   ``bork check`` would consider TAM-less or invalid-TAM archives as garbage or a potential attack.
+   To see that all archives now are "tam:verified" run: ``bork list --format='{name} {time} tam:{tam}{NL}' <repo>``
 
-5. Please note that you should never use BORG_WORKAROUNDS=ignore_invalid_archive_tam
+5. Please note that you should never use BORK_WORKAROUNDS=ignore_invalid_archive_tam
    for normal production operations - it is only needed once to get the archives in a
    repository into a good state. All archives have a valid TAM now.
 
@@ -317,7 +317,7 @@ New features:
 - benchmark cpu: display benchmarks of cpu bound stuff
 - export-tar: new --tar-format=PAX (default: GNU)
 - import-tar/export-tar: can use PAX format for ctime and atime support
-- import-tar/export-tar: --tar-format=BORG: roundtrip ALL item metadata, #5830
+- import-tar/export-tar: --tar-format=BORK: roundtrip ALL item metadata, #5830
 - repository: create and use version 2 repos only for now
 - repository: implement PUT2: header crc32, overall xxh64, #1704
 
@@ -407,14 +407,14 @@ Compatibility notes:
   - option "--list-format" (2017-10), use "--format"
   - option "--ignore-inode" (2017-09), use "--files-cache" w/o "inode"
   - option "--no-files-cache" (2017-09), use "--files-cache=disabled"
-- removed BORG_HOSTNAME_IS_UNIQUE env var.
+- removed BORK_HOSTNAME_IS_UNIQUE env var.
   to use bork you must implement one of these 2 scenarios:
 
   - 1) the combination of FQDN and result of uuid.getnode() must be unique
        and stable (this should be the case for almost everybody, except when
        having duplicate FQDN *and* MAC address or all-zero MAC address)
   - 2) if you are aware that 1) is not the case for you, you must set
-       BORG_HOST_ID env var to something unique.
+       BORK_HOST_ID env var to something unique.
 - exit with 128 + signal number, #5161.
   if you have scripts expecting rc == 2 for a signal exit, you need to update
   them to check for >= 128.
@@ -502,7 +502,7 @@ Fixes:
 - benchmark crud: make sure cleanup of bork-test-data files/dir happens, #5630
 - do not show archive name in repository-related error msgs, #6014
 - prettier error msg (no stacktrace) if exclude file is missing, #5734
-- do not require BORG_CONFIG_DIR if BORG_{SECURITY,KEYS}_DIR are set, #5979
+- do not require BORK_CONFIG_DIR if BORK_{SECURITY,KEYS}_DIR are set, #5979
 - fix pyinstaller detection for dir-mode, #5897
 - atomically create the CACHE_TAG file, #6028
 - deal with the SaveFile/SyncFile race, docs, see #6056 708a5853
@@ -517,7 +517,7 @@ New features:
 - create: add retry_erofs workaround for O_NOATIME issue on volume shadow copies in WSL1, #6024
 - create: allow --files-cache=size (this is potentially dangerous, use on your own risk), #5686
 - import-tar: implement import-tar to complement export-tar, #2233
-- implement BORG_SELFTEST env variable (can be carefully used to speedup bork hosting), #5871
+- implement BORK_SELFTEST env variable (can be carefully used to speedup bork hosting), #5871
 - key export: print key if path is '-' or not given, #6092
 - list --format: Add command_line to format keys
 
@@ -544,7 +544,7 @@ Other changes:
 - shell completions:
 
   - update shell completions to 1.1.17, #5923
-  - remove BORG_LIBC completion, since 9914968 bork no longer uses find_library().
+  - remove BORK_LIBC completion, since 9914968 bork no longer uses find_library().
 - docs:
 
   - fixed readme.rst irc webchat link (we use libera chat now, not freenode)
@@ -570,7 +570,7 @@ Other changes:
   - add note about grandfather-father-son backup retention policy / rotation scheme, #6006
   - permissions note rewritten to make it less confusing
   - create github security policy
-  - remove leftovers of BORG_HOSTNAME_IS_UNIQUE
+  - remove leftovers of BORK_HOSTNAME_IS_UNIQUE
   - excluded parent dir's metadata can't restore. (#6062)
   - if parent dir is not extracted, we do not have its metadata
   - clarify who starts the remote agent
@@ -678,7 +678,7 @@ Version 1.2.0b1 (2020-12-06)
 
 Fixes:
 
-- BORG_CACHE_DIR crashing bork if empty, atomic handling of
+- BORK_CACHE_DIR crashing bork if empty, atomic handling of
   recursive directory creation, #5216
 - fix --dry-run and --stats coexistence, #5415
 - allow EIO with warning when trying to hardlink, #4336
@@ -696,8 +696,8 @@ New features:
 - 'obfuscate' pseudo compressor obfuscates compressed chunk size in repo
 - add pyfuse3 (successor of llfuse) as an alternative lowlevel fuse
   implementation to llfuse (deprecated), #5407.
-  FUSE implementation can be switched via env var BORG_FUSE_IMPL.
-- allow appending to the files cache filename with BORG_FILES_CACHE_SUFFIX
+  FUSE implementation can be switched via env var BORK_FUSE_IMPL.
+- allow appending to the files cache filename with BORK_FILES_CACHE_SUFFIX
 - create: implement --stdin-mode, --stdin-user and --stdin-group, #5333
 
 Other changes:
@@ -760,7 +760,7 @@ Fixes:
 New features:
 
 - --content-from-command: create archive using stdout of given command, #5174
-- allow key-import + BORG_KEY_FILE to create key files
+- allow key-import + BORK_KEY_FILE to create key files
 - build directory-based binary for macOS to avoid Gatekeeper delays
 
 Other changes:
@@ -850,11 +850,11 @@ Other changes:
 
   - improve description of path variables
   - document how to delete data completely, #2929
-  - add FAQ about Borg config dir, #4941
+  - add FAQ about Bork config dir, #4941
   - add docs about errors not printed as JSON, #4073
   - update usage_general.rst.inc
-  - added "Will move with BORG_CONFIG_DIR variable unless specified." to BORG_SECURITY_DIR info.
-  - put BORG_SECURITY_DIR immediately below BORG_CONFIG_DIR (and moved BORG_CACHE_DIR up before them).
+  - added "Will move with BORK_CONFIG_DIR variable unless specified." to BORK_SECURITY_DIR info.
+  - put BORK_SECURITY_DIR immediately below BORK_CONFIG_DIR (and moved BORK_CACHE_DIR up before them).
   - add paragraph regarding cache security assumptions, #4900
   - tell about bork cache security precautions
   - add FAQ describing difference between a local repo vs. repo on a server.
@@ -926,9 +926,9 @@ New features:
 
 - minimal native Windows support, see windows readme (work in progress)
 - create: first ctrl-c (SIGINT) triggers checkpoint and abort, #4606
-- new BORG_WORKAROUNDS mechanism, basesyncfile, #4710
+- new BORK_WORKAROUNDS mechanism, basesyncfile, #4710
 - remove WSL autodetection. if WSL still has this problem, you need to
-  set BORG_WORKAROUNDS=basesyncfile in the bork process environment to
+  set BORK_WORKAROUNDS=basesyncfile in the bork process environment to
   work around it.
 - support xxh64 checksum in addition to the hashlib hashes in bork list
 - enable placeholder usage in all extra archive arguments
@@ -1058,9 +1058,9 @@ New features:
 Other changes:
 
 - redo stale lock handling, #3986
-  drop BORG_HOSTNAME_IS_UNIQUE (please use BORG_HOST_ID if needed).
+  drop BORK_HOSTNAME_IS_UNIQUE (please use BORK_HOST_ID if needed).
   bork now always assumes it has a unique host id - either automatically
-  from fqdn plus uuid.getnode() or overridden via BORG_HOST_ID.
+  from fqdn plus uuid.getnode() or overridden via BORK_HOST_ID.
 - docs:
 
   - added Alpine Linux to distribution list
@@ -1178,7 +1178,7 @@ Compatibility notes:
     See the --files-cache docs for details.
 - 1.1.11 removes WSL autodetection (Windows 10 Subsystem for Linux).
   If WSL still has a problem with sync_file_range, you need to set
-  BORG_WORKAROUNDS=basesyncfile in the bork process environment to
+  BORK_WORKAROUNDS=basesyncfile in the bork process environment to
   work around the WSL issue.
 - 1.1.14 changes return codes due to a bug fix:
   In case you have scripts expecting rc == 2 for a signal exit, you need to
@@ -1208,7 +1208,7 @@ Fixes:
 - fix hardlinkable file type check, #6037
 - do not show archive name in error msgs referring to the repository, #6023
 - prettier error msg (no stacktrace) if exclude file is missing, #5734
-- do not require BORG_CONFIG_DIR if BORG_{SECURITY,KEYS}_DIR are set, #5979
+- do not require BORK_CONFIG_DIR if BORK_{SECURITY,KEYS}_DIR are set, #5979
 - atomically create the CACHE_TAG file, #6028
 - deal with the SaveFile/SyncFile race, docs, see #6176 5c5b59bc9
 - avoid expanding path into LHS of formatting operation + tests, #6064 #6063
@@ -1221,7 +1221,7 @@ Fixes:
 - repo::archive location placeholder expansion fixes, #5826, #5998
 
   - use expanded location for log output
-  - support placeholder expansion for BORG_REPO env var
+  - support placeholder expansion for BORK_REPO env var
 - respect umask for created directory and file modes, #6400
 - safer truncate_and_unlink implementation
 
@@ -1286,7 +1286,7 @@ Other changes:
   - fix/update cygwin package requirements
   - impact of deleting path/to/repo/nonce, #5858
   - warn about tampered server nonce
-  - mention BORG_FILES_CACHE_SUFFIX as alternative to BORG_FILES_CACHE_TTL, #5602
+  - mention BORK_FILES_CACHE_SUFFIX as alternative to BORK_FILES_CACHE_TTL, #5602
   - add a troubleshooting note about "is not a valid repository" to the FAQ
 - vagrant / CI / testing:
 
@@ -1325,7 +1325,7 @@ Compatibility notes:
     See the --files-cache docs for details.
 - 1.1.11 removes WSL autodetection (Windows 10 Subsystem for Linux).
   If WSL still has a problem with sync_file_range, you need to set
-  BORG_WORKAROUNDS=basesyncfile in the bork process environment to
+  BORK_WORKAROUNDS=basesyncfile in the bork process environment to
   work around the WSL issue.
 - 1.1.14 changes return codes due to a bug fix:
   In case you have scripts expecting rc == 2 for a signal exit, you need to
@@ -1337,7 +1337,7 @@ Fixes:
 
 - pyinstaller dir-mode: fix pyi detection / LIBPATH treatment, #5897
 - handle crash due to kill stale lock race, #5828
-- fix BORG_CACHE_DIR crashing bork if empty, #5216
+- fix BORK_CACHE_DIR crashing bork if empty, #5216
 - create --dry-run: fix display of kept tagfile, #5834
 - fix missing parameter in "did not consistently fail" msg, #5822
 - missing / healed chunks: always tell chunk ID, #5704
@@ -1345,12 +1345,12 @@ Fixes:
 
 New features:
 
-- implement BORG_SELFTEST env variable, #5871.
+- implement BORK_SELFTEST env variable, #5871.
   this can be used to accelerate bork startup a bit. not recommended for
   normal usage, but bork mass hosters with a lot of bork invocations can
   save some resources with this. on my laptop, this saved ~100ms cpu time
   (sys+user) per bork command invocation.
-- implement BORG_LIBC env variable to give the libc filename, #5870.
+- implement BORK_LIBC env variable to give the libc filename, #5870.
   you can use this if a bork does not find your libc.
 - check: add progress indicator for archive check.
 - allow --files-cache=size (not recommended, make sure you know what you do)
@@ -1471,7 +1471,7 @@ Fixes:
 New features:
 
 - create: implement --stdin-mode, --stdin-user and --stdin-group, #5333
-- allow appending the files cache filename with BORG_FILES_CACHE_SUFFIX env var
+- allow appending the files cache filename with BORK_FILES_CACHE_SUFFIX env var
 
 Other changes:
 
@@ -1542,7 +1542,7 @@ Other changes:
 
   - misc. updates / fixes
   - support repositories in fish tab completion, #5256
-  - complete $BORG_RECREATE_I_KNOW_WHAT_I_AM_DOING
+  - complete $BORK_RECREATE_I_KNOW_WHAT_I_AM_DOING
   - rewrite zsh completion:
 
     - completion for almost all optional and positional arguments
@@ -1595,7 +1595,7 @@ Compatibility notes:
     See the --files-cache docs for details.
 - 1.1.11 removes WSL autodetection (Windows 10 Subsystem for Linux).
   If WSL still has a problem with sync_file_range, you need to set
-  BORG_WORKAROUNDS=basesyncfile in the bork process environment to
+  BORK_WORKAROUNDS=basesyncfile in the bork process environment to
   work around the WSL issue.
 
 Fixes:
@@ -1667,7 +1667,7 @@ Compatibility notes:
     See the --files-cache docs for details.
 - 1.1.11 removes WSL autodetection (Windows 10 Subsystem for Linux).
   If WSL still has a problem with sync_file_range, you need to set
-  BORG_WORKAROUNDS=basesyncfile in the bork process environment to
+  BORK_WORKAROUNDS=basesyncfile in the bork process environment to
   work around the WSL issue.
 
 Fixes:
@@ -1704,7 +1704,7 @@ Fixes:
 New features:
 
 - enable placeholder usage in all extra archive arguments
-- new BORG_WORKAROUNDS mechanism, basesyncfile, #4710
+- new BORK_WORKAROUNDS mechanism, basesyncfile, #4710
 - recreate: support --timestamp option, #4745
 - support platforms without os.link (e.g. Android with Termux), #4901.
   if we don't have os.link, we just extract another copy instead of making a hardlink.
@@ -1720,7 +1720,7 @@ Other:
 - docs:
 
   - changelog: add advisory about hashindex_set bug #4829
-  - better describe BORG_SECURITY_DIR, BORG_CACHE_DIR, #4919
+  - better describe BORK_SECURITY_DIR, BORK_CACHE_DIR, #4919
   - infos about cache security assumptions, #4900
   - add FAQ describing difference between a local repo vs. repo on a server.
   - document how to test exclusion patterns without performing an actual backup
@@ -1867,7 +1867,7 @@ Fixes:
 
 New features:
 
-- add --rsh command line option to complement BORG_RSH env var, #1701
+- add --rsh command line option to complement BORK_RSH env var, #1701
 - init: --make-parent-dirs parent1/parent2/repo_dir, #4235
 
 Other:
@@ -1883,7 +1883,7 @@ Other:
 - docs:
 
   - add FAQ regarding free disk space check, #3905
-  - update BORG_PASSCOMMAND example and clarify variable expansion, #4249
+  - update BORK_PASSCOMMAND example and clarify variable expansion, #4249
   - FAQ regarding change of compression settings, #4222
   - add note about BSD flags to changelog, #4246
   - improve logging in example automation script
@@ -1911,7 +1911,7 @@ New features:
 
 - create: added PATH::archive output on INFO log level
 - read a passphrase from a file descriptor specified in the
-  BORG_PASSPHRASE_FD environment variable.
+  BORK_PASSPHRASE_FD environment variable.
 
 Other:
 
@@ -1959,7 +1959,7 @@ Fixes:
 New features:
 
 - init: add warning to store both key and passphrase at safe place(s)
-- BORG_HOST_ID env var to work around all-zero MAC address issue, #3985
+- BORK_HOST_ID env var to work around all-zero MAC address issue, #3985
 - bork debug dump-repo-objs --ghost (dump everything from segment files,
   including deleted or superseded objects or commit tags)
 - bork debug search-repo-objs (search in repo objects for hex bytes or strings)
@@ -2033,7 +2033,7 @@ Other changes:
 - update bundled lz4 code to 1.8.2, #3870
 - docs:
 
-  - describe what BORG_LIBZSTD_PREFIX does
+  - describe what BORK_LIBZSTD_PREFIX does
   - fix and deduplicate encryption quickstart docs, #3776
 - vagrant:
 
@@ -2084,7 +2084,7 @@ New features:
 
 - create: implement --stdin-name, #3533
 - add chunker_params to bork archive info (--json)
-- BORG_SHOW_SYSINFO=no to hide system information from exceptions
+- BORK_SHOW_SYSINFO=no to hide system information from exceptions
 
 Other changes:
 
@@ -2165,7 +2165,7 @@ New features:
 
 - added zstd compression. try it!
 - added placeholder {reverse-fqdn} for fqdn in reverse notation
-- added BORG_BASE_DIR environment variable, #3338
+- added BORK_BASE_DIR environment variable, #3338
 
 Other changes:
 
@@ -2188,8 +2188,8 @@ Other changes:
   - bundle lz4 1.8.0 (requirement: >= 1.7.0 / r129)
   - bundle zstd 1.3.2 (requirement: >= 1.3.0)
   - blake2 was already bundled
-  - rename BORG_LZ4_PREFIX env var to BORG_LIBLZ4_PREFIX for better consistency:
-    we also have BORG_LIBB2_PREFIX and BORG_LIBZSTD_PREFIX now.
+  - rename BORK_LZ4_PREFIX env var to BORK_LIBLZ4_PREFIX for better consistency:
+    we also have BORK_LIBB2_PREFIX and BORK_LIBZSTD_PREFIX now.
   - add prefer_system_lib* = True settings to setup.py - by default the build
     will prefer a shared library over the bundled code, if library and headers
     can be found and meet the minimum requirements.
@@ -2221,7 +2221,7 @@ New features:
 
 - mount: added exclusion group options and paths, #2138
 
-  Reused some code to support similar options/paths as borg extract offers -
+  Reused some code to support similar options/paths as bork extract offers -
   making good use of these to mount only a smaller subset of dirs/files can
   speed up mounting a lot and also will consume way less memory.
 
@@ -2277,7 +2277,7 @@ Fixes:
 New features:
 
 - bash, zsh and fish shell auto-completions, see scripts/shell_completions/
-- added BORG_CONFIG_DIR env var, #3083
+- added BORK_CONFIG_DIR env var, #3083
 
 Other changes:
 
@@ -2312,7 +2312,7 @@ Compatibility notes:
   default because this functionality (esp. if it happened by error or
   unexpected) was rather confusing and unexplainable at first to users.
   If you want that "do not back up NODUMP-flagged files" behaviour, use:
-  borg create --exclude-nodump ...
+  bork create --exclude-nodump ...
 - If you are on Linux and do not need bsdflags archived, consider using
   ``--nobsdflags`` with ``bork create`` to avoid additional syscalls and
   speed up backup creation.
@@ -2336,7 +2336,7 @@ Fixes:
 - move --no-files-cache from common to bork create options, #3146
 - fix detection of non-local path (failed on ..filename), #3108
 - logging with fileConfig: set json attr on "bork" logger, #3114
-- fix crash with relative BORG_KEY_FILE, #3197
+- fix crash with relative BORK_KEY_FILE, #3197
 - show excluded dir with "x" for tagged dirs / caches, #3189
 
 New features:
@@ -2586,14 +2586,14 @@ Compatibility notes:
 
 - Repositories in the "repokey" and "repokey-blake2" modes with an empty passphrase
   are now treated as unencrypted repositories for security checks (e.g.
-  BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK).
+  BORK_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK).
 
   Previously there would be no prompts nor messages if an unknown repository
   in one of these modes with an empty passphrase was encountered. This would
   allow an attacker to swap a repository, if one assumed that the lack of
-  password prompts was due to a set BORG_PASSPHRASE.
+  password prompts was due to a set BORK_PASSPHRASE.
 
-  Since the "trick" does not work if BORG_PASSPHRASE is set, this does generally
+  Since the "trick" does not work if BORK_PASSPHRASE is set, this does generally
   not affect scripts.
 
 - Repositories in the "authenticated" mode are now treated as the unencrypted
@@ -2622,7 +2622,7 @@ New features:
   and key types are now checked for almost all non-debug commands. #2487
 - implement storage quotas, #2517
 - serve: add --restrict-to-repository, #2589
-- BORG_PASSCOMMAND: use external tool providing the key passphrase, #2573
+- BORK_PASSCOMMAND: use external tool providing the key passphrase, #2573
 - bork export-tar, #2519
 - list: --json-lines instead of --json for archive contents, #2439
 - add --debug-profile option (and also "bork debug convert-profile"), #2473
@@ -2732,7 +2732,7 @@ Other changes:
   - usage: avoid bash highlight, [options] instead of <options>
   - usage: add benchmark page
   - helpers: truncate_and_unlink doc
-  - don't suggest to leak BORG_PASSPHRASE
+  - don't suggest to leak BORK_PASSPHRASE
   - internals: columnize rather long ToC [webkit fixup]
     internals: manifest & feature flags
   - internals: more HashIndex details
@@ -2787,7 +2787,7 @@ Version 1.1.0b5 (2017-04-30)
 
 Compatibility notes:
 
-- BORG_HOSTNAME_IS_UNIQUE is now on by default.
+- BORK_HOSTNAME_IS_UNIQUE is now on by default.
 - removed --compression-from feature
 - recreate: add --recompress flag, unify --always-recompress and
   --recompress
@@ -2976,7 +2976,7 @@ Other changes:
   - datas: enc: correct factual error -- no nonce involved there.
   - make internals.rst an index page and edit it a bit
   - add "Cryptography in Bork" and "Remote RPC protocol security" sections
-  - document BORG_HOSTNAME_IS_UNIQUE, #2087
+  - document BORK_HOSTNAME_IS_UNIQUE, #2087
   - FAQ by categories as proposed by @anarcat in #1802
   - FAQ: update Which file types, attributes, etc. are *not* preserved?
   - development: new branching model for git repository
@@ -3011,18 +3011,18 @@ New features:
 - new CRC32 implementations that are much faster than the zlib one used previously, #1970
 - add blake2b key modes (use blake2b as MAC). This links against system libb2,
   if possible, otherwise uses bundled code
-- automatically remove stale locks - set BORG_HOSTNAME_IS_UNIQUE env var
+- automatically remove stale locks - set BORK_HOSTNAME_IS_UNIQUE env var
   to enable stale lock killing. If set, stale locks in both cache and
   repository are deleted. #562 #1253
 - bork info <repo>: print general repo information, #1680
 - bork check --first / --last / --sort / --prefix, #1663
 - bork mount --first / --last / --sort / --prefix, #1542
 - implement "health" item formatter key, #1749
-- BORG_SECURITY_DIR to remember security related infos outside the cache.
+- BORK_SECURITY_DIR to remember security related infos outside the cache.
   Key type, location and manifest timestamp checks now survive cache
   deletion. This also means that you can now delete your cache and avoid
   previous warnings, since Bork can still tell it's safe.
-- implement BORG_NEW_PASSPHRASE, #1768
+- implement BORK_NEW_PASSPHRASE, #1768
 
 Other changes:
 
@@ -3067,7 +3067,7 @@ Other changes:
   - fix byte range error in test, #1740
   - use monkeypatch to set env vars, but only on pytest based tests.
   - point XDG_*_HOME to temp dirs for tests, #1714
-  - remove all BORG_* env vars from the outer environment
+  - remove all BORK_* env vars from the outer environment
 
 
 Version 1.1.0b2 (2016-10-01)
@@ -3188,7 +3188,7 @@ New features:
 - --show-version: shows/logs the bork version, #725
 - added --debug-topic for granular debug logging, #1447
 - use atomic file writing/updating for configuration and key files, #1377
-- BORG_KEY_FILE environment variable, #1001
+- BORK_KEY_FILE environment variable, #1001
 - self-testing module, #970
 
 
@@ -3249,12 +3249,12 @@ Bug fixes:
   "default_permissions" is now enforced by bork by default to let the
   kernel check uid/gid/mode based permissions.
   "ignore_permissions" can be given not to enforce "default_permissions".
-- xattrs: fix borg exception handling on ENOSPC error, #3808.
+- xattrs: fix bork exception handling on ENOSPC error, #3808.
 
 New features:
 
 - Read a passphrase from a file descriptor specified in the
-  BORG_PASSPHRASE_FD environment variable.
+  BORK_PASSPHRASE_FD environment variable.
 
 Other changes:
 
@@ -3294,7 +3294,7 @@ Bug fixes:
 - fix detection of non-local path, #3108
 - fix LDLP restoration for subprocesses, #3077
 - fix subprocess environments (xattr module's fakeroot version check,
-  bork umount, BORG_PASSCOMMAND), #3050
+  bork umount, BORK_PASSCOMMAND), #3050
 - remote: deal with partial lines, #2637
 - get rid of datetime.isoformat, use safe parse_timestamp to parse
   timestamps, #2994
@@ -3404,7 +3404,7 @@ Bug fixes:
   - do pre-mount checks before opening repository
   - check llfuse is installed before asking for passphrase
 - bork rename: expand placeholders, #2386
-- bork serve: fix forced command lines containing BORG_* env vars
+- bork serve: fix forced command lines containing BORK_* env vars
 - fix error msg, it is --keep-within, not --within
 - fix bork key/debug/benchmark crashing without subcommand, #2240
 - chunker: fix invalid use of types, don't do uint32_t >> 32
@@ -3412,7 +3412,7 @@ Bug fixes:
 
 New features:
 
-- added BORG_PASSCOMMAND environment variable, #2573
+- added BORK_PASSCOMMAND environment variable, #2573
 - add minimal version of in repository mandatory feature flags, #2134
 
   This should allow us to make sure older bork versions can be cleanly
@@ -3453,7 +3453,7 @@ Other changes:
     cryptohash for dedupe, so people don't worry, #2390
   - add hint about chunker params to bork upgrade docs, #2421
   - clarify bork upgrade docs, #2436
-  - quickstart: delete problematic BORG_PASSPHRASE use, #2623
+  - quickstart: delete problematic BORK_PASSPHRASE use, #2623
   - faq: specify "using inline shell scripts"
   - document pattern denial of service, #2624
 - tests:
@@ -3551,8 +3551,8 @@ Other changes:
 - docs:
 
   - language clarification - VM backup FAQ
-  - borg create: document how to back up stdin, #2013
-  - borg upgrade: fix incorrect title levels
+  - bork create: document how to back up stdin, #2013
+  - bork upgrade: fix incorrect title levels
   - add CVE numbers for issues fixed in 1.0.9, #2106
 - fix typos (taken from Debian package patch)
 - remote: include data hexdump in "unexpected RPC data" error message
@@ -3577,13 +3577,13 @@ Security fixes:
   take.
 
   CVE-2016-10099 was assigned to this vulnerability.
-- borg check: When rebuilding the manifest (which should only be needed very rarely)
+- bork check: When rebuilding the manifest (which should only be needed very rarely)
   duplicate archive names would be handled on a "first come first serve" basis,
   potentially opening an attack vector to replace archives.
 
   Example: were there 2 archives named "foo" in a repo (which can not happen
-  under normal circumstances, because borg checks if the name is already used)
-  and a "borg check" recreated a (previously lost) manifest, the first of the
+  under normal circumstances, because bork checks if the name is already used)
+  and a "bork check" recreated a (previously lost) manifest, the first of the
   archives it encountered would be in the manifest. The second archive is also
   still in the repo, but not referenced in the manifest, in this case. If the
   second archive is the "correct" one (and was previously referenced from the
@@ -3756,7 +3756,7 @@ Bug fixes:
 
 New features:
 
-- add "borg key export" / "borg key import" commands, #1555, so users are able
+- add "bork key export" / "bork key import" commands, #1555, so users are able
   to back up / restore their encryption keys more easily.
 
   Supported formats are the keyfile format used by bork internally and a
@@ -3792,7 +3792,7 @@ Other changes:
   - fix inconsistency in FAQ (pv-wrapper).
   - fix second block in "Easy to use" section not showing on GitHub, #1576
   - add bestpractices badge
-  - link reference docs and faq about BORG_FILES_CACHE_TTL, #1561
+  - link reference docs and faq about BORK_FILES_CACHE_TTL, #1561
   - improve bork info --help, explain size infos, #1532
   - add release signing key / security contact to README, #1560
   - add contribution guidelines for developers
@@ -3913,12 +3913,12 @@ Bug fixes:
 
 - fix repo lock deadlocks (related to lock upgrade), #1220
 - catch unpacker exceptions, resync, #1351
-- fix bork break-lock ignoring BORG_REPO env var, #1324
+- fix bork break-lock ignoring BORK_REPO env var, #1324
 - files cache performance fixes (fixes unnecessary re-reading/chunking/
   hashing of unmodified files for some use cases):
 
   - fix unintended file cache eviction, #1430
-  - implement BORG_FILES_CACHE_TTL, update FAQ, raise default TTL from 10
+  - implement BORK_FILES_CACHE_TTL, update FAQ, raise default TTL from 10
     to 20, #1338
 - FUSE:
 
@@ -3934,7 +3934,7 @@ New features:
   wanting to offer multiple bork versions and for clients wanting to choose
   a specific server bork version), #1392:
 
-  - add BORG_VERSION environment variable before executing "bork serve" via ssh
+  - add BORK_VERSION environment variable before executing "bork serve" via ssh
   - add new placeholder {borkversion}
   - substitute placeholders in --remote-path
 
@@ -4053,7 +4053,7 @@ New features:
   This was included because it was a simple change (append-only functionality
   was already present via repository config file) and makes better security now
   practically usable.
-- BORG_REMOTE_PATH environment variable, #1258
+- BORK_REMOTE_PATH environment variable, #1258
   This was included because it was a simple change (--remote-path cli option
   was already present) and makes bork much easier to use if you need it.
 - Repository: cleanup incomplete transaction on "no space left" condition.
@@ -4249,7 +4249,7 @@ Bug fixes:
 - test suite: reset exit code of persistent archiver, #844
 - RemoteRepository: clean up pipe if remote open() fails
 - Remote: don't print tracebacks for Error exceptions handled downstream, #792
-- if BORG_PASSPHRASE is present but wrong, don't prompt for password, but fail
+- if BORK_PASSPHRASE is present but wrong, don't prompt for password, but fail
   instead, #791
 - ArchiveChecker: move "orphaned objects check skipped" to INFO log level, #826
 - fix capitalization, add ellipses, change log level to debug for 2 messages,
@@ -4326,7 +4326,7 @@ Compatibility notes:
   if you used the old --chunker-params default value (or if you did not use
   --chunker-params option at all) and you'd like to continue using small
   chunks (and you accept the huge resource usage that comes with that), just
-  use explicitly borg create --chunker-params=10,23,16,4095.
+  use explicitly bork create --chunker-params=10,23,16,4095.
 - archive timestamps: the 'time' timestamp now refers to archive creation
   start time (was: end time), the new 'time_end' timestamp refers to archive
   creation end time. This might affect prune if your backups take a long time.
@@ -4372,7 +4372,7 @@ Bug fixes:
 
 Other changes:
 
-- it is now possible to use "pip install borgbackup[fuse]" to
+- it is now possible to use "pip install borkbackup[fuse]" to
   install the llfuse dependency automatically, using the correct version requirement
   for it. you still need to care about having installed the FUSE / build
   related OS package first, though, so that building llfuse can succeed.
@@ -4391,7 +4391,7 @@ Other changes:
   - add a hint about the dev headers needed when installing from source
   - add examples for delete (and handle delete after list, before prune), #656
   - update example for bork create -v --stats (use iso datetime format), #663
-  - added example to BORG_RSH docs
+  - added example to BORK_RSH docs
   - "connection closed by remote": add FAQ entry and point to issue #636
 
 

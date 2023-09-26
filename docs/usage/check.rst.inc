@@ -25,13 +25,13 @@ bork check
     +-----------------------------------------------------------------------------+----------------------------------------------+---------------------------------------------------------------------------------------------------+
     |                                                                             | ``--max-duration SECONDS``                   | do only a partial repo check for max. SECONDS seconds (Default: unlimited)                        |
     +-----------------------------------------------------------------------------+----------------------------------------------+---------------------------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                                                                 |
+    | .. class:: bork-common-opt-ref                                                                                                                                                                                                 |
     |                                                                                                                                                                                                                                |
     | :ref:`common_options`                                                                                                                                                                                                          |
     +-----------------------------------------------------------------------------+----------------------------------------------+---------------------------------------------------------------------------------------------------+
     | **Archive filters** — Archive filters can be applied to repository targets.                                                                                                                                                    |
     +-----------------------------------------------------------------------------+----------------------------------------------+---------------------------------------------------------------------------------------------------+
-    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN`` | only consider archive names matching the pattern. see "borg help match-archives".                 |
+    |                                                                             | ``-a PATTERN``, ``--match-archives PATTERN`` | only consider archive names matching the pattern. see "bork help match-archives".                 |
     +-----------------------------------------------------------------------------+----------------------------------------------+---------------------------------------------------------------------------------------------------+
     |                                                                             | ``--sort-by KEYS``                           | Comma-separated list of sorting keys; valid keys are: timestamp, name, id; default is: timestamp  |
     +-----------------------------------------------------------------------------+----------------------------------------------+---------------------------------------------------------------------------------------------------+
@@ -142,7 +142,7 @@ About repair mode
 +++++++++++++++++
 
 The check command is a readonly task by default. If any corruption is found,
-Borg will report the issue and proceed with checking. To actually repair the
+Bork will report the issue and proceed with checking. To actually repair the
 issues found, pass ``--repair``.
 
 .. note::
@@ -153,7 +153,7 @@ issues found, pass ``--repair``.
     dealing with. **BE VERY CAREFUL!**
 
 Pursuant to the previous warning it is also highly recommended to test the
-reliability of the hardware running Borg with stress testing software. This
+reliability of the hardware running Bork with stress testing software. This
 especially includes storage and memory testers. Unreliable hardware might lead
 to additional data loss.
 
@@ -161,7 +161,7 @@ It is highly recommended to create a backup of your repository before running
 in repair mode (i.e. running it with ``--repair``).
 
 Repair mode will attempt to fix any corruptions found. Fixing corruptions does
-not mean recovering lost data: Borg can not magically restore data lost due to
+not mean recovering lost data: Bork can not magically restore data lost due to
 e.g. a hardware failure. Repairing a repository means sacrificing some data
 for the sake of the repository as a whole and the remaining data. Hence it is,
 by definition, a potentially lossy task.
@@ -188,11 +188,11 @@ the ``extract`` command will distinctly warn about it. The FUSE filesystem
 created by the ``mount`` command will reject reading such a "zero-patched"
 file unless a special mount option is given.
 
-As mentioned earlier, Borg might be able to "heal" a "zero-patched" file in
+As mentioned earlier, Bork might be able to "heal" a "zero-patched" file in
 repair mode, if all its previously lost chunks reappear (e.g. via a later
-backup). This is achieved by Borg not only keeping track of the all-zero
+backup). This is achieved by Bork not only keeping track of the all-zero
 replacement chunks, but also by keeping metadata about the lost chunks. In
-repair mode Borg will check whether a previously lost chunk reappeared and will
+repair mode Bork will check whether a previously lost chunk reappeared and will
 replace the all-zero replacement chunk by the reappeared chunk. If all lost
 chunks of a "zero-patched" file reappear, this effectively "heals" the file.
 Consequently, if lost chunks were repaired earlier, it is advised to run

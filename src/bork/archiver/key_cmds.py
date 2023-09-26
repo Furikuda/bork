@@ -217,13 +217,13 @@ class KeysMixIn:
         proceeding to the next line. For this format PATH must not be given.
 
         For repositories using keyfile encryption, the key file which ``bork key
-        import`` writes to depends on several factors. If the ``BORG_KEY_FILE``
+        import`` writes to depends on several factors. If the ``BORK_KEY_FILE``
         environment variable is set and non-empty, ``bork key import`` creates
-        or overwrites that file named by ``$BORG_KEY_FILE``. Otherwise, ``bork
-        key import`` searches in the ``$BORG_KEYS_DIR`` directory for a key file
+        or overwrites that file named by ``$BORK_KEY_FILE``. Otherwise, ``bork
+        key import`` searches in the ``$BORK_KEYS_DIR`` directory for a key file
         associated with the repository. If a key file is found in
-        ``$BORG_KEYS_DIR``, ``bork key import`` overwrites it; otherwise, ``bork
-        key import`` creates a new key file in ``$BORG_KEYS_DIR``.
+        ``$BORK_KEYS_DIR``, ``bork key import`` overwrites it; otherwise, ``bork
+        key import`` creates a new key file in ``$BORK_KEYS_DIR``.
         """
         )
         subparser = key_parsers.add_parser(

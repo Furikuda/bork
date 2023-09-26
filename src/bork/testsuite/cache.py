@@ -109,7 +109,7 @@ class TestCacheSynchronizer:
 
     def make_index_with_refcount(self, refcount):
         index_data = io.BytesIO()
-        index_data.write(b"BORG2IDX")
+        index_data.write(b"BORK2IDX")
         # version
         index_data.write((2).to_bytes(4, "little"))
         # num_entries
@@ -171,7 +171,7 @@ class TestAdHocCache:
 
     @pytest.fixture
     def key(self, repository, monkeypatch):
-        monkeypatch.setenv("BORG_PASSPHRASE", "test")
+        monkeypatch.setenv("BORK_PASSPHRASE", "test")
         key = AESOCBRepoKey.create(repository, TestKey.MockArgs())
         return key
 

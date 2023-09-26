@@ -776,7 +776,7 @@ def test_unknown_integrity_version(repository):
     # for now an unknown integrity data version is ignored and not an error.
     integrity_path = os.path.join(repository.path, "integrity.1")
     with open(integrity_path, "r+b") as fd:
-        msgpack.pack({b"version": 4.7}, fd)  # borg only understands version 2
+        msgpack.pack({b"version": 4.7}, fd)  # bork only understands version 2
         fd.truncate()
     with repository:
         # no issues accessing the repository
@@ -1040,7 +1040,7 @@ def test_hints_behaviour(repository):
 
 def _get_mock_args():
     class MockArgs:
-        remote_path = "borg"
+        remote_path = "bork"
         umask = 0o077
         debug_topics = []
         rsh = None
@@ -1126,33 +1126,33 @@ def test_remote_ssh_cmd(remote_repository):
             "1234",
             "user@example.com",
         ]
-        os.environ["BORG_RSH"] = "ssh --foo"
+        os.environ["BORK_RSH"] = "ssh --foo"
         assert remote_repository.ssh_cmd(Location("ssh://example.com/foo")) == ["ssh", "--foo", "example.com"]
 
 
-def test_remote_borg_cmd(remote_repository):
+def test_remote_bork_cmd(remote_repository):
     with remote_repository:
-        assert remote_repository.borg_cmd(None, testing=True) == [sys.executable, "-m", "borg", "serve"]
+        assert remote_repository.bork_cmd(None, testing=True) == [sys.executable, "-m", "bork", "serve"]
         args = _get_mock_args()
         # XXX without next line we get spurious test fails when using pytest-xdist, root cause unknown:
         logging.getLogger().setLevel(logging.INFO)
         # note: test logger is on info log level, so --info gets added automagically
-        assert remote_repository.borg_cmd(args, testing=False) == ["borg", "serve", "--info"]
-        args.remote_path = "borg-0.28.2"
-        assert remote_repository.borg_cmd(args, testing=False) == ["borg-0.28.2", "serve", "--info"]
+        assert remote_repository.bork_cmd(args, testing=False) == ["bork", "serve", "--info"]
+        args.remote_path = "bork-0.28.2"
+        assert remote_repository.bork_cmd(args, testing=False) == ["bork-0.28.2", "serve", "--info"]
         args.debug_topics = ["something_client_side", "repository_compaction"]
-        assert remote_repository.borg_cmd(args, testing=False) == [
-            "borg-0.28.2",
+        assert remote_repository.bork_cmd(args, testing=False) == [
+            "bork-0.28.2",
             "serve",
             "--info",
             "--debug-topic=bork.debug.repository_compaction",
         ]
         args = _get_mock_args()
         args.storage_quota = 0
-        assert remote_repository.borg_cmd(args, testing=False) == ["borg", "serve", "--info"]
+        assert remote_repository.bork_cmd(args, testing=False) == ["bork", "serve", "--info"]
         args.storage_quota = 314159265
-        assert remote_repository.borg_cmd(args, testing=False) == [
-            "borg",
+        assert remote_repository.bork_cmd(args, testing=False) == [
+            "bork",
             "serve",
             "--info",
             "--storage-quota=314159265",

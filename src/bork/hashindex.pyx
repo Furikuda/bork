@@ -74,9 +74,9 @@ def hashindex_variant(fn):
     """peek into an index file and find out what it is"""
     with open(fn, 'rb') as f:
         magic = f.read(8)  # MAGIC_LEN
-    if magic == b'BORG_IDX':
+    if magic == b'BORK_IDX':
         return 1  # legacy
-    if magic == b'BORG2IDX':
+    if magic == b'BORK2IDX':
         return 2
     if magic == b'12345678':  # used by unit tests
         return 2  # just return the current variant

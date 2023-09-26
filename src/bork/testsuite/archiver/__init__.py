@@ -37,7 +37,7 @@ from ...xattr import get_all
 RK_ENCRYPTION = "--encryption=repokey-aes-ocb"
 KF_ENCRYPTION = "--encryption=keyfile-chacha20-poly1305"
 
-# this points to src/borg/archiver directory (which is small and has only a few files)
+# this points to src/bork/archiver directory (which is small and has only a few files)
 src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "archiver"))
 src_file = "archiver/__init__.py"  # relative path of one file in src_dir
 
@@ -99,12 +99,12 @@ def exec_cmd(*args, archiver=None, fork=False, exe=None, input=b"", binary_outpu
 # check if the binary "bork.exe" is available (for local testing a symlink to virtualenv/bin/bork should do)
 try:
     exec_cmd("help", exe="bork.exe", fork=True)
-    BORG_EXES = ["python", "binary"]
+    BORK_EXES = ["python", "binary"]
 except FileNotFoundError:
-    BORG_EXES = ["python"]
+    BORK_EXES = ["python"]
 
 
-@pytest.fixture(params=BORG_EXES)
+@pytest.fixture(params=BORK_EXES)
 def cmd_fixture(request):
     if request.param == "python":
         exe = None
@@ -120,7 +120,7 @@ def cmd_fixture(request):
 
 
 def generate_archiver_tests(metafunc, kinds: str):
-    # Generate tests for different scenarios: local repository, remote repository, and using the borg binary.
+    # Generate tests for different scenarios: local repository, remote repository, and using the bork binary.
     archivers = []
     for kind in kinds.split(","):
         if kind == "local":
@@ -215,7 +215,7 @@ def create_test_files(input_path, create_hardlinks=True):
         # ironically, due to the way how fakeroot works, comparing FUSE file xattrs to orig file xattrs
         # will FAIL if fakeroot supports xattrs, thus we only set the xattr if XATTR_FAKEROOT is False.
         # This is because fakeroot with xattr-support does not propagate xattrs of the underlying file
-        # into "fakeroot space". Because the xattrs exposed by borgfs are these of an underlying file
+        # into "fakeroot space". Because the xattrs exposed by borkfs are these of an underlying file
         # (from fakeroots point of view) they are invisible to the test process inside the fakeroot.
         xattr.setxattr(fn, b"user.foo", b"bar")
         xattr.setxattr(fn, b"user.empty", b"")
@@ -349,7 +349,7 @@ def _assert_test_keep_tagged(archiver):
 
 
 def check_cache(archiver):
-    # First run a regular borg check
+    # First run a regular bork check
     cmd(archiver, "check")
     # Then check that the cache on disk matches exactly what's in the repo.
     with open_repository(archiver) as repository:
@@ -414,7 +414,7 @@ def _assert_dirs_equal_cmp(diff, ignore_flags=False, ignore_xattrs=False, ignore
             d1[4] = None
         if not stat.S_ISCHR(s2.st_mode) and not stat.S_ISBLK(s2.st_mode):
             d2[4] = None
-        # If utime isn't fully supported, borg can't set mtime.
+        # If utime isn't fully supported, bork can't set mtime.
         # Therefore, we shouldn't test it in that case.
         if is_utime_fully_supported():
             # Older versions of llfuse do not support ns precision properly
@@ -484,7 +484,7 @@ def wait_for_mountstate(mountpoint, *, mounted, timeout=5):
 @contextmanager
 def fuse_mount(archiver, mountpoint=None, *options, fork=True, os_fork=False, **kwargs):
     # For a successful mount, `fork = True` is required for
-    # the borg mount daemon to work properly or the tests
+    # the bork mount daemon to work properly or the tests
     # will just freeze. Therefore, if argument `fork` is not
     # specified, the default value is `True`, regardless of
     # `FORK_DEFAULT`. However, leaving the possibility to run
@@ -493,7 +493,7 @@ def fuse_mount(archiver, mountpoint=None, *options, fork=True, os_fork=False, **
     # mount a read-only repo.
     #    `os_fork = True` is needed for testing (the absence of)
     # a race condition of the Lock during lock migration when
-    # borg mount (local repo) is daemonizing (#4953). This is another
+    # bork mount (local repo) is daemonizing (#4953). This is another
     # example where we need `fork = False`, because the test case
     # needs an OS fork, not a spawning of the fuse mount.
     # `fork = False` is implied if `os_fork = True`.
@@ -513,12 +513,12 @@ def fuse_mount(archiver, mountpoint=None, *options, fork=True, os_fork=False, **
                 os._exit(0)
             # The grandchild process.
             try:
-                cmd(archiver, *args, fork=False, **kwargs)  # borg mount not spawning.
+                cmd(archiver, *args, fork=False, **kwargs)  # bork mount not spawning.
             finally:
                 # This should never be reached, since it daemonizes,
                 # and the grandchild process exits before cmd() returns.
                 # However, just in case...
-                print("Fatal: borg mount did not daemonize properly. Force exiting.", file=sys.stderr, flush=True)
+                print("Fatal: bork mount did not daemonize properly. Force exiting.", file=sys.stderr, flush=True)
                 os._exit(0)
     else:
         cmd(archiver, *args, fork=fork, **kwargs)

@@ -48,11 +48,11 @@ def test_transfer_upgrade(archivers, request):
     if archiver.get_kind() in ["remote", "binary"]:
         pytest.skip("only works locally")
 
-    # test upgrading a borg 1.2 repo to borg 2
+    # test upgrading a bork 1.2 repo to bork 2
     # testing using json is a bit problematic because parseformat (used for json dumping)
     # already tweaks the values a bit for better printability (like e.g. using the empty
     # string for attributes that are not present).
-    # borg 1.2 repo dir contents, created by: scripts/make-testdata/test_transfer_upgrade.sh
+    # bork 1.2 repo dir contents, created by: scripts/make-testdata/test_transfer_upgrade.sh
     repo12_tar = os.path.join(os.path.dirname(__file__), "repo12.tar.gz")
     repo12_tzoffset = "+01:00"  # timezone used to create the repo/archives/json dumps inside the tar file
 
@@ -72,8 +72,8 @@ def test_transfer_upgrade(archivers, request):
     other_repo1 = f"--other-repo={original_location}1"
     archiver.repository_location = original_location + "2"
 
-    assert os.environ.get("BORG_PASSPHRASE") == "waytooeasyonlyfortests"
-    os.environ["BORG_TESTONLY_WEAKEN_KDF"] = "0"  # must use the strong kdf here or it can't decrypt the key
+    assert os.environ.get("BORK_PASSPHRASE") == "waytooeasyonlyfortests"
+    os.environ["BORK_TESTONLY_WEAKEN_KDF"] = "0"  # must use the strong kdf here or it can't decrypt the key
 
     cmd(archiver, "rcreate", RK_ENCRYPTION, other_repo1)
     cmd(archiver, "transfer", other_repo1, "--upgrader=From12To20")
@@ -96,8 +96,8 @@ def test_transfer_upgrade(archivers, request):
         del expected_archive["id"]
         del expected_archive["barchive"]
         # timestamps:
-        # borg 1.2 transformed to local time and had microseconds = 0, no tzoffset
-        # borg 2 uses local time, with microseconds and with tzoffset
+        # bork 1.2 transformed to local time and had microseconds = 0, no tzoffset
+        # bork 2 uses local time, with microseconds and with tzoffset
         for key in "start", "time":
             # fix expectation: local time meant +01:00, so we convert that to whatever local tz is here.
             expected_archive[key] = convert_tz(expected_archive[key], repo12_tzoffset, None)
@@ -116,18 +116,18 @@ def test_transfer_upgrade(archivers, request):
         expected = [json.loads(line) for line in lines.splitlines()]
         hardlinks = {}
         for g, e in zip(got, expected):
-            # borg 1.2 parseformat uses .get("bsdflags", 0) so the json has 0 even
+            # bork 1.2 parseformat uses .get("bsdflags", 0) so the json has 0 even
             # if there were no bsdflags stored in the item.
-            # borg 2 parseformat uses .get("bsdflags"), so the json has either an int
+            # bork 2 parseformat uses .get("bsdflags"), so the json has either an int
             # (if the archived item has bsdflags) or None (if the item has no bsdflags).
             if e["flags"] == 0 and g["flags"] is None:
                 # this is expected behaviour, fix the expectation
                 e["flags"] = None
 
-            # borg2 parseformat falls back to str(item.uid) if it does not have item.user,
+            # bork2 parseformat falls back to str(item.uid) if it does not have item.user,
             # same for str(item.gid) and no item.group.
             # so user/group are always str type, even if it is just str(uid) or str(gid).
-            # fix expectation (borg1 used int type for user/group in that case):
+            # fix expectation (bork1 used int type for user/group in that case):
             if g["user"] == str(g["uid"]) == str(e["uid"]):
                 e["user"] = str(e["uid"])
             if g["group"] == str(g["gid"]) == str(e["gid"]):
@@ -137,24 +137,24 @@ def test_transfer_upgrade(archivers, request):
                 if key in e:
                     e[key] = convert_tz(e[key], repo12_tzoffset, None)
 
-            # borg 1 used hardlink slaves linking back to their hardlink masters.
-            # borg 2 uses symmetric approach: just normal items. if they are hardlinks,
+            # bork 1 used hardlink slaves linking back to their hardlink masters.
+            # bork 2 uses symmetric approach: just normal items. if they are hardlinks,
             # each item has normal attributes, including the chunks list, size. additionally,
             # they have a hlid and same hlid means same inode / belonging to same set of hardlinks.
             hardlink = bool(g.get("hlid"))  # note: json has "" as hlid if there is no hlid in the item
             if hardlink:
                 hardlinks[g["path"]] = g["hlid"]
                 if e["mode"].startswith("h"):
-                    # fix expectations: borg1 signalled a hardlink slave with "h"
-                    # borg2 treats all hardlinks symmetrically as normal files
+                    # fix expectations: bork1 signalled a hardlink slave with "h"
+                    # bork2 treats all hardlinks symmetrically as normal files
                     e["mode"] = g["mode"][0] + e["mode"][1:]
-                    # borg1 used source/linktarget to link back to hardlink master
+                    # bork1 used source/linktarget to link back to hardlink master
                     assert e["source"] != ""
                     assert e["linktarget"] != ""
-                    # fix expectations: borg2 does not use source/linktarget any more for hardlinks
+                    # fix expectations: bork2 does not use source/linktarget any more for hardlinks
                     e["source"] = ""
                     e["linktarget"] = ""
-                    # borg 1 has size == 0 for hardlink slaves, borg 2 has the real file size
+                    # bork 1 has size == 0 for hardlink slaves, bork 2 has the real file size
                     assert e["size"] == 0
                     assert g["size"] >= 0
                     # fix expectation for size
@@ -163,7 +163,7 @@ def test_transfer_upgrade(archivers, request):
                 # Note: healthy == True indicates the *absence* of the additional chunks_healthy list
             del g["hlid"]
 
-            # borg 1 used "linktarget" and "source" for links, borg 2 uses "target" for symlinks.
+            # bork 1 used "linktarget" and "source" for links, bork 2 uses "target" for symlinks.
             if g["target"] == e["linktarget"]:
                 e["target"] = e["linktarget"]
                 del e["linktarget"]
@@ -177,22 +177,22 @@ def test_transfer_upgrade(archivers, request):
 
         if name == "archive1":
             # hardlinks referring to same inode have same hlid
-            assert hardlinks["tmp/borgtest/hardlink1"] == hardlinks["tmp/borgtest/hardlink2"]
+            assert hardlinks["tmp/borktest/hardlink1"] == hardlinks["tmp/borktest/hardlink2"]
 
     repo_path = f"{original_location}2"
     for archive_name in ("archive1", "archive2"):
         archive, repository = open_archive(repo_path, archive_name)
         with repository:
             for item in archive.iter_items():
-                # borg1 used to store some stuff with None values
-                # borg2 does just not have the key if the value is not known.
+                # bork1 used to store some stuff with None values
+                # bork2 does just not have the key if the value is not known.
                 item_dict = item.as_dict()
                 assert not any(value is None for value in item_dict.values()), f"found None value in {item_dict}"
 
-                # with borg2, all items with chunks must have a precomputed size
+                # with bork2, all items with chunks must have a precomputed size
                 assert "chunks" not in item or "size" in item and item.size >= 0
 
-                if item.path.endswith("directory") or item.path.endswith("borgtest"):
+                if item.path.endswith("directory") or item.path.endswith("borktest"):
                     assert stat.S_ISDIR(item.mode)
                     assert item.uid > 0
                     assert "hlid" not in item
@@ -249,8 +249,8 @@ def test_transfer_upgrade(archivers, request):
                     assert item.xattrs[b"key2"] == b""
                 elif item.path.endswith("without_flags"):
                     assert stat.S_ISREG(item.mode)
-                    # borg1 did not store a flags value of 0 ("nothing special")
-                    # borg2 reflects this "I do not know" by not having the k/v pair
+                    # bork1 did not store a flags value of 0 ("nothing special")
+                    # bork2 reflects this "I do not know" by not having the k/v pair
                     assert "bsdflags" not in item
                 elif item.path.endswith("with_flags"):
                     assert stat.S_ISREG(item.mode)

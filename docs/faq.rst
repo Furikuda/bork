@@ -115,9 +115,9 @@ Which file types, attributes, etc. are *not* preserved?
 Are there other known limitations?
 ----------------------------------
 
-- borg extract supports restoring only into an empty destination. After extraction,
+- bork extract supports restoring only into an empty destination. After extraction,
   the destination will have exactly the contents of the extracted archive.
-  If you extract into a non-empty destination, borg will (for example) not
+  If you extract into a non-empty destination, bork will (for example) not
   remove files which are in the destination, but not in the archive.
   See :issue:`4598` for a workaround and more details.
 
@@ -155,7 +155,7 @@ Once your backup has finished successfully, you can delete all
 also care for deleting unneeded checkpoints.
 
 Note: the checkpointing mechanism may create a partial (truncated) last file
-in a checkpoint archive named ``<filename>.borg_part``. Such partial files
+in a checkpoint archive named ``<filename>.bork_part``. Such partial files
 won't be contained in the final archive.
 This is done so that checkpoints work cleanly and promptly while a big
 file is being processed.
@@ -169,7 +169,7 @@ Yes. For more details, see :ref:`checkpoints_parts`.
 How can I restore huge file(s) over an unstable connection?
 -----------------------------------------------------------
 
-Try using ``borg mount`` and ``rsync`` (or a similar tool that supports
+Try using ``bork mount`` and ``rsync`` (or a similar tool that supports
 resuming a partial file copy from what's already copied).
 
 How can I switch append-only mode on and off?
@@ -338,7 +338,7 @@ That's **45** orders of magnitude more probable than the SHA-256 collision. Brie
 if you find SHA-256 collisions scary then your priorities are wrong. This example was grabbed from
 `this SO answer <https://stackoverflow.com/a/4014407/13359375>`_, it's great honestly.
 
-Still, the real question is whether Borg tries not to make this happen?
+Still, the real question is whether Bork tries not to make this happen?
 
 Well... previously it did not check anything until there was a feature added which saves the size
 of the chunks too, so the size of the chunks is compared to the size that you got with the
@@ -369,8 +369,8 @@ different prefixes. For example, you could have a script that does::
 
 Then you would have two different prune calls with different policies::
 
-    borg prune --verbose --list -d 30 -a 'sh:main-*'
-    borg prune --verbose --list -d 7  -a 'sh:logs-*'
+    bork prune --verbose --list -d 30 -a 'sh:main-*'
+    bork prune --verbose --list -d 7  -a 'sh:logs-*'
 
 This will keep 7 days of logs and 30 days of everything else.
 
@@ -419,21 +419,21 @@ The Bork config directory has content that you should take care of:
 
 Make sure that only you have access to the Bork config directory.
 
-.. _home_data_borg:
+.. _home_data_bork:
 
-How important is the $HOME/.local/share/borg directory?
+How important is the $HOME/.local/share/bork directory?
 -------------------------------------------------------
 
-The Borg data directory has content that you should take care of:
+The Bork data directory has content that you should take care of:
 
 ``security`` subdirectory
-  Each directory here represents one Borg repository by its ID and contains the last known status.
-  If a repository's status is different from this information at the beginning of BorgBackup
-  operation, Borg outputs warning messages and asks for confirmation, so make sure you do not lose
+  Each directory here represents one Bork repository by its ID and contains the last known status.
+  If a repository's status is different from this information at the beginning of BorkBackup
+  operation, Bork outputs warning messages and asks for confirmation, so make sure you do not lose
   or manipulate these files. However, apart from those warnings, a loss of these files can be
   recovered.
 
-Make sure that only you have access to the Borg data directory.
+Make sure that only you have access to the Bork data directory.
 
 .. _cache_security:
 
@@ -456,15 +456,15 @@ How can I specify the encryption passphrase programmatically?
 
 There are several ways to specify a passphrase without human intervention:
 
-Setting ``BORG_PASSPHRASE``
-  The passphrase can be specified using the ``BORG_PASSPHRASE`` environment variable.
+Setting ``BORK_PASSPHRASE``
+  The passphrase can be specified using the ``BORK_PASSPHRASE`` environment variable.
   This is often the simplest option, but can be insecure if the script that sets it
   is world-readable.
 
   .. _password_env:
   .. note:: Be careful how you set the environment; using the ``env``
           command, a ``system()`` call or using inline shell scripts
-          (e.g. ``BORG_PASSPHRASE=hunter2 bork ...``)
+          (e.g. ``BORK_PASSPHRASE=hunter2 bork ...``)
           might expose the credentials in the process list directly
           and they will be readable to all users on a system. Using
           ``export`` in a shell script file should be safe, however, as
@@ -472,7 +472,7 @@ Setting ``BORG_PASSPHRASE``
           user
           <https://security.stackexchange.com/questions/14000/environment-variable-accessibility-in-linux/14009#14009>`_.
 
-Using ``BORG_PASSCOMMAND`` with a file of proper permissions
+Using ``BORK_PASSCOMMAND`` with a file of proper permissions
   Another option is to create a file with a password in it in your home
   directory and use permissions to keep anyone else from reading it. For
   example, first create a key::
@@ -481,7 +481,7 @@ Using ``BORG_PASSCOMMAND`` with a file of proper permissions
 
   Then in an automated script one can put::
 
-    export BORG_PASSCOMMAND="cat $HOME/.bork-passphrase"
+    export BORK_PASSCOMMAND="cat $HOME/.bork-passphrase"
 
   and Bork will automatically use that passphrase.
 
@@ -491,23 +491,23 @@ Using keyfile-based encryption with a blank passphrase
   when ``bork rcreate`` asks for the password). See :ref:`encrypted_repos`
   for more details.
 
-Using ``BORG_PASSCOMMAND`` with macOS Keychain
+Using ``BORK_PASSCOMMAND`` with macOS Keychain
   macOS has a native manager for secrets (such as passphrases) which is safer
   than just using a file as it is encrypted at rest and unlocked manually
   (fortunately, the login keyring automatically unlocks when you log in). With
   the built-in ``security`` command, you can access it from the command line,
-  making it useful for ``BORG_PASSCOMMAND``.
+  making it useful for ``BORK_PASSCOMMAND``.
 
   First generate a passphrase and use ``security`` to save it to your login
   (default) keychain::
 
     security add-generic-password -D secret -U -a $USER -s bork-passphrase -w $(head -c 32 /dev/urandom | base64 -w 0)
 
-  In your backup script retrieve it in the ``BORG_PASSCOMMAND``::
+  In your backup script retrieve it in the ``BORK_PASSCOMMAND``::
 
-    export BORG_PASSCOMMAND="security find-generic-password -a $USER -s bork-passphrase -w"
+    export BORK_PASSCOMMAND="security find-generic-password -a $USER -s bork-passphrase -w"
 
-Using ``BORG_PASSCOMMAND`` with GNOME Keyring
+Using ``BORK_PASSCOMMAND`` with GNOME Keyring
   GNOME also has a keyring daemon that can be used to store a Bork passphrase.
   First ensure ``libsecret-tools``, ``gnome-keyring`` and ``libpam-gnome-keyring``
   are installed. If ``libpam-gnome-keyring`` wasn't already installed, ensure it
@@ -525,9 +525,9 @@ Using ``BORG_PASSCOMMAND`` with GNOME Keyring
   login password. If there is a checkbox for automatically unlocking on login, check it
   to allow backups without any user intervention whatsoever.
 
-  Once the secret is saved, retrieve it in a backup script using ``BORG_PASSCOMMAND``::
+  Once the secret is saved, retrieve it in a backup script using ``BORK_PASSCOMMAND``::
 
-    export BORG_PASSCOMMAND="secret-tool lookup bork-repository repo-name"
+    export BORK_PASSCOMMAND="secret-tool lookup bork-repository repo-name"
 
   .. note:: For this to unlock the keychain automatically it must be run
     in the ``dbus`` session of an unlocked terminal; for example, running a backup
@@ -538,16 +538,16 @@ Using ``BORG_PASSCOMMAND`` with GNOME Keyring
 
 __ https://github.com/furikuda/bork/pull/2837#discussion_r127641330
 
-Using ``BORG_PASSCOMMAND`` with KWallet
+Using ``BORK_PASSCOMMAND`` with KWallet
   KDE also has a keychain feature in the form of KWallet. The command-line tool
   ``kwalletcli`` can be used to store and retrieve secrets. Ensure ``kwalletcli``
   is installed, generate a passphrase, and store it in your "wallet"::
 
     head -c 32 /dev/urandom | base64 -w 0 | kwalletcli -Pe bork-passphrase -f Passwords
 
-  Once the secret is saved, retrieve it in a backup script using ``BORG_PASSCOMMAND``::
+  Once the secret is saved, retrieve it in a backup script using ``BORK_PASSCOMMAND``::
 
-    export BORG_PASSCOMMAND="kwalletcli -e bork-passphrase -f Passwords"
+    export BORK_PASSCOMMAND="kwalletcli -e bork-passphrase -f Passwords"
 
 When backing up to remote encrypted repos, is encryption done locally?
 ----------------------------------------------------------------------
@@ -573,7 +573,7 @@ How can I protect against a hacked backup client?
 -------------------------------------------------
 
 Assume you back up your backup client machine C to the backup server S and
-C gets hacked. In a simple push setup, the attacker could then use borg on
+C gets hacked. In a simple push setup, the attacker could then use bork on
 C to delete all backups residing on S.
 
 These are your options to protect against that:
@@ -743,7 +743,7 @@ This has some pros and cons, though:
 
 The long term plan to improve this is called "borkception", see :issue:`474`.
 
-Can I back up my root partition (/) with Borg?
+Can I back up my root partition (/) with Bork?
 ----------------------------------------------
 
 Backing up your entire root partition works just fine, but remember to
@@ -946,28 +946,28 @@ unchanged and thus its contents won't get chunked (again).
 
 Bork can't keep an infinite history of files of course, thus entries
 in the files cache have a "maximum time to live" which is set via the
-environment variable BORG_FILES_CACHE_TTL (and defaults to 20).
+environment variable BORK_FILES_CACHE_TTL (and defaults to 20).
 Every time you do a backup (on the same machine, using the same user), the
 cache entries' ttl values of files that were not "seen" are incremented by 1
-and if they reach BORG_FILES_CACHE_TTL, the entry is removed from the cache.
+and if they reach BORK_FILES_CACHE_TTL, the entry is removed from the cache.
 
 So, for example, if you do daily backups of 26 different data sets A, B,
 C, ..., Z on one machine (using the default TTL), the files from A will be
 already forgotten when you repeat the same backups on the next day and it
 will be slow because it would chunk all the files each time. If you set
-BORG_FILES_CACHE_TTL to at least 26 (or maybe even a small multiple of that),
+BORK_FILES_CACHE_TTL to at least 26 (or maybe even a small multiple of that),
 it would be much faster.
 
-Besides using a higher BORG_FILES_CACHE_TTL (which also increases memory usage),
-there is also BORG_FILES_CACHE_SUFFIX which can be used to have separate (smaller)
+Besides using a higher BORK_FILES_CACHE_TTL (which also increases memory usage),
+there is also BORK_FILES_CACHE_SUFFIX which can be used to have separate (smaller)
 files caches for each backup set instead of the default one (big) unified files cache.
 
 Another possible reason is that files don't always have the same path, for
 example if you mount a filesystem without stable mount points for each backup
 or if you are running the backup from a filesystem snapshot whose name is not
 stable. If the directory where you mount a filesystem is different every time,
-Borg assumes they are different files. This is true even if you back up these
-files with relative pathnames - borg uses full pathnames in files cache regardless.
+Bork assumes they are different files. This is true even if you back up these
+files with relative pathnames - bork uses full pathnames in files cache regardless.
 
 It is possible for some filesystems, such as ``mergerfs`` or network filesystems,
 to return inconsistent inode numbers across runs, causing bork to consider them changed.
@@ -996,11 +996,11 @@ Create a wrapper script:  /usr/local/bin/pv-wrapper
     RATE=307200
     pv -q -L $RATE  | "$@"
 
-Add BORG_RSH environment variable to use pipeviewer wrapper script with ssh.
+Add BORK_RSH environment variable to use pipeviewer wrapper script with ssh.
 
 ::
 
-    export BORG_RSH='/usr/local/bin/pv-wrapper ssh'
+    export BORK_RSH='/usr/local/bin/pv-wrapper ssh'
 
 Now Bork will be bandwidth limited. The nice thing about ``pv`` is that you can
 change rate-limit on the fly:
@@ -1123,13 +1123,13 @@ How do I rename a repository?
 There is nothing special that needs to be done, you can simply rename the
 directory that corresponds to the repository. However, the next time bork
 interacts with the repository (i.e, via ``bork list``), depending on the value
-of ``BORG_RELOCATED_REPO_ACCESS_IS_OK``, bork may warn you that the repository
+of ``BORK_RELOCATED_REPO_ACCESS_IS_OK``, bork may warn you that the repository
 has been moved. You will be given a prompt to confirm you are OK with this.
 
-If ``BORG_RELOCATED_REPO_ACCESS_IS_OK`` is unset, bork will interactively ask for
+If ``BORK_RELOCATED_REPO_ACCESS_IS_OK`` is unset, bork will interactively ask for
 each repository whether it's OK.
 
-It may be useful to set ``BORG_RELOCATED_REPO_ACCESS_IS_OK=yes`` to avoid the
+It may be useful to set ``BORK_RELOCATED_REPO_ACCESS_IS_OK=yes`` to avoid the
 prompts when renaming multiple repositories or in a non-interactive context
 such as a script. See :doc:`deployment` for an example.
 
@@ -1166,7 +1166,7 @@ conditions, but generally this should be avoided. If your backup disk is already
 full when Bork starts a write command like `bork create`, it will abort
 immediately and the repository will stay as-is.
 
-If you run a backup that stops due to a disk running full, Borg will roll back,
+If you run a backup that stops due to a disk running full, Bork will roll back,
 delete the new segment file and thus freeing disk space automatically. There
 may be a checkpoint archive left that has been saved before the disk got full.
 You can keep it to speed up the next backup or delete it to get back more disk
@@ -1175,17 +1175,17 @@ space.
 Miscellaneous
 #############
 
-macOS: borg mounts not shown in Finder's side bar
+macOS: bork mounts not shown in Finder's side bar
 -------------------------------------------------
 
 https://github.com/osxfuse/osxfuse/wiki/Mount-options#local
 
 Read the above first and use this on your own risk::
 
-    borg mount -olocal REPO MOUNTPOINT
+    bork mount -olocal REPO MOUNTPOINT
 
 
-Requirements for the borg single-file binary, esp. (g)libc?
+Requirements for the bork single-file binary, esp. (g)libc?
 -----------------------------------------------------------
 
 We try to build the binary on old, but still supported systems - to keep the

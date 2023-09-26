@@ -120,7 +120,7 @@ class KeyManager:
         export = "To restore key use bork key import --paper /path/to/repo\n\n"
 
         binary = a2b_base64(self.keyblob)
-        export += "BORG PAPER KEY v1\n"
+        export += "BORK PAPER KEY v1\n"
         lines = (len(binary) + 17) // 18
         repoid = bin_to_hex(self.repository.id)[:18]
         complete_checksum = sha256_truncated(binary, 12)

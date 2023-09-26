@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-SERVE" 1 "2023-09-14" "" "borg backup tool"
+.TH "BORK-SERVE" 1 "2023-09-14" "" "bork backup tool"
 .SH NAME
 bork-serve \- Start in server mode. This command is usually not used manually.
 .SH SYNOPSIS
@@ -37,20 +37,20 @@ bork [common options] serve [options]
 .sp
 This command starts a repository server process.
 .sp
-borg serve can currently support:
+bork serve can currently support:
 .INDENT 0.0
 .IP \(bu 2
-Getting automatically started via ssh when the borg client uses a \fI\%ssh://\fP\&...
-remote repository. In this mode, \fIborg serve\fP will live until that ssh connection
+Getting automatically started via ssh when the bork client uses a \fI\%ssh://\fP\&...
+remote repository. In this mode, \fIbork serve\fP will live until that ssh connection
 gets terminated.
 .IP \(bu 2
-Getting started by some other means (not by the borg client) as a long\-running socket
-server to be used for borg clients using a socket://... repository (see the \fI\-\-socket\fP
+Getting started by some other means (not by the bork client) as a long\-running socket
+server to be used for bork clients using a socket://... repository (see the \fI\-\-socket\fP
 option if you do not want to use the default path for the socket and pid file).
 .UNINDENT
 .SH OPTIONS
 .sp
-See \fIborg\-common(1)\fP for common options of Borg commands.
+See \fIbork\-common(1)\fP for common options of Bork commands.
 .SS options
 .INDENT 0.0
 .TP
@@ -82,8 +82,8 @@ such as \fB\-\-verbose\fP, \fB\-\-info\fP, \fB\-\-debug\fP, \fB\-\-debug\-topic\
 giving up and aborting the operation when another process is holding a lock.
 .UNINDENT
 .sp
-Environment variables (such as BORG_XXX) contained in the original
-command sent by the client are \fInot\fP interpreted, but ignored. If BORG_XXX environment
+Environment variables (such as BORK_XXX) contained in the original
+command sent by the client are \fInot\fP interpreted, but ignored. If BORK_XXX environment
 variables should be set on the \fBbork serve\fP side, then these must be set in system\-specific
 locations like \fB/etc/environment\fP or in the forced command itself (example below).
 .INDENT 0.0
@@ -91,15 +91,15 @@ locations like \fB/etc/environment\fP or in the forced command itself (example b
 .sp
 .nf
 .ft C
-# Allow an SSH keypair to run only borg, and only have access to /path/to/repo.
+# Allow an SSH keypair to run only bork, and only have access to /path/to/repo.
 # Use key options to disable unneeded and potentially dangerous SSH functionality.
 # This will help to secure an automated remote backup system.
 $ cat ~/.ssh/authorized_keys
 command=\(dqbork serve \-\-restrict\-to\-path /path/to/repo\(dq,restrict ssh\-rsa AAAAB3[...]
 
-# Set a BORG_XXX environment variable on the \(dqbork serve\(dq side
+# Set a BORK_XXX environment variable on the \(dqbork serve\(dq side
 $ cat ~/.ssh/authorized_keys
-command=\(dqexport BORG_XXX=value; bork serve [...]\(dq,restrict ssh\-rsa [...]
+command=\(dqexport BORK_XXX=value; bork serve [...]\(dq,restrict ssh\-rsa [...]
 .ft P
 .fi
 .UNINDENT

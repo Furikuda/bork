@@ -39,7 +39,7 @@ bork rcompress
 
 
     options
-        -C COMPRESSION, --compression COMPRESSION    select compression algorithm, see the output of the "borg help compression" command for details.
+        -C COMPRESSION, --compression COMPRESSION    select compression algorithm, see the output of the "bork help compression" command for details.
         -s, --stats     print statistics
         -c SECONDS, --checkpoint-interval SECONDS    write checkpoint every SECONDS seconds (Default: 1800)
 

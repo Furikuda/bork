@@ -76,7 +76,7 @@ def test_basic_functionality(archivers, request):
         assert "input/file_unchanged" not in output
 
         # Directory replaced with a regular file
-        if "BORG_TESTS_IGNORE_MODES" not in os.environ and not is_win32 and not content_only:
+        if "BORK_TESTS_IGNORE_MODES" not in os.environ and not is_win32 and not content_only:
             assert_line_exists(lines, "[drwxr-xr-x -> -rwxr-xr-x].*input/dir_replaced_with_file")
 
         # Basic directory cases
@@ -97,7 +97,7 @@ def test_basic_functionality(archivers, request):
             # Symlink target removed. Should not affect the symlink at all.
             assert "input/link_target_removed" not in output
 
-        # The inode has two links and the file contents changed. Borg
+        # The inode has two links and the file contents changed. Bork
         # should notice the changes in both links. However, the symlink
         # pointing to the file is not changed.
         change = "modified.*0 B" if can_compare_ids else r"modified:  \(can't get size\)"
@@ -123,12 +123,12 @@ def test_basic_functionality(archivers, request):
             assert "removed:              256 B input/hardlink_removed" in output
 
         if are_hardlinks_supported() and content_only:
-            # Another link (marked previously as the source in borg) to the
+            # Another link (marked previously as the source in bork) to the
             # same inode was removed. This should only change the ctime since removing
             # the link would result in the decrementation of the inode's hard-link count.
             assert "input/hardlink_target_removed" not in output
 
-            # Another link (marked previously as the source in borg) to the
+            # Another link (marked previously as the source in bork) to the
             # same inode was replaced with a new regular file. This should only change
             # its ctime. This should not be reflected in the output if content-only is set
             assert "input/hardlink_target_replaced" not in output
@@ -151,7 +151,7 @@ def test_basic_functionality(archivers, request):
         assert not any(get_changes("input/file_unchanged", joutput))
 
         # Directory replaced with a regular file
-        if "BORG_TESTS_IGNORE_MODES" not in os.environ and not is_win32 and not content_only:
+        if "BORK_TESTS_IGNORE_MODES" not in os.environ and not is_win32 and not content_only:
             assert {"type": "changed mode", "item1": "drwxr-xr-x", "item2": "-rwxr-xr-x"} in get_changes(
                 "input/dir_replaced_with_file", joutput
             )
@@ -181,7 +181,7 @@ def test_basic_functionality(archivers, request):
             # Symlink target removed. Should not affect the symlink at all.
             assert not any(get_changes("input/link_target_removed", joutput))
 
-        # The inode has two links and the file contents changed. Borg
+        # The inode has two links and the file contents changed. Bork
         # should notice the changes in both links. However, the symlink
         # pointing to the file is not changed.
         expected = {"type": "modified", "added": 13, "removed": 0} if can_compare_ids else {"type": "modified"}
@@ -207,12 +207,12 @@ def test_basic_functionality(archivers, request):
             assert {"added": 0, "removed": 256, "type": "removed"} in get_changes("input/hardlink_removed", joutput)
 
         if are_hardlinks_supported() and content_only:
-            # Another link (marked previously as the source in borg) to the
+            # Another link (marked previously as the source in bork) to the
             # same inode was removed. This should only change the ctime since removing
             # the link would result in the decrementation of the inode's hard-link count.
             assert not any(get_changes("input/hardlink_target_removed", joutput))
 
-            # Another link (marked previously as the source in borg) to the
+            # Another link (marked previously as the source in bork) to the
             # same inode was replaced with a new regular file. This should only change
             # its ctime. This should not be reflected in the output if content-only is set
             assert not any(get_changes("input/hardlink_target_replaced", joutput))

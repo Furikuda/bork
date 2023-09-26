@@ -52,7 +52,7 @@ class build_usage(Command):
         print("generating usage docs")
         import bork
 
-        borg.doc_mode = "build_man"
+        bork.doc_mode = "build_man"
         os.makedirs("docs/usage", exist_ok=True)
         # allows us to build docs without the C modules fully loaded during help generation
         from bork.archiver import Archiver
@@ -469,7 +469,7 @@ class build_man(Command):
         self.write_heading(write, title, "=", double_sided=True)
         self.write_heading(write, description, double_sided=True)
         # man page metadata
-        write(":Author: The Borg Collective")
+        write(":Author: The Bork Collective")
         source_date_epoch = int(os.environ.get("SOURCE_DATE_EPOCH", time.time()))
         write(":Date:", datetime.fromtimestamp(source_date_epoch, timezone.utc).date().isoformat())
         write(":Manual section: 1")

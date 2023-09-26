@@ -100,7 +100,7 @@ class TarMixIn:
 
         # The | (pipe) symbol instructs tarfile to use a streaming mode of operation
         # where it never seeks on the passed fileobj.
-        tar_format = dict(GNU=tarfile.GNU_FORMAT, PAX=tarfile.PAX_FORMAT, BORG=tarfile.PAX_FORMAT)[args.tar_format]
+        tar_format = dict(GNU=tarfile.GNU_FORMAT, PAX=tarfile.PAX_FORMAT, BORK=tarfile.PAX_FORMAT)[args.tar_format]
         tar = tarfile.open(fileobj=tarstream, mode="w|", format=tar_format)
 
         if progress:
@@ -198,11 +198,11 @@ class TarMixIn:
             # - possibly Linux capabilities, security.* xattrs (TODO)
             # - various additions supported by GNU tar in POSIX mode (TODO)
             #
-            # BORG format
+            # BORK format
             # -----------
-            # This is based on PAX, but additionally adds BORG.* pax headers.
+            # This is based on PAX, but additionally adds BORK.* pax headers.
             # Additionally to the standard tar / PAX metadata and data, it transfers
-            # ALL bork item metadata in a BORG specific way.
+            # ALL bork item metadata in a BORK specific way.
             #
             ph = {}
             # note: for mtime this is a bit redundant as it is already done by tarfile module,
@@ -211,12 +211,12 @@ class TarMixIn:
                 if hasattr(item, name):
                     ns = getattr(item, name)
                     ph[name] = str(ns / 1e9)
-            if format == "BORG":  # BORG format additions
-                ph["BORG.item.version"] = "1"
-                # BORG.item.meta - just serialize all metadata we have:
+            if format == "BORK":  # BORK format additions
+                ph["BORK.item.version"] = "1"
+                # BORK.item.meta - just serialize all metadata we have:
                 meta_bin = msgpack.packb(item.as_dict())
                 meta_text = base64.b64encode(meta_bin).decode()
-                ph["BORG.item.meta"] = meta_text
+                ph["BORK.item.meta"] = meta_text
             return ph
 
         for item in archive.iter_items(filter, preload=True):
@@ -225,7 +225,7 @@ class TarMixIn:
                 item.path = os.sep.join(orig_path.split(os.sep)[strip_components:])
             tarinfo, stream = item_to_tarinfo(item, orig_path)
             if tarinfo:
-                if args.tar_format in ("BORG", "PAX"):
+                if args.tar_format in ("BORK", "PAX"):
                     tarinfo.pax_headers = item_to_paxheaders(args.tar_format, item)
                 if output_list:
                     logging.getLogger("bork.output.list").info(remove_surrogates(orig_path))
@@ -364,7 +364,7 @@ class TarMixIn:
         +--------------+---------------------------+----------------------------+
         | --tar-format | Specification             | Metadata                   |
         +--------------+---------------------------+----------------------------+
-        | BORG         | BORG specific, like PAX   | all as supported by bork   |
+        | BORK         | BORK specific, like PAX   | all as supported by bork   |
         +--------------+---------------------------+----------------------------+
         | PAX          | POSIX.1-2001 (pax) format | GNU + atime/ctime/mtime ns |
         +--------------+---------------------------+----------------------------+
@@ -409,9 +409,9 @@ class TarMixIn:
             metavar="FMT",
             dest="tar_format",
             default="GNU",
-            choices=("BORG", "PAX", "GNU"),
+            choices=("BORK", "PAX", "GNU"),
             action=Highlander,
-            help="select tar format: BORG, PAX or GNU",
+            help="select tar format: BORK, PAX or GNU",
         )
         subparser.add_argument("name", metavar="NAME", type=archivename_validator, help="specify the archive name")
         subparser.add_argument("tarfile", metavar="FILE", help='output tar file. "-" to write to stdout instead.')
@@ -448,7 +448,7 @@ class TarMixIn:
 
         import-tar reads these tar formats:
 
-        - BORG: bork specific (PAX-based)
+        - BORK: bork specific (PAX-based)
         - PAX: POSIX.1-2001
         - GNU: GNU tar
         - POSIX.1-1988 (ustar)
@@ -564,7 +564,7 @@ class TarMixIn:
             type=CompressionSpec,
             default=CompressionSpec("lz4"),
             action=Highlander,
-            help="select compression algorithm, see the output of the " '"borg help compression" command for details.',
+            help="select compression algorithm, see the output of the " '"bork help compression" command for details.',
         )
 
         subparser.add_argument("name", metavar="NAME", type=archivename_validator, help="specify the archive name")

@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-UMOUNT" 1 "2023-09-14" "" "borg backup tool"
+.TH "BORK-UMOUNT" 1 "2023-09-14" "" "bork backup tool"
 .SH NAME
 bork-umount \- un-mount the FUSE filesystem
 .SH SYNOPSIS
@@ -74,7 +74,7 @@ $ bork umount /tmp/mymountpoint
 # Archive filters are supported.
 # These are especially handy for the \(dqversions view\(dq,
 # which does not support lazy processing of archives.
-$ borg mount \-o versions \-\-match\-archives \(aqsh:*\-my\-home\(aq \-\-last 10 /tmp/mymountpoint
+$ bork mount \-o versions \-\-match\-archives \(aqsh:*\-my\-home\(aq \-\-last 10 /tmp/mymountpoint
 
 # Exclusion options are supported.
 # These can speed up mounting and lower memory needs significantly.
@@ -102,8 +102,8 @@ root\-2016\-02\-01 root\-2016\-02\-2015
 \fBNOTE:\fP
 .INDENT 0.0
 .INDENT 3.5
-\fBborgfs\fP will be automatically provided if you used a distribution
-package, \fBpip\fP or \fBsetup.py\fP to install Borg. Users of the
+\fBborkfs\fP will be automatically provided if you used a distribution
+package, \fBpip\fP or \fBsetup.py\fP to install Bork. Users of the
 standalone binary will have to create a symlink manually (see
 \fIpyinstaller\-binary\fP).
 .UNINDENT

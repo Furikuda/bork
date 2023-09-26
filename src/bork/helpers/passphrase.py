@@ -19,11 +19,11 @@ class NoPassphraseFailure(Error):
 
 
 class PassphraseWrong(Error):
-    """passphrase supplied in BORG_PASSPHRASE, by BORG_PASSCOMMAND or via BORG_PASSPHRASE_FD is incorrect."""
+    """passphrase supplied in BORK_PASSPHRASE, by BORK_PASSCOMMAND or via BORK_PASSPHRASE_FD is incorrect."""
 
 
 class PasscommandFailure(Error):
-    """passcommand supplied in BORG_PASSCOMMAND failed: {}"""
+    """passcommand supplied in BORK_PASSCOMMAND failed: {}"""
 
 
 class PasswordRetriesExceeded(Error):
@@ -39,7 +39,7 @@ class Passphrase(str):
 
     @classmethod
     def env_passphrase(cls, default=None):
-        passphrase = cls._env_passphrase("BORG_PASSPHRASE", default)
+        passphrase = cls._env_passphrase("BORK_PASSPHRASE", default)
         if passphrase is not None:
             return passphrase
         passphrase = cls.env_passcommand()
@@ -51,7 +51,7 @@ class Passphrase(str):
 
     @classmethod
     def env_passcommand(cls, default=None):
-        passcommand = os.environ.get("BORG_PASSCOMMAND", None)
+        passcommand = os.environ.get("BORK_PASSCOMMAND", None)
         if passcommand is not None:
             # passcommand is a system command (not inside pyinstaller env)
             env = prepare_subprocess_env(system=True)
@@ -64,7 +64,7 @@ class Passphrase(str):
     @classmethod
     def fd_passphrase(cls):
         try:
-            fd = int(os.environ.get("BORG_PASSPHRASE_FD"))
+            fd = int(os.environ.get("BORK_PASSPHRASE_FD"))
         except (ValueError, TypeError):
             return None
         with os.fdopen(fd, mode="r") as f:
@@ -73,7 +73,7 @@ class Passphrase(str):
 
     @classmethod
     def env_new_passphrase(cls, default=None):
-        return cls._env_passphrase("BORG_NEW_PASSPHRASE", default)
+        return cls._env_passphrase("BORK_NEW_PASSPHRASE", default)
 
     @classmethod
     def getpass(cls, prompt):
@@ -83,7 +83,7 @@ class Passphrase(str):
             if prompt:
                 print()  # avoid err msg appearing right of prompt
             msg = []
-            for env_var in "BORG_PASSPHRASE", "BORG_PASSCOMMAND":
+            for env_var in "BORK_PASSPHRASE", "BORK_PASSCOMMAND":
                 env_var_set = os.environ.get(env_var) is not None
                 msg.append("{} is {}.".format(env_var, "set" if env_var_set else "not set"))
             msg.append("Interactive password query failed.")
@@ -99,7 +99,7 @@ class Passphrase(str):
             retry_msg=msg,
             invalid_msg="Invalid answer, try again.",
             retry=True,
-            env_var_override="BORG_DISPLAY_PASSPHRASE",
+            env_var_override="BORK_DISPLAY_PASSPHRASE",
         ):
             print('Your passphrase (between double-quotes): "%s"' % passphrase, file=sys.stderr)
             print("Make sure the passphrase displayed above is exactly what you wanted.", file=sys.stderr)

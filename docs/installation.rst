@@ -63,24 +63,24 @@ Raspbian     `Raspbian testing`_                           ``apt install borkbac
 Ubuntu       `Ubuntu packages`_, `Ubuntu PPA`_             ``apt install borkbackup``
 ============ ============================================= =======
 
-.. _Alpine repository: https://pkgs.alpinelinux.org/packages?name=borgbackup
-.. _[community]: https://www.archlinux.org/packages/?name=borg
-.. _Debian packages: https://packages.debian.org/search?keywords=borgbackup&searchon=names&exact=1&suite=all&section=all
-.. _Fedora official repository: https://packages.fedoraproject.org/pkgs/borgbackup/borgbackup/
-.. _FreeBSD ports: https://www.freshports.org/archivers/py-borgbackup/
-.. _ebuild: https://packages.gentoo.org/packages/app-backup/borgbackup
-.. _GNU Guix: https://www.gnu.org/software/guix/package-list.html#borg
-.. _pkgsrc: http://pkgsrc.se/sysutils/py-borgbackup
-.. _cauldron: http://madb.mageia.org/package/show/application/0/release/cauldron/name/borgbackup
-.. _.nix file: https://github.com/NixOS/nixpkgs/blob/master/pkgs/tools/backup/borgbackup/default.nix
-.. _OpenBSD ports: https://cvsweb.openbsd.org/cgi-bin/cvsweb/ports/sysutils/borgbackup/
-.. _OpenIndiana hipster repository: https://pkg.openindiana.org/hipster/en/search.shtml?token=borg&action=Search
-.. _openSUSE official repository: https://software.opensuse.org/package/borgbackup
-.. _Homebrew: https://formulae.brew.sh/formula/borgbackup
-.. _private Tap: https://github.com/borgbackup/homebrew-tap
-.. _Raspbian testing: https://archive.raspbian.org/raspbian/pool/main/b/borgbackup/
-.. _Ubuntu packages: https://launchpad.net/ubuntu/+source/borgbackup
-.. _Ubuntu PPA: https://launchpad.net/~costamagnagianfranco/+archive/ubuntu/borgbackup
+.. _Alpine repository: https://pkgs.alpinelinux.org/packages?name=borkbackup
+.. _[community]: https://www.archlinux.org/packages/?name=bork
+.. _Debian packages: https://packages.debian.org/search?keywords=borkbackup&searchon=names&exact=1&suite=all&section=all
+.. _Fedora official repository: https://packages.fedoraproject.org/pkgs/borkbackup/borkbackup/
+.. _FreeBSD ports: https://www.freshports.org/archivers/py-borkbackup/
+.. _ebuild: https://packages.gentoo.org/packages/app-backup/borkbackup
+.. _GNU Guix: https://www.gnu.org/software/guix/package-list.html#bork
+.. _pkgsrc: http://pkgsrc.se/sysutils/py-borkbackup
+.. _cauldron: http://madb.mageia.org/package/show/application/0/release/cauldron/name/borkbackup
+.. _.nix file: https://github.com/NixOS/nixpkgs/blob/master/pkgs/tools/backup/borkbackup/default.nix
+.. _OpenBSD ports: https://cvsweb.openbsd.org/cgi-bin/cvsweb/ports/sysutils/borkbackup/
+.. _OpenIndiana hipster repository: https://pkg.openindiana.org/hipster/en/search.shtml?token=bork&action=Search
+.. _openSUSE official repository: https://software.opensuse.org/package/borkbackup
+.. _Homebrew: https://formulae.brew.sh/formula/borkbackup
+.. _private Tap: https://github.com/borkbackup/homebrew-tap
+.. _Raspbian testing: https://archive.raspbian.org/raspbian/pool/main/b/borkbackup/
+.. _Ubuntu packages: https://launchpad.net/ubuntu/+source/borkbackup
+.. _Ubuntu PPA: https://launchpad.net/~costamagnagianfranco/+archive/ubuntu/borkbackup
 
 Please ask package maintainers to build a package or, if you can package /
 submit it yourself, please help us with that! See :issue:`105` on
@@ -178,7 +178,7 @@ following dependencies first:
   a FUSE implementation for Python:
 
   - Either pyfuse3_ (preferably, newer) or llfuse_ (older).
-    See also the BORG_FUSE_IMPL env variable.
+    See also the BORK_FUSE_IMPL env variable.
   - See setup.py about the version requirements.
 
 If you have troubles finding the right package names, have a look at the
@@ -265,8 +265,8 @@ the installed ``openssl`` formula, point pkg-config to the correct path::
     PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig" pip install borkbackup[llfuse]
 
 Be aware that for all recent macOS releases you must authorize full disk access.
-It is no longer sufficient to run borg backups as root. If you have not yet
-granted full disk access, and you run Borg backup from cron, you will see
+It is no longer sufficient to run bork backups as root. If you have not yet
+granted full disk access, and you run Bork backup from cron, you will see
 messages such as::
 
     /Users/you/Pictures/Photos Library.photoslibrary: scandir: [Errno 1] Operation not permitted:
@@ -350,9 +350,9 @@ Ensure to install the dependencies as described within :ref:`Dependencies: Windo
 
     export SETUPTOOLS_USE_DISTUTILS=stdlib # Needed for pip to work - https://www.msys2.org/docs/python/#known-issues
     pip install -e .
-    pyinstaller -y scripts/borg.exe.spec
+    pyinstaller -y scripts/bork.exe.spec
 
-A standalone executable will be created in ``dist/borg.exe``.
+A standalone executable will be created in ``dist/bork.exe``.
 
 .. _pip-installation:
 
@@ -367,9 +367,9 @@ Ensure to install the dependencies as described within :ref:`source-install`.
 
 .. note::
     If you install into a virtual environment, you need to **activate** it
-    first (``source borg-env/bin/activate``), before running ``borg``.
-    Alternatively, symlink ``borg-env/bin/borg`` into some directory that is in
-    your ``PATH`` so you can run ``borg``.
+    first (``source bork-env/bin/activate``), before running ``bork``.
+    Alternatively, symlink ``bork-env/bin/bork`` into some directory that is in
+    your ``PATH`` so you can run ``bork``.
 
 This will use ``pip`` to install the latest release from PyPi::
 

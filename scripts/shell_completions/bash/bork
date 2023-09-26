@@ -1,7 +1,7 @@
 # Completions for bork
 # https://www.borkbackup.org/
 # Note:
-# Listing archives works on password protected repositories only if $BORG_PASSPHRASE is set.
+# Listing archives works on password protected repositories only if $BORK_PASSPHRASE is set.
 # Install:
 # Copy this file to /usr/share/bash-completion/completions/ or /etc/bash_completion.d/
 
@@ -17,8 +17,8 @@ _bork()
 
     # Commands
     if [[ ${COMP_CWORD} == 1 ]] ; then
-        local borg_commands="benchmark break-lock check compact config create delete diff export-tar extract help import-tar info key list mount prune rcompress rcreate rdelete recreate rename rinfo rlist serve transfer umount with-lock"
-        COMPREPLY=( $(compgen -W "${borg_commands}" -- ${cur}) )
+        local bork_commands="benchmark break-lock check compact config create delete diff export-tar extract help import-tar info key list mount prune rcompress rcreate rdelete recreate rename rinfo rlist serve transfer umount with-lock"
+        COMPREPLY=( $(compgen -W "${bork_commands}" -- ${cur}) )
         compopt +o default
         return 0
     fi
@@ -168,7 +168,7 @@ _bork()
 
     # Get the repository name if available
     # If there is a space before the "::" it means that no repository name was typed,
-    # so probably $BORG_REPO was set and we can still list the archives.
+    # so probably $BORK_REPO was set and we can still list the archives.
     local repository_name="${COMP_LINE%%::*}"
     repository_name=${repository_name##* }
 

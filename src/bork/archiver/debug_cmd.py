@@ -268,7 +268,7 @@ class DebugMixIn:
 
     @with_repository(compatibility=Manifest.NO_OPERATION_CHECK)
     def do_debug_parse_obj(self, args, repository, manifest):
-        """parse borg object file into meta dict and data (decrypting, decompressing)"""
+        """parse bork object file into meta dict and data (decrypting, decompressing)"""
 
         # get the object from id
         hex_id = args.id
@@ -296,7 +296,7 @@ class DebugMixIn:
 
     @with_repository(compatibility=Manifest.NO_OPERATION_CHECK)
     def do_debug_format_obj(self, args, repository, manifest):
-        """format file and metadata into borg object file"""
+        """format file and metadata into bork object file"""
 
         # get the object from id
         hex_id = args.id
@@ -590,7 +590,7 @@ class DebugMixIn:
             description=self.do_debug_parse_obj.__doc__,
             epilog=debug_parse_obj_epilog,
             formatter_class=argparse.RawDescriptionHelpFormatter,
-            help="parse borg object file into meta dict and data",
+            help="parse bork object file into meta dict and data",
         )
         subparser.set_defaults(func=self.do_debug_parse_obj)
         subparser.add_argument("id", metavar="ID", type=str, help="hex object ID to get from the repo")
@@ -617,7 +617,7 @@ class DebugMixIn:
             description=self.do_debug_format_obj.__doc__,
             epilog=debug_format_obj_epilog,
             formatter_class=argparse.RawDescriptionHelpFormatter,
-            help="format file and metadata into borg objectfile",
+            help="format file and metadata into bork objectfile",
         )
         subparser.set_defaults(func=self.do_debug_format_obj)
         subparser.add_argument("id", metavar="ID", type=str, help="hex object ID to get from the repo")
@@ -635,7 +635,7 @@ class DebugMixIn:
             type=CompressionSpec,
             default=CompressionSpec("lz4"),
             action=Highlander,
-            help="select compression algorithm, see the output of the " '"borg help compression" command for details.',
+            help="select compression algorithm, see the output of the " '"bork help compression" command for details.',
         )
         subparser.add_argument(
             "object_path",

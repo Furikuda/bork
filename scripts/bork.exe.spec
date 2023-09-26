@@ -1,5 +1,5 @@
 # -*- mode: python -*-
-# this pyinstaller spec file is used to build borg binaries on posix platforms and Windows
+# this pyinstaller spec file is used to build bork binaries on posix platforms and Windows
 
 import os, sys
 

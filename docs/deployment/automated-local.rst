@@ -105,15 +105,15 @@ modify it to suit your needs (e.g. more backup sets, dumping databases etc.).
     #
 
     # Options for bork create
-    BORG_OPTS="--stats --one-file-system --compression lz4 --checkpoint-interval 86400"
+    BORK_OPTS="--stats --one-file-system --compression lz4 --checkpoint-interval 86400"
 
-    # Set BORG_PASSPHRASE or BORG_PASSCOMMAND somewhere around here, using export,
+    # Set BORK_PASSPHRASE or BORK_PASSCOMMAND somewhere around here, using export,
     # if encryption is used.
 
     # No one can answer if Bork asks these questions, it is better to just fail quickly
     # instead of hanging.
-    export BORG_RELOCATED_REPO_ACCESS_IS_OK=no
-    export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=no
+    export BORK_RELOCATED_REPO_ACCESS_IS_OK=no
+    export BORK_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=no
 
     # Log Bork version
     bork --version
@@ -121,7 +121,7 @@ modify it to suit your needs (e.g. more backup sets, dumping databases etc.).
     echo "Starting backup for $DATE"
 
     # This is just an example, change it however you see fit
-    bork create $BORG_OPTS \
+    bork create $BORK_OPTS \
       --exclude root/.cache \
       --exclude var/lib/docker/devicemapper \
       $TARGET::$DATE-$$-system \
@@ -130,7 +130,7 @@ modify it to suit your needs (e.g. more backup sets, dumping databases etc.).
     # /home is often a separate partition / file system.
     # Even if it isn't (add --exclude /home above), it probably makes sense
     # to have /home in a separate archive.
-    bork create $BORG_OPTS \
+    bork create $BORK_OPTS \
       --exclude 'sh:home/*/.cache' \
       $TARGET::$DATE-$$-home \
       /home/
@@ -209,7 +209,7 @@ DMA attacks, stealing the machine, ...).
 
 Bork ensures that backups are not created on random drives that "just happen"
 to contain a Bork repository. If an unknown unencrypted repository is encountered,
-then the script aborts (BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=no).
+then the script aborts (BORK_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=no).
 
 Backups are only created on hard drives that contain a Bork repository that is
 either known (by ID) to your machine or you are using encryption and the

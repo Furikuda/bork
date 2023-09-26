@@ -444,7 +444,7 @@ class FuseOperations(llfuse.Operations, FuseBackend):
         llfuse.Operations.__init__(self)
         FuseBackend.__init__(self, manifest, args, decrypted_repository)
         self.decrypted_repository = decrypted_repository
-        data_cache_capacity = int(os.environ.get("BORG_MOUNT_DATA_CACHE_ENTRIES", os.cpu_count() or 1))
+        data_cache_capacity = int(os.environ.get("BORK_MOUNT_DATA_CACHE_ENTRIES", os.cpu_count() or 1))
         logger.debug("mount data cache capacity: %d chunks", data_cache_capacity)
         self.data_cache = LRUCache(capacity=data_cache_capacity)
         self._last_pos = LRUCache(capacity=FILES)
@@ -519,7 +519,7 @@ class FuseOperations(llfuse.Operations, FuseBackend):
             volname = pop_option(options, "volname", "", "", str)
             # if the user did not specify it, we make something up,
             # because otherwise it would be "macFUSE Volume 0 (Python)", #7690.
-            volname = volname or f"{os.path.basename(mountpoint)} (borgfs)"
+            volname = volname or f"{os.path.basename(mountpoint)} (borkfs)"
             options.append(f"volname={volname}")
         ignore_permissions = pop_option(options, "ignore_permissions", True, False, bool)
         if ignore_permissions:

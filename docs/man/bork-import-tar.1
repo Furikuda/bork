@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-IMPORT-TAR" 1 "2023-09-14" "" "borg backup tool"
+.TH "BORK-IMPORT-TAR" 1 "2023-09-14" "" "bork backup tool"
 .SH NAME
 bork-import-tar \- Create a backup archive from a tarball
 .SH SYNOPSIS
@@ -68,7 +68,7 @@ About tar formats and metadata conservation or loss, please see \fBbork export\-
 import\-tar reads these tar formats:
 .INDENT 0.0
 .IP \(bu 2
-BORG: bork specific (PAX\-based)
+BORK: bork specific (PAX\-based)
 .IP \(bu 2
 PAX: POSIX.1\-2001
 .IP \(bu 2
@@ -157,7 +157,7 @@ $ bork export\-tar Monday Monday.tar.gz \-\-exclude \(aq*.so\(aq
 $ bork export\-tar \-\-tar\-filter=\(dqgzip \-9\(dq Monday Monday.tar.gz
 
 # copy an archive from repoA to repoB
-$ bork \-r repoA export\-tar \-\-tar\-format=BORG archive \- | bork \-r repoB import\-tar archive \-
+$ bork \-r repoA export\-tar \-\-tar\-format=BORK archive \- | bork \-r repoB import\-tar archive \-
 
 # export a tar, but instead of storing it on disk, upload it to remote site using curl
 $ bork export\-tar Monday \- | curl \-\-data\-binary @\- https://somewhere/to/POST
@@ -176,9 +176,9 @@ Outputs a script that copies all archives from repo1 to repo2:
 .sp
 .nf
 .ft C
-for A T in \(gaborg list \-\-format=\(aq{archive} {time:%Y\-%m\-%dT%H:%M:%S}{NL}\(aq\(ga
+for A T in \(gabork list \-\-format=\(aq{archive} {time:%Y\-%m\-%dT%H:%M:%S}{NL}\(aq\(ga
 do
-  echo \(dqbork \-r repo1 export\-tar \-\-tar\-format=BORG $A \- | bork \-r repo2 import\-tar \-\-timestamp=$T $A \-\(dq
+  echo \(dqbork \-r repo1 export\-tar \-\-tar\-format=BORK $A \- | bork \-r repo2 import\-tar \-\-timestamp=$T $A \-\(dq
 done
 .ft P
 .fi

@@ -26,7 +26,7 @@ def test_fuse_mount_hardlinks(archivers, request):
     _extract_hardlinks_setup(archiver)
     mountpoint = os.path.join(archiver.tmpdir, "mountpoint")
     # we need to get rid of permissions checking because fakeroot causes issues with it.
-    # On all platforms, borg defaults to "default_permissions" and we need to get rid of it via "ignore_permissions".
+    # On all platforms, bork defaults to "default_permissions" and we need to get rid of it via "ignore_permissions".
     # On macOS (darwin), we additionally need "defer_permissions" to switch off the checks in osxfuse.
     if sys.platform == "darwin":
         ignore_perms = ["-o", "ignore_permissions,defer_permissions"]
@@ -258,7 +258,7 @@ def test_migrate_lock_alive(archivers, request):
     import pickle
     import traceback
 
-    # Check results are communicated from the borg mount background process
+    # Check results are communicated from the bork mount background process
     # to the pytest process by means of a serialized dict object stored in this file.
     assert_data_file = os.path.join(archiver.tmpdir, "migrate_lock_assert_data.pickle")
 
@@ -309,8 +309,8 @@ def test_migrate_lock_alive(archivers, request):
         cmd(archiver, "rcreate", "--encryption=none")
         create_src_archive(archiver, "arch")
         mountpoint = os.path.join(archiver.tmpdir, "mountpoint")
-        # In order that the decoration is kept for the borg mount process, we must not spawn, but actually fork;
-        # not to be confused with the forking in borg.helpers.daemonize() which is done as well.
+        # In order that the decoration is kept for the bork mount process, we must not spawn, but actually fork;
+        # not to be confused with the forking in bork.helpers.daemonize() which is done as well.
         with fuse_mount(archiver, mountpoint, os_fork=True):
             pass
         with open(assert_data_file, "rb") as _in:

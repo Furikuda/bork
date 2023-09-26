@@ -63,7 +63,7 @@ For more details, see :ref:`chunker_details`.
 ``--noatime / --noctime``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use these ``borg create`` options not to store the respective timestamp
+You can use these ``bork create`` options not to store the respective timestamp
 into the archive, in case you do not really need it.
 
 Besides saving a little space for the not archived timestamp, it might also
@@ -174,8 +174,8 @@ Now, let's see how to restore some LVs from such a backup.
 Separate compaction
 ~~~~~~~~~~~~~~~~~~~
 
-Borg does not auto-compact the segment files in the repository at commit time
-(at the end of each repository-writing command) any more (since borg 1.2.0).
+Bork does not auto-compact the segment files in the repository at commit time
+(at the end of each repository-writing command) any more (since bork 1.2.0).
 
 This causes a similar behaviour of the repository as if it was in append-only
 mode (see below) most of the time (until ``bork compact`` is invoked or an
@@ -234,8 +234,8 @@ in ``.ssh/authorized_keys``:
     command="bork serve --append-only ..." ssh-rsa <key used for not-always-trustable backup clients>
     command="bork serve ..." ssh-rsa <key used for backup management>
 
-Running ``borg rcreate`` via a ``borg serve --append-only`` server will *not* create
-an append-only repository. Running ``borg rcreate --append-only`` creates an append-only
+Running ``bork rcreate`` via a ``bork serve --append-only`` server will *not* create
+an append-only repository. Running ``bork rcreate --append-only`` creates an append-only
 repository regardless of server settings.
 
 Example
@@ -330,5 +330,5 @@ SSH batch mode
 When running Bork using an automated script, ``ssh`` might still ask for a password,
 even if there is an SSH key for the target server. Use this to make scripts more robust::
 
-    export BORG_RSH='ssh -oBatchMode=yes'
+    export BORK_RSH='ssh -oBatchMode=yes'
 

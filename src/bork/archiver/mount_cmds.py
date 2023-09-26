@@ -18,10 +18,10 @@ class MountMixIn:
         """Mount archive or an entire repository as a FUSE filesystem"""
         # Perform these checks before opening the repository and asking for a passphrase.
 
-        from ..fuse_impl import llfuse, BORG_FUSE_IMPL
+        from ..fuse_impl import llfuse, BORK_FUSE_IMPL
 
         if llfuse is None:
-            self.print_error("bork mount not available: no FUSE support, BORG_FUSE_IMPL=%s." % BORG_FUSE_IMPL)
+            self.print_error("bork mount not available: no FUSE support, BORK_FUSE_IMPL=%s." % BORK_FUSE_IMPL)
             return self.exit_code
 
         if not os.path.isdir(args.mountpoint):
@@ -96,13 +96,13 @@ class MountMixIn:
         - ``versions``: when used with a repository mount, this gives a merged, versioned
           view of the files in the archives. EXPERIMENTAL, layout may change in future.
         - ``allow_damaged_files``: by default damaged files (where missing chunks were
-          replaced with runs of zeros by ``borg check --repair``) are not readable and
+          replaced with runs of zeros by ``bork check --repair``) are not readable and
           return EIO (I/O error). Set this option to read such files.
         - ``ignore_permissions``: for security reasons the ``default_permissions`` mount
-          option is internally enforced by borg. ``ignore_permissions`` can be given to
+          option is internally enforced by bork. ``ignore_permissions`` can be given to
           not enforce ``default_permissions``.
 
-        The BORG_MOUNT_DATA_CACHE_ENTRIES environment variable is meant for advanced users
+        The BORK_MOUNT_DATA_CACHE_ENTRIES environment variable is meant for advanced users
         to tweak the performance. It sets the number of cached data chunks; additional
         memory usage can be up to ~8 MiB times this number. The default is the number
         of CPU cores.

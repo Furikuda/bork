@@ -28,7 +28,7 @@ class TestKey:
         key_algorithm = "argon2"
 
     keyfile2_key_file = """
-        BORG_KEY 0000000000000000000000000000000000000000000000000000000000000000
+        BORK_KEY 0000000000000000000000000000000000000000000000000000000000000000
         hqlhbGdvcml0aG2mc2hhMjU2pGRhdGHaAN4u2SiN7hqISe3OA8raBWNuvHn1R50ZU7HVCn
         11vTJNEaj9soxUaIGcW+pAB2N5yYoKMg/sGCMuZa286iJ008DvN99rf/ORfcKrK2GmzslO
         N3uv9Tk9HtqV/Sq5zgM9xuY9rEeQGDQVQ+AOsFamJqSUrAemGJbJqw9IerXC/jN4XPnX6J
@@ -43,7 +43,7 @@ class TestKey:
     keyfile2_id = unhexlify("c3fbf14bc001ebcc3cd86e696c13482ed071740927cd7cbe1b01b4bfcee49314")
 
     keyfile_blake2_key_file = """
-        BORG_KEY 0000000000000000000000000000000000000000000000000000000000000000
+        BORK_KEY 0000000000000000000000000000000000000000000000000000000000000000
         hqlhbGdvcml0aG2mc2hhMjU2pGRhdGHaAZ7VCsTjbLhC1ipXOyhcGn7YnROEhP24UQvOCi
         Oar1G+JpwgO9BIYaiCODUpzPuDQEm6WxyTwEneJ3wsuyeqyh7ru2xo9FAUKRf6jcqqZnan
         ycTfktkUC+CPhKR7W6MTu5fPvy99chyL09/RGdD15aswR5PjNoFu4626sfMrBReyPdlxqt
@@ -70,7 +70,7 @@ class TestKey:
 
     @pytest.fixture
     def keys_dir(self, request, monkeypatch, tmpdir):
-        monkeypatch.setenv("BORG_KEYS_DIR", str(tmpdir))
+        monkeypatch.setenv("BORK_KEYS_DIR", str(tmpdir))
         return tmpdir
 
     @pytest.fixture(
@@ -96,7 +96,7 @@ class TestKey:
         )
     )
     def key(self, request, monkeypatch):
-        monkeypatch.setenv("BORG_PASSPHRASE", "test")
+        monkeypatch.setenv("BORK_PASSPHRASE", "test")
         return request.param.create(self.MockRepository(), self.MockArgs())
 
     class MockRepository:
@@ -125,7 +125,7 @@ class TestKey:
         assert chunk == key.decrypt(id, key.encrypt(id, chunk))
 
     def test_keyfile(self, monkeypatch, keys_dir):
-        monkeypatch.setenv("BORG_PASSPHRASE", "test")
+        monkeypatch.setenv("BORK_PASSPHRASE", "test")
         key = KeyfileKey.create(self.MockRepository(), self.MockArgs())
         assert key.cipher.next_iv() == 0
         chunk = b"ABC"
@@ -148,8 +148,8 @@ class TestKey:
 
     def test_keyfile_kfenv(self, tmpdir, monkeypatch):
         keyfile = tmpdir.join("keyfile")
-        monkeypatch.setenv("BORG_KEY_FILE", str(keyfile))
-        monkeypatch.setenv("BORG_PASSPHRASE", "testkf")
+        monkeypatch.setenv("BORK_KEY_FILE", str(keyfile))
+        monkeypatch.setenv("BORK_PASSPHRASE", "testkf")
         assert not keyfile.exists()
         key = CHPOKeyfileKey.create(self.MockRepository(), self.MockArgs())
         assert keyfile.exists()
@@ -165,7 +165,7 @@ class TestKey:
     def test_keyfile2(self, monkeypatch, keys_dir):
         with keys_dir.join("keyfile").open("w") as fd:
             fd.write(self.keyfile2_key_file)
-        monkeypatch.setenv("BORG_PASSPHRASE", "passphrase")
+        monkeypatch.setenv("BORK_PASSPHRASE", "passphrase")
         key = KeyfileKey.detect(self.MockRepository(), self.keyfile2_cdata)
         assert key.decrypt(self.keyfile2_id, self.keyfile2_cdata) == b"payload"
 
@@ -173,15 +173,15 @@ class TestKey:
         keyfile = tmpdir.join("keyfile")
         with keyfile.open("w") as fd:
             fd.write(self.keyfile2_key_file)
-        monkeypatch.setenv("BORG_KEY_FILE", str(keyfile))
-        monkeypatch.setenv("BORG_PASSPHRASE", "passphrase")
+        monkeypatch.setenv("BORK_KEY_FILE", str(keyfile))
+        monkeypatch.setenv("BORK_PASSPHRASE", "passphrase")
         key = KeyfileKey.detect(self.MockRepository(), self.keyfile2_cdata)
         assert key.decrypt(self.keyfile2_id, self.keyfile2_cdata) == b"payload"
 
     def test_keyfile_blake2(self, monkeypatch, keys_dir):
         with keys_dir.join("keyfile").open("w") as fd:
             fd.write(self.keyfile_blake2_key_file)
-        monkeypatch.setenv("BORG_PASSPHRASE", "passphrase")
+        monkeypatch.setenv("BORK_PASSPHRASE", "passphrase")
         key = Blake2KeyfileKey.detect(self.MockRepository(), self.keyfile_blake2_cdata)
         assert key.decrypt(self.keyfile_blake2_id, self.keyfile_blake2_cdata) == b"payload"
 
@@ -196,7 +196,7 @@ class TestKey:
     def test_decrypt_integrity(self, monkeypatch, keys_dir):
         with keys_dir.join("keyfile").open("w") as fd:
             fd.write(self.keyfile2_key_file)
-        monkeypatch.setenv("BORG_PASSPHRASE", "passphrase")
+        monkeypatch.setenv("BORK_PASSPHRASE", "passphrase")
         key = KeyfileKey.detect(self.MockRepository(), self.keyfile2_cdata)
 
         data = self.keyfile2_cdata
@@ -235,7 +235,7 @@ class TestKey:
                 key.assert_id(id, plaintext_changed)
 
     def test_authenticated_encrypt(self, monkeypatch):
-        monkeypatch.setenv("BORG_PASSPHRASE", "test")
+        monkeypatch.setenv("BORK_PASSPHRASE", "test")
         key = AuthenticatedKey.create(self.MockRepository(), self.MockArgs())
         assert AuthenticatedKey.id_hash is ID_HMAC_SHA_256.id_hash
         assert len(key.id_key) == 32
@@ -246,7 +246,7 @@ class TestKey:
         assert authenticated == b"\x07" + plaintext
 
     def test_blake2_authenticated_encrypt(self, monkeypatch):
-        monkeypatch.setenv("BORG_PASSPHRASE", "test")
+        monkeypatch.setenv("BORK_PASSPHRASE", "test")
         key = Blake2AuthenticatedKey.create(self.MockRepository(), self.MockArgs())
         assert Blake2AuthenticatedKey.id_hash is ID_BLAKE2b_256.id_hash
         assert len(key.id_key) == 128
@@ -260,7 +260,7 @@ class TestKey:
 class TestTAM:
     @pytest.fixture
     def key(self, monkeypatch):
-        monkeypatch.setenv("BORG_PASSPHRASE", "test")
+        monkeypatch.setenv("BORK_PASSPHRASE", "test")
         return CHPOKeyfileKey.create(TestKey.MockRepository(), TestKey.MockArgs())
 
     def test_unpack_future(self, key):
@@ -411,7 +411,7 @@ def test_key_file_roundtrip(monkeypatch):
         return {a: getattr(key, a) for a in extract}
 
     repository = MagicMock(id=b"repository_id")
-    monkeypatch.setenv("BORG_PASSPHRASE", "hello, pass phrase")
+    monkeypatch.setenv("BORK_PASSPHRASE", "hello, pass phrase")
 
     save_me = AESOCBRepoKey.create(repository, args=MagicMock(key_algorithm="argon2"))
     saved = repository.save_key.call_args.args[0]

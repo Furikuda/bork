@@ -70,7 +70,7 @@ class RDeleteMixIn:
                     invalid_msg="Invalid answer, aborting.",
                     truish=("YES",),
                     retry=False,
-                    env_var_override="BORG_DELETE_I_KNOW_WHAT_I_AM_DOING",
+                    env_var_override="BORK_DELETE_I_KNOW_WHAT_I_AM_DOING",
                 ):
                     self.exit_code = EXIT_ERROR
                     return self.exit_code

@@ -21,7 +21,7 @@ def test_rcreate_parent_dirs(archivers, request):
     repository_path = os.path.join(parent_path, "repository")
     archiver.repository_location = ("ssh://__testsuite__" + repository_path) if remote_repo else repository_path
     with pytest.raises(Repository.ParentPathDoesNotExist):
-        # normal borg rcreate does NOT create missing parent dirs
+        # normal bork rcreate does NOT create missing parent dirs
         cmd(archiver, "rcreate", "--encryption=none")
     # but if told so, it does:
     cmd(archiver, "rcreate", "--encryption=none", "--make-parent-dirs")
@@ -58,11 +58,11 @@ def test_rcreate_nested_repositories(archivers, request):
 
 
 def test_rcreate_refuse_to_overwrite_keyfile(archivers, request, monkeypatch):
-    #  BORG_KEY_FILE=something borg rcreate should quit if "something" already exists.
-    #  See: https://github.com/borgbackup/borg/pull/6046
+    #  BORK_KEY_FILE=something bork rcreate should quit if "something" already exists.
+    #  See: https://github.com/borkbackup/bork/pull/6046
     archiver = request.getfixturevalue(archivers)
     keyfile = os.path.join(archiver.tmpdir, "keyfile")
-    monkeypatch.setenv("BORG_KEY_FILE", keyfile)
+    monkeypatch.setenv("BORK_KEY_FILE", keyfile)
     original_location = archiver.repository_location
     archiver.repository_location = original_location + "0"
     cmd(archiver, "rcreate", KF_ENCRYPTION)

@@ -195,7 +195,7 @@ class TestRepositoryCache:
 
     @pytest.fixture
     def key(self, repository, monkeypatch):
-        monkeypatch.setenv("BORG_PASSPHRASE", "test")
+        monkeypatch.setenv("BORK_PASSPHRASE", "test")
         key = PlaintextKey.create(repository, TestKey.MockArgs())
         return key
 

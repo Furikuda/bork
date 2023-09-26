@@ -241,7 +241,7 @@ def ignore_sigint():
 
     Ctrl-C will send a SIGINT to both the main process (bork) and subprocesses
     (e.g. ssh for remote ssh:// repos), but often we do not want the subprocess
-    getting killed (e.g. because it is still needed to shut down borg cleanly).
+    getting killed (e.g. because it is still needed to shut down bork cleanly).
 
     To avoid that: Popen(..., preexec_fn=ignore_sigint)
     """
@@ -315,9 +315,9 @@ def prepare_subprocess_env(system, env=None):
             if lp is not None and getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
                 env.pop(lp_key)
     # security: do not give secrets to subprocess
-    env.pop("BORG_PASSPHRASE", None)
+    env.pop("BORK_PASSPHRASE", None)
     # for information, give bork version to the subprocess
-    env["BORG_VERSION"] = __version__
+    env["BORK_VERSION"] = __version__
     return env
 
 

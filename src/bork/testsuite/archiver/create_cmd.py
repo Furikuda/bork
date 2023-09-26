@@ -53,7 +53,7 @@ def test_basic_functionality(archivers, request):
     have_root = create_test_files(archiver.input_path)
     # fork required to test show-rc output
     output = cmd(archiver, "rcreate", RK_ENCRYPTION, "--show-version", "--show-rc", fork=True)
-    assert "borgbackup version" in output
+    assert "borkbackup version" in output
     assert "terminating with success status, rc 0" in output
 
     cmd(archiver, "create", "--exclude-nodump", "test", "input")
@@ -118,7 +118,7 @@ def test_basic_functionality(archivers, request):
 
 
 def test_archived_paths(archivers, request):
-    # As borg comes from the POSIX (Linux, UNIX) world, a lot of stuff assumes path separators
+    # As bork comes from the POSIX (Linux, UNIX) world, a lot of stuff assumes path separators
     # to be slashes "/", e.g.: in archived items, for pattern matching.
     # To make our lives easier and to support cross-platform extraction we always use slashes.
     # Similarly, archived paths are expected to be full, but relative (have no leading slash).
@@ -128,13 +128,13 @@ def test_archived_paths(archivers, request):
     posix_path = full_path[2:] if full_path[1] == ":" else full_path
     # only needed on Windows in case there are backslashes:
     posix_path = posix_path.replace("\\", "/")
-    # no leading slash in borg archives:
+    # no leading slash in bork archives:
     archived_path = posix_path.lstrip("/")
     create_regular_file(archiver.input_path, "test")
     cmd(archiver, "rcreate", "--encryption=none")
     cmd(archiver, "create", "test", "input", posix_path)
-    # "input" directory is recursed into, "input/test" is discovered and joined by borg's recursion.
-    # posix_path was directly given as a cli argument and should end up as archive_path in the borg archive.
+    # "input" directory is recursed into, "input/test" is discovered and joined by bork's recursion.
+    # posix_path was directly given as a cli argument and should end up as archive_path in the bork archive.
     expected_paths = sorted(["input", "input/test", archived_path])
 
     # check path in archived items:
@@ -252,7 +252,7 @@ def test_create_stdin_checkpointing(archivers, request):
     cmd(archiver, "check", "--debug")
     # verify that there are no part files in final archive
     out = cmd(archiver, "list", "test")
-    assert "stdin.borg_part" not in out
+    assert "stdin.bork_part" not in out
     # verify full file
     out = cmd(archiver, "extract", "test", "stdin", "--stdout", binary_output=True)
     assert out == input_data
@@ -554,7 +554,7 @@ def test_create_archivename_with_placeholder(archivers, request):
     create_test_files(archiver.input_path)
     cmd(archiver, "rcreate", RK_ENCRYPTION)
     ts = "1999-12-31T23:59:59"
-    name_given = "test-{now}"  # placeholder in archive name gets replaced by borg
+    name_given = "test-{now}"  # placeholder in archive name gets replaced by bork
     name_expected = f"test-{ts}"  # placeholder in f-string gets replaced by python
     cmd(archiver, "create", f"--timestamp={ts}", name_given, "input")
     list_output = cmd(archiver, "rlist", "--short")
@@ -632,7 +632,7 @@ def test_repeated_files(archivers, request):
     cmd(archiver, "create", "test", "input", "input")
 
 
-@pytest.mark.skipif("BORG_TESTS_IGNORE_MODES" in os.environ, reason="modes unreliable")
+@pytest.mark.skipif("BORK_TESTS_IGNORE_MODES" in os.environ, reason="modes unreliable")
 @pytest.mark.skipif(is_win32, reason="modes unavailable on Windows")
 def test_umask(archivers, request):
     archiver = request.getfixturevalue(archivers)
@@ -684,7 +684,7 @@ def test_file_status(archivers, request):
     output = cmd(archiver, "create", "--list", "test2", "input")
     assert "U input/file1" in output
     # although surprising, this is expected. For why, see:
-    # https://borgbackup.readthedocs.org/en/latest/faq.html#i-am-seeing-a-added-status-for-a-unchanged-file
+    # https://borkbackup.readthedocs.org/en/latest/faq.html#i-am-seeing-a-added-status-for-a-unchanged-file
     assert "A input/file2" in output
 
 
@@ -761,18 +761,18 @@ def test_file_status_excluded(archivers, request):
 
 
 def test_file_status_counters(archivers, request):
-    """Test file status counters in the stats of `borg create --stats`"""
+    """Test file status counters in the stats of `bork create --stats`"""
     archiver = request.getfixturevalue(archivers)
 
-    def to_dict(borg_create_output):
-        borg_create_output = borg_create_output.strip().splitlines()
-        borg_create_output = [line.split(":", 1) for line in borg_create_output]
-        borg_create_output = {
+    def to_dict(bork_create_output):
+        bork_create_output = bork_create_output.strip().splitlines()
+        bork_create_output = [line.split(":", 1) for line in bork_create_output]
+        bork_create_output = {
             key: int(value)
-            for key, value in borg_create_output
+            for key, value in bork_create_output
             if key in ("Added files", "Unchanged files", "Modified files")
         }
-        return borg_create_output
+        return bork_create_output
 
     # Test case set up: create a repository
     cmd(archiver, "rcreate", RK_ENCRYPTION)
@@ -796,7 +796,7 @@ def test_file_status_counters(archivers, request):
     result = cmd(archiver, "create", "--stats", "test_archive3", archiver.input_path)
     result = to_dict(result)
     # Should process testfile2 as added because of
-    # https://borgbackup.readthedocs.io/en/stable/faq.html#i-am-seeing-a-added-status-for-an-unchanged-file
+    # https://borkbackup.readthedocs.io/en/stable/faq.html#i-am-seeing-a-added-status-for-an-unchanged-file
     assert result["Added files"] == 1
     assert result["Unchanged files"] == 0
     assert result["Modified files"] == 1
@@ -871,7 +871,7 @@ def test_create_read_special_symlink(archivers, request):
     try:
         cmd(archiver, "create", "--read-special", "test", "input/link_fifo")
     finally:
-        # In case `borg create` failed to open FIFO, read all data to avoid join() hanging.
+        # In case `bork create` failed to open FIFO, read all data to avoid join() hanging.
         fd = os.open(fifo_fn, os.O_RDONLY | os.O_NONBLOCK)
         try:
             os.read(fd, len(data))
@@ -930,10 +930,10 @@ def test_common_options(archivers, request):
 def test_hashing_time(archivers, request):
     archiver = request.getfixturevalue(archivers)
 
-    def extract_hashing_time(borg_create_output):
-        borg_create_output = borg_create_output.strip().splitlines()
-        borg_create_output = [line.split(":", 1) for line in borg_create_output]
-        hashing_time = [line for line in borg_create_output if line[0] == "Time spent in hashing"].pop()
+    def extract_hashing_time(bork_create_output):
+        bork_create_output = bork_create_output.strip().splitlines()
+        bork_create_output = [line.split(":", 1) for line in bork_create_output]
+        hashing_time = [line for line in bork_create_output if line[0] == "Time spent in hashing"].pop()
         hashing_time = hashing_time[1]
         hashing_time = float(hashing_time.removesuffix(" seconds"))
         return hashing_time
@@ -950,10 +950,10 @@ def test_hashing_time(archivers, request):
 def test_chunking_time(archivers, request):
     archiver = request.getfixturevalue(archivers)
 
-    def extract_chunking_time(borg_create_output):
-        borg_create_output = borg_create_output.strip().splitlines()
-        borg_create_output = [line.split(":", 1) for line in borg_create_output]
-        chunking_time = [line for line in borg_create_output if line[0] == "Time spent in chunking"].pop()
+    def extract_chunking_time(bork_create_output):
+        bork_create_output = bork_create_output.strip().splitlines()
+        bork_create_output = [line.split(":", 1) for line in bork_create_output]
+        chunking_time = [line for line in bork_create_output if line[0] == "Time spent in chunking"].pop()
         chunking_time = chunking_time[1]
         chunking_time = float(chunking_time.removesuffix(" seconds"))
         return chunking_time

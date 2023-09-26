@@ -441,10 +441,10 @@ class Archiver(
         """turn on INFO level logging for args that imply that they will produce output"""
         # map of option name to name of logger for that option
         option_logger = {
-            "show_version": "borg.output.show-version",
-            "show_rc": "borg.output.show-rc",
-            "stats": "borg.output.stats",
-            "progress": "borg.output.progress",
+            "show_version": "bork.output.show-version",
+            "show_rc": "bork.output.show-rc",
+            "stats": "bork.output.stats",
+            "progress": "bork.output.progress",
         }
         for option, logger_name in option_logger.items():
             option_set = args.get(option, False)
@@ -452,7 +452,7 @@ class Archiver(
 
         # special-case --list / --list-kept / --list-pruned as they all work on same logger
         options = [args.get(name, False) for name in ("output_list", "list_kept", "list_pruned")]
-        logging.getLogger("borg.output.list").setLevel("INFO" if any(options) else "WARN")
+        logging.getLogger("bork.output.list").setLevel("INFO" if any(options) else "WARN")
 
     def _setup_topic_debugging(self, args):
         """Turn on DEBUG level logging for specified --debug-topics."""
@@ -569,7 +569,7 @@ def format_tb(exc):
     qualname = type(exc).__qualname__
     remote = isinstance(exc, RemoteRepository.RPCError)
     if remote:
-        prefix = "Borg server: "
+        prefix = "Bork server: "
         trace_back = "\n".join(prefix + line for line in exc.exception_full.splitlines())
         sys_info = "\n".join(prefix + line for line in exc.sysinfo.splitlines())
     else:

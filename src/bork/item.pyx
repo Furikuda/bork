@@ -264,7 +264,7 @@ cdef class Item(PropDict):
     # properties statically defined, so that IDEs can know their names:
 
     path = PropDictProperty(str, 'surrogate-escaped str', encode=assert_sanitized_path, decode=to_sanitized_path)
-    source = PropDictProperty(str, 'surrogate-escaped str')  # legacy borg 1.x. borg 2: see .target
+    source = PropDictProperty(str, 'surrogate-escaped str')  # legacy bork 1.x. bork 2: see .target
     target = PropDictProperty(str, 'surrogate-escaped str')
     user = PropDictProperty(str, 'surrogate-escaped str')
     group = PropDictProperty(str, 'surrogate-escaped str')
@@ -318,7 +318,7 @@ cdef class Item(PropDict):
         except AttributeError:
             if stat.S_ISLNK(self.mode):
                 # get out of here quickly. symlinks have no own chunks, their fs size is the length of the target name.
-                if 'source' in self:  # legacy borg 1.x archives
+                if 'source' in self:  # legacy bork 1.x archives
                     return len(self.source)
                 return len(self.target)
             # no precomputed (c)size value available, compute it:
@@ -467,7 +467,7 @@ cdef class Key(PropDict):
     crypt_key = PropDictProperty(bytes)
     id_key = PropDictProperty(bytes)
     chunk_seed = PropDictProperty(int)
-    tam_required = PropDictProperty(bool)  # legacy. borg now implicitly always requires TAM.
+    tam_required = PropDictProperty(bool)  # legacy. bork now implicitly always requires TAM.
 
     def update_internal(self, d):
         # legacy support for migration (data from old msgpacks comes in as bytes always, but sometimes we want str)

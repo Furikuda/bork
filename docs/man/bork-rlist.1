@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-RLIST" 1 "2023-09-14" "" "borg backup tool"
+.TH "BORK-RLIST" 1 "2023-09-14" "" "bork backup tool"
 .SH NAME
 bork-rlist \- List the archives contained in a repository
 .SH SYNOPSIS
@@ -38,7 +38,7 @@ bork [common options] rlist [options]
 This command lists the archives contained in a repository.
 .SH OPTIONS
 .sp
-See \fIborg\-common(1)\fP for common options of Borg commands.
+See \fIbork\-common(1)\fP for common options of Bork commands.
 .SS options
 .INDENT 0.0
 .TP
@@ -116,7 +116,7 @@ ArchiveBar
 # {VAR:NUMBER} \- pad to NUMBER columns.
 # Strings are left\-aligned, numbers are right\-aligned.
 # Note: time columns except \(ga\(gaisomtime\(ga\(ga, \(ga\(gaisoctime\(ga\(ga and \(ga\(gaisoatime\(ga\(ga cannot be padded.
-$ borg rlist \-\-format \(aq{archive:36} {time} [{id}]{NL}\(aq /path/to/repo
+$ bork rlist \-\-format \(aq{archive:36} {time} [{id}]{NL}\(aq /path/to/repo
 ArchiveFoo                           Thu, 2021\-12\-09 10:22:28 [0b8e9...3b274]
 \&...
 .ft P

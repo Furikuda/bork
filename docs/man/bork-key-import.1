@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-KEY-IMPORT" 1 "2023-09-14" "" "borg backup tool"
+.TH "BORK-KEY-IMPORT" 1 "2023-09-14" "" "bork backup tool"
 .SH NAME
 bork-key-import \- Import the repository key from backup
 .SH SYNOPSIS
@@ -42,13 +42,13 @@ process in which each line is checked for plausibility before
 proceeding to the next line. For this format PATH must not be given.
 .sp
 For repositories using keyfile encryption, the key file which \fBbork key
-import\fP writes to depends on several factors. If the \fBBORG_KEY_FILE\fP
+import\fP writes to depends on several factors. If the \fBBORK_KEY_FILE\fP
 environment variable is set and non\-empty, \fBbork key import\fP creates
-or overwrites that file named by \fB$BORG_KEY_FILE\fP\&. Otherwise, \fBbork
-key import\fP searches in the \fB$BORG_KEYS_DIR\fP directory for a key file
+or overwrites that file named by \fB$BORK_KEY_FILE\fP\&. Otherwise, \fBbork
+key import\fP searches in the \fB$BORK_KEYS_DIR\fP directory for a key file
 associated with the repository. If a key file is found in
-\fB$BORG_KEYS_DIR\fP, \fBbork key import\fP overwrites it; otherwise, \fBbork
-key import\fP creates a new key file in \fB$BORG_KEYS_DIR\fP\&.
+\fB$BORK_KEYS_DIR\fP, \fBbork key import\fP overwrites it; otherwise, \fBbork
+key import\fP creates a new key file in \fB$BORK_KEYS_DIR\fP\&.
 .SH OPTIONS
 .sp
 See \fIbork\-common(1)\fP for common options of Bork commands.

@@ -61,14 +61,14 @@ Vagrant.configure("2") do |config|
     losetup /dev/loop0 loopbackfile.img
 
 	# Make it look as if the adv. usage screencast was recorded after basic usage
-    export BORG_PASSPHRASE='1234'
+    export BORK_PASSPHRASE='1234'
     bork init --encryption=repokey /media/backup/borkdemo
     bork create --compression lz4 /media/backup/borkdemo::backup1 Wallpaper
     echo "new nice file" > Wallpaper/newfile.txt
     bork create --compression lz4 /media/backup/borkdemo::backup2 Wallpaper
     mv Wallpaper/bigcollection Wallpaper/bigcollection_NEW
     bork create --compression lz4 /media/backup/borkdemo::backup3 Wallpaper
-    unset BORG_PASSPHRASE
+    unset BORK_PASSPHRASE
 
     asciinema rec -c 'expect /vagrant/advanced.tcl' --overwrite /vagrant/advanced.json < /dev/null
   SHELL

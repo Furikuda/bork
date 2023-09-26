@@ -12,11 +12,11 @@ from ..logger import create_logger
 logger = create_logger()
 
 from . import msgpack
-from .. import __version__ as borg_version
+from .. import __version__ as bork_version
 
 
 def sysinfo():
-    show_sysinfo = os.environ.get("BORG_SHOW_SYSINFO", "yes").lower()
+    show_sysinfo = os.environ.get("BORK_SHOW_SYSINFO", "yes").lower()
     if show_sysinfo == "no":
         return ""
 
@@ -36,11 +36,11 @@ def sysinfo():
         msgpack_version = ".".join(str(v) for v in msgpack.version)
     except:  # noqa
         msgpack_version = "unknown"
-    from ..fuse_impl import llfuse, BORG_FUSE_IMPL
+    from ..fuse_impl import llfuse, BORK_FUSE_IMPL
 
     llfuse_name = llfuse.__name__ if llfuse else "None"
     llfuse_version = (" %s" % llfuse.__version__) if llfuse else ""
-    llfuse_info = f"{llfuse_name}{llfuse_version} [{BORG_FUSE_IMPL}]"
+    llfuse_info = f"{llfuse_name}{llfuse_version} [{BORK_FUSE_IMPL}]"
     info = []
     if uname is not None:
         info.append("Platform: {}".format(" ".join(uname)))

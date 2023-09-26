@@ -1,7 +1,7 @@
 # Completions for bork
 # https://www.borkbackup.org/
 # Note:
-# Listing archives works on password protected repositories only if $BORG_PASSPHRASE is set.
+# Listing archives works on password protected repositories only if $BORK_PASSPHRASE is set.
 # Install:
 # Copy this file to /usr/share/fish/vendor_completions.d/
 

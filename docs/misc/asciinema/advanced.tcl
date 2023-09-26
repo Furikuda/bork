@@ -5,12 +5,12 @@ set send_human {.05 .1 1 .01 .2}
 
 set script {
 # For the pro users, here are some advanced features of bork, so you can impress your friends. ;)
-# Note: This screencast was made with __BORG_VERSION__ – older or newer bork versions may behave differently.
+# Note: This screencast was made with __BORK_VERSION__ – older or newer bork versions may behave differently.
 
 # First of all, we can use several environment variables for bork.
 # E.g. we do not want to type in our repo path and password again and again…
-export BORG_REPO='/media/backup/borkdemo'
-export BORG_PASSPHRASE='1234'
+export BORK_REPO='/media/backup/borkdemo'
+export BORK_PASSPHRASE='1234'
 # Problem solved, bork will use this automatically… :)
 # We'll use this right away…
 
@@ -71,7 +71,7 @@ bork umount /tmp/mount
 }
 
 set script [string trim $script]
-set script [string map [list __BORG_VERSION__ [exec bork -V]] $script]
+set script [string map [list __BORK_VERSION__ [exec bork -V]] $script]
 set script [split $script \n]
 
 set ::env(PS1) "$ "

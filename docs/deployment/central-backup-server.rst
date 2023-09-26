@@ -5,7 +5,7 @@
 Central repository server with Ansible or Salt
 ==============================================
 
-This section will give an example how to set up a borg repository server for multiple
+This section will give an example how to set up a bork repository server for multiple
 clients.
 
 Machines

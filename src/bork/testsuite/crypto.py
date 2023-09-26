@@ -315,7 +315,7 @@ def test_repo_key_detect_does_not_raise_integrity_error(getpass, monkeypatch):
     This is a regression test for a bug I introduced and fixed:
 
     Traceback (most recent call last):
-      File "/home/user/borg-master/src/borg/testsuite/crypto.py", line 384,
+      File "/home/user/bork-master/src/bork/testsuite/crypto.py", line 384,
                                                                   in test_repo_key_detect_does_not_raise_integrity_error
         RepoKey.detect(repository, manifest_data=None)
       File "/home/user/bork-master/src/bork/crypto/key.py", line 402, in detect
@@ -341,7 +341,7 @@ def test_repo_key_detect_does_not_raise_integrity_error(getpass, monkeypatch):
     """
     repository = MagicMock(id=b"repository_id")
     getpass.return_value = "hello, pass phrase"
-    monkeypatch.setenv("BORG_DISPLAY_PASSPHRASE", "no")
+    monkeypatch.setenv("BORK_DISPLAY_PASSPHRASE", "no")
     AESOCBRepoKey.create(repository, args=MagicMock(key_algorithm="argon2"))
     repository.load_key.return_value = repository.save_key.call_args.args[0]
 

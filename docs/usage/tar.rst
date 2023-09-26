@@ -19,7 +19,7 @@ Examples
     $ bork export-tar --tar-filter="gzip -9" Monday Monday.tar.gz
 
     # copy an archive from repoA to repoB
-    $ bork -r repoA export-tar --tar-format=BORG archive - | bork -r repoB import-tar archive -
+    $ bork -r repoA export-tar --tar-format=BORK archive - | bork -r repoB import-tar archive -
 
     # export a tar, but instead of storing it on disk, upload it to remote site using curl
     $ bork export-tar Monday - | curl --data-binary @- https://somewhere/to/POST
@@ -34,9 +34,9 @@ Outputs a script that copies all archives from repo1 to repo2:
 
 ::
 
-    for A T in `borg list --format='{archive} {time:%Y-%m-%dT%H:%M:%S}{NL}'`
+    for A T in `bork list --format='{archive} {time:%Y-%m-%dT%H:%M:%S}{NL}'`
     do
-      echo "bork -r repo1 export-tar --tar-format=BORG $A - | bork -r repo2 import-tar --timestamp=$T $A -"
+      echo "bork -r repo1 export-tar --tar-format=BORK $A - | bork -r repo2 import-tar --timestamp=$T $A -"
     done
 
 Kept:

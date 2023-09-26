@@ -3,15 +3,15 @@ from typing import Optional
 
 import pytest
 
-from borg.testsuite.archiver import BORG_EXES
+from bork.testsuite.archiver import BORK_EXES
 
 if hasattr(pytest, "register_assert_rewrite"):
     pytest.register_assert_rewrite("bork.testsuite")
 
 
-import borg.cache  # noqa: E402
-from borg.archiver import Archiver
-from borg.logger import setup_logging  # noqa: E402
+import bork.cache  # noqa: E402
+from bork.archiver import Archiver
+from bork.logger import setup_logging  # noqa: E402
 
 # Ensure that the loggers exist for all tests
 setup_logging()
@@ -24,13 +24,13 @@ from bork.testsuite.platform import fakeroot_detected  # noqa: E402
 @pytest.fixture(autouse=True)
 def clean_env(tmpdir_factory, monkeypatch):
     # also avoid to use anything from the outside environment:
-    keys = [key for key in os.environ if key.startswith("BORG_") and key not in ("BORG_FUSE_IMPL",)]
+    keys = [key for key in os.environ if key.startswith("BORK_") and key not in ("BORK_FUSE_IMPL",)]
     for key in keys:
         monkeypatch.delenv(key, raising=False)
     # avoid that we access / modify the user's normal .config / .cache directory:
-    monkeypatch.setenv("BORG_BASE_DIR", str(tmpdir_factory.mktemp("borg-base-dir")))
+    monkeypatch.setenv("BORK_BASE_DIR", str(tmpdir_factory.mktemp("bork-base-dir")))
     # Speed up tests
-    monkeypatch.setenv("BORG_TESTONLY_WEAKEN_KDF", "1")
+    monkeypatch.setenv("BORK_TESTONLY_WEAKEN_KDF", "1")
 
 
 def pytest_report_header(config, startdir):
@@ -42,7 +42,7 @@ def pytest_report_header(config, startdir):
         "symlinks": are_symlinks_supported(),
         "hardlinks": are_hardlinks_supported(),
         "atime/mtime": is_utime_fully_supported(),
-        "modes": "BORG_TESTS_IGNORE_MODES" not in os.environ,
+        "modes": "BORK_TESTS_IGNORE_MODES" not in os.environ,
     }
     enabled = []
     disabled = []
@@ -80,16 +80,16 @@ def default_patches(request):
 
 @pytest.fixture()
 def set_env_variables():
-    os.environ["BORG_CHECK_I_KNOW_WHAT_I_AM_DOING"] = "YES"
-    os.environ["BORG_DELETE_I_KNOW_WHAT_I_AM_DOING"] = "YES"
-    os.environ["BORG_PASSPHRASE"] = "waytooeasyonlyfortests"
-    os.environ["BORG_SELFTEST"] = "disabled"
+    os.environ["BORK_CHECK_I_KNOW_WHAT_I_AM_DOING"] = "YES"
+    os.environ["BORK_DELETE_I_KNOW_WHAT_I_AM_DOING"] = "YES"
+    os.environ["BORK_PASSPHRASE"] = "waytooeasyonlyfortests"
+    os.environ["BORK_SELFTEST"] = "disabled"
 
 
 class ArchiverSetup:
     EXE: str = None  # python source based
     FORK_DEFAULT = False
-    BORG_EXES = []
+    BORK_EXES = []
 
     def __init__(self):
         self.archiver = None
@@ -106,7 +106,7 @@ class ArchiverSetup:
     def get_kind(self) -> str:
         if self.repository_location.startswith("ssh://__testsuite__"):
             return "remote"
-        elif self.EXE == "borg.exe":
+        elif self.EXE == "bork.exe":
             return "binary"
         else:
             return "local"
@@ -125,8 +125,8 @@ def archiver(tmp_path, set_env_variables):
     archiver.cache_path = os.fspath(tmp_path / "cache")
     archiver.exclude_file_path = os.fspath(tmp_path / "excludes")
     archiver.patterns_file_path = os.fspath(tmp_path / "patterns")
-    os.environ["BORG_KEYS_DIR"] = archiver.keys_path
-    os.environ["BORG_CACHE_DIR"] = archiver.cache_path
+    os.environ["BORK_KEYS_DIR"] = archiver.keys_path
+    os.environ["BORK_CACHE_DIR"] = archiver.cache_path
     os.mkdir(archiver.input_path)
     os.chmod(archiver.input_path, 0o777)  # avoid troubles with fakeroot / FUSE
     os.mkdir(archiver.output_path)
@@ -150,8 +150,8 @@ def remote_archiver(archiver):
 
 @pytest.fixture()
 def binary_archiver(archiver):
-    if "binary" not in BORG_EXES:
-        pytest.skip("No borg.exe binary available")
-    archiver.EXE = "borg.exe"
+    if "binary" not in BORK_EXES:
+        pytest.skip("No bork.exe binary available")
+    archiver.EXE = "bork.exe"
     archiver.FORK_DEFAULT = True
     yield archiver

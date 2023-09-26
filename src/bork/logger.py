@@ -29,9 +29,9 @@ The way to use this is as follows:
 * what is output on INFO level is additionally controlled by commandline
   flags
 
-Logging setup is a bit complicated in borg, as it needs to work under misc. conditions:
+Logging setup is a bit complicated in bork, as it needs to work under misc. conditions:
 - purely local, not client/server (easy)
-- client/server: RemoteRepository ("borg serve" process) writes log records into a global
+- client/server: RemoteRepository ("bork serve" process) writes log records into a global
   queue, which is then sent to the client side by the main serve loop (via the RPC protocol,
   either over ssh stdout, more directly via process stdout without ssh [used in the tests]
   or via a socket. On the client side, the log records are fed into the clientside logging
@@ -41,10 +41,10 @@ Logging setup is a bit complicated in borg, as it needs to work under misc. cond
 - progress output is always given as json to the logger (including the plain text inside
   the json), but then formatted by the logging system's formatter as either plain text or
   json depending on the cli args given (--log-json?).
-- tests: potentially running in parallel via pytest-xdist, capturing borg output into a
+- tests: potentially running in parallel via pytest-xdist, capturing bork output into a
   given stream.
-- logging might be short-lived (e.g. when invoking a single borg command via the cli)
-  or long-lived (e.g. borg serve --socket or when running the tests)
+- logging might be short-lived (e.g. when invoking a single bork command via the cli)
+  or long-lived (e.g. bork serve --socket or when running the tests)
 - logging is global and exists only once per process.
 """
 
@@ -60,14 +60,14 @@ import time
 from typing import Optional
 import warnings
 
-logging_debugging_path: Optional[str] = None  # if set, write borg.logger debugging log to path/borg-*.log
+logging_debugging_path: Optional[str] = None  # if set, write bork.logger debugging log to path/bork-*.log
 
 configured = False
-borg_serve_log_queue: queue.SimpleQueue = queue.SimpleQueue()
+bork_serve_log_queue: queue.SimpleQueue = queue.SimpleQueue()
 
 
-class BorgQueueHandler(logging.handlers.QueueHandler):
-    """borg serve writes log record dicts to a borg_serve_log_queue"""
+class BorkQueueHandler(logging.handlers.QueueHandler):
+    """bork serve writes log record dicts to a bork_serve_log_queue"""
 
     def prepare(self, record: logging.LogRecord) -> dict:
         return dict(
@@ -135,16 +135,16 @@ def remove_handlers(logger):
 
 def flush_logging():
     # make sure all log output is flushed,
-    # this is especially important for the "borg serve" RemoteRepository logging:
+    # this is especially important for the "bork serve" RemoteRepository logging:
     # all log output needs to be sent via the ssh / socket connection before closing it.
-    for logger_name in "borg.output.progress", "":
+    for logger_name in "bork.output.progress", "":
         logger = logging.getLogger(logger_name)
         for handler in logger.handlers:
             handler.flush()
 
 
 def setup_logging(
-    stream=None, conf_fname=None, env_var="BORG_LOGGING_CONF", level="info", is_serve=False, log_json=False, func=None
+    stream=None, conf_fname=None, env_var="BORK_LOGGING_CONF", level="info", is_serve=False, log_json=False, func=None
 ):
     """setup logging module according to the arguments provided
 
@@ -154,7 +154,7 @@ def setup_logging(
     otherwise, set up a stream handler logger on stderr (by default, if no
     stream is provided).
 
-    is_serve: are we setting up the logging for "borg serve"?
+    is_serve: are we setting up the logging for "bork serve"?
     """
     global configured
     err_msg = None
@@ -182,7 +182,7 @@ def setup_logging(
     fmt = "%(message)s"
     formatter = JsonFormatter(fmt) if log_json else logging.Formatter(fmt)
     SHandler = StderrHandler if stream is None else logging.StreamHandler
-    handler = BorgQueueHandler(borg_serve_log_queue) if is_serve else SHandler(stream)
+    handler = BorkQueueHandler(bork_serve_log_queue) if is_serve else SHandler(stream)
     handler.setFormatter(formatter)
     logger = logging.getLogger()
     remove_handlers(logger)
@@ -190,7 +190,7 @@ def setup_logging(
 
     if logging_debugging_path is not None:
         # add an addtl. root handler for debugging purposes
-        log_fname = os.path.join(logging_debugging_path, f"borg-{'serve' if is_serve else 'client'}-root.log")
+        log_fname = os.path.join(logging_debugging_path, f"bork-{'serve' if is_serve else 'client'}-root.log")
         handler2 = logging.StreamHandler(open(log_fname, "a"))
         handler2.setFormatter(formatter)
         logger.addHandler(handler2)
@@ -199,16 +199,16 @@ def setup_logging(
     logger.addHandler(handler)  # do this late, so handler is not added while debug handler is set up
 
     bop_formatter = JSONProgressFormatter() if log_json else TextProgressFormatter()
-    bop_handler = BorgQueueHandler(borg_serve_log_queue) if is_serve else SHandler(stream)
+    bop_handler = BorkQueueHandler(bork_serve_log_queue) if is_serve else SHandler(stream)
     bop_handler.setFormatter(bop_formatter)
-    bop_logger = logging.getLogger("borg.output.progress")
+    bop_logger = logging.getLogger("bork.output.progress")
     remove_handlers(bop_logger)
     bop_logger.setLevel("INFO")
     bop_logger.propagate = False
 
     if logging_debugging_path is not None:
         # add an addtl. progress handler for debugging purposes
-        log_fname = os.path.join(logging_debugging_path, f"borg-{'serve' if is_serve else 'client'}-progress.log")
+        log_fname = os.path.join(logging_debugging_path, f"bork-{'serve' if is_serve else 'client'}-progress.log")
         bop_handler2 = logging.StreamHandler(open(log_fname, "a"))
         bop_handler2.setFormatter(bop_formatter)
         bop_logger.addHandler(bop_handler2)

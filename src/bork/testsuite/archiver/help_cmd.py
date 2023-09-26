@@ -7,8 +7,8 @@ from . import Archiver, cmd
 
 def get_all_parsers():
     # Return dict mapping command to parser.
-    parser = Archiver(prog="borg").build_parser()
-    borgfs_parser = Archiver(prog="borgfs").build_parser()
+    parser = Archiver(prog="bork").build_parser()
+    borkfs_parser = Archiver(prog="borkfs").build_parser()
     parsers = {}
 
     def discover_level(prefix, parser, Archiver, extra_choices=None):
@@ -36,7 +36,7 @@ def test_usage(archiver):
 
 
 def test_help(archiver):
-    assert "Borg" in cmd(archiver, "help")
+    assert "Bork" in cmd(archiver, "help")
     assert "patterns" in cmd(archiver, "help", "patterns")
     assert "creates a new, empty repository" in cmd(archiver, "help", "rcreate")
     assert "positional arguments" not in cmd(archiver, "help", "rcreate", "--epilog-only")

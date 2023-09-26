@@ -1,5 +1,5 @@
 
-#define BORG_NO_PYTHON
+#define BORK_NO_PYTHON
 
 #include "../../src/bork/_hashindex.c"
 #include "../../src/bork/cache_sync/cache_sync.c"

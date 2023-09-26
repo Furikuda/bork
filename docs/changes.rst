@@ -12,7 +12,7 @@ This section provides information about security and corruption issues.
 Upgrade Notes
 =============
 
-borg 1.2.x to borg 2.0
+bork 1.2.x to bork 2.0
 ----------------------
 
 Compatibility notes:
@@ -28,14 +28,14 @@ Compatibility notes:
   You can use "bork transfer" to transfer archives from bork 1.1/1.2 repos to
   a new bork 2.0 repo, but it will need some time and space.
 
-  Before using "borg transfer", you must have upgraded to borg >= 1.2.6 (or
-  another borg version that was patched to fix CVE-2023-CVE-2023-36811) and
+  Before using "bork transfer", you must have upgraded to bork >= 1.2.6 (or
+  another bork version that was patched to fix CVE-2023-CVE-2023-36811) and
   you must have followed the upgrade instructions at top of the change log
-  relating to manifest and archive TAMs (borg2 just requires these TAMs now).
+  relating to manifest and archive TAMs (bork2 just requires these TAMs now).
 
 - command line syntax was changed, scripts and wrappers will need changes:
 
-  - you will usually either export BORG_REPO=<MYREPO> into your environment or
+  - you will usually either export BORK_REPO=<MYREPO> into your environment or
     call bork like: "bork -r <MYREPO> <COMMAND>".
     in the docs, we usually omit "-r ..." for brevity.
   - the scp-style REPO syntax was removed, please use ssh://..., #6697
@@ -51,9 +51,9 @@ Compatibility notes:
   - or, if the command makes sense for an arbitrary amount of archives, archives
     can be selected using a glob pattern, like:
 
-    - borg delete -a 'sh:myarchive*'
-    - borg recreate -a 'sh:myarchive*'
-  - some borg 1.x commands that supported working on a repo AND on an archive
+    - bork delete -a 'sh:myarchive*'
+    - bork recreate -a 'sh:myarchive*'
+  - some bork 1.x commands that supported working on a repo AND on an archive
     were split into 2 commands, some others were renamed:
 
     - bork 2 repo commands:
@@ -100,8 +100,8 @@ Compatibility notes:
 - use platformdirs 3.x.x instead of home-grown code. Due to that:
 
   - XDG_*_HOME is not honoured on macOS and on Windows.
-  - BORG_BASE_DIR can still be used to enforce some base dir + .config/ or .cache/.
-  - the default macOS config and cache dir will now be in ~/Library/Application Support/borg/.
+  - BORK_BASE_DIR can still be used to enforce some base dir + .config/ or .cache/.
+  - the default macOS config and cache dir will now be in ~/Library/Application Support/bork/.
 - create: different included/excluded status chars, #7321
 
   - dry-run: now uses "+" (was: "-") and "-" (was: "x") for included/excluded status
@@ -109,7 +109,7 @@ Compatibility notes:
 
   Option --filter=... might need an update, if you filter for the status chars
   that were changed.
-- borg is now more strict and disallows giving some options multiple times -
+- bork is now more strict and disallows giving some options multiple times -
   if that makes no sense. Highlander options, see #6269. That might make scripts
   fail now that somehow "worked" before (but maybe didn't work as intended due to
   the contradicting options).
@@ -132,8 +132,8 @@ above.
 
 New features:
 
-- BORG_WORKAROUNDS=authenticated_no_key to extract from authenticated repos
-  without having the borg key, #7700
+- BORK_WORKAROUNDS=authenticated_no_key to extract from authenticated repos
+  without having the bork key, #7700
 
 Fixes:
 
@@ -145,8 +145,8 @@ Fixes:
 
 Other changes:
 
-- always implicitly require archive TAMs (all archives have TAMs since borg 1.2.6)
-- always implicitly require manifest TAMs (manifests have TAMs since borg 1.0.9)
+- always implicitly require archive TAMs (all archives have TAMs since bork 1.2.6)
+- always implicitly require manifest TAMs (manifests have TAMs since bork 1.0.9)
 - rlist: remove support for {tam} placeholder, archives are now always TAM-authenticated.
 - support / test on Python 3.12
 - allow msgpack 1.0.6 (which has py312 wheels), #7810
@@ -156,10 +156,10 @@ Other changes:
 - Docs:
 
   - move upgrade / compat. notes to own section, see #7546
-  - fix borg delete examples, #7759
+  - fix bork delete examples, #7759
   - improve rcreate / related repos docs
   - automated-local.rst: use UUID for consistent udev rule
-  - rewrite `borg check` docs, #7578
+  - rewrite `bork check` docs, #7578
   - misc. other docs updates
 - Tests / CI / Vagrant:
 
@@ -170,7 +170,7 @@ Other changes:
   - CI: run on ubuntu 22.04
   - CI: test building the docs
   - simplify flake8 config, fix some complaints
-  - use pyinstaller 5.13.1 to build the borg binaries
+  - use pyinstaller 5.13.1 to build the bork binaries
 
 
 Version 2.0.0b6 (2023-06-11)
@@ -188,13 +188,13 @@ New features:
 - extract --continue: continue a previously interrupted extraction, #1356
 - prune --list-kept/--list-pruned: only list the kept (or pruned) archives, #7511
 - prune --short/--format: enable users to format the list output, #3238
-- implement BORG_<CMD>_FORMAT env vars for prune, list, rlist, #5166
+- implement BORK_<CMD>_FORMAT env vars for prune, list, rlist, #5166
 - rlist: size and nfiles format keys
 - implement unix domain (ipc) socket support, #6183::
 
-      borg serve --socket  # server side (not started automatically!)
-      borg -r socket:///path/to/repo ...  # client side
-- add get_runtime_dir / BORG_RUNTIME_DIR (contains e.g. .sock and .pid file)
+      bork serve --socket  # server side (not started automatically!)
+      bork -r socket:///path/to/repo ...  # client side
+- add get_runtime_dir / BORK_RUNTIME_DIR (contains e.g. .sock and .pid file)
 - support shell-style alternatives, like: sh:image.{png,jpg}, #7602
 
 Fixes:
@@ -205,17 +205,17 @@ Fixes:
 - xattrs: fix namespace processing on FreeBSD, #6997
 - ProgressIndicatorPercent: fix space computation for wide chars, #3027
 - delete: remove --cache-only option, #7440.
-  for deleting the cache only, use: borg rdelete --cache-only
-- borg debug get-obj/put-obj: fixed chunk id
+  for deleting the cache only, use: bork rdelete --cache-only
+- bork debug get-obj/put-obj: fixed chunk id
 - create: ignore empty paths, print warning, #5637
 - extract: support extraction of atime/mtime on win32
 - benchmark crud: use TemporaryDirectory below given path, #4706
 - Ensure that cli options specified with action=Highlander can only be set once, even
   if the set value is a default value. Add tests for action=Highlander, #7500, #6269.
 - Fix argparse error messages from misc. validators (being more specific).
-- put security infos into data dir, add BORG_DATA_DIR env var, #5760
+- put security infos into data dir, add BORK_DATA_DIR env var, #5760
 - setup.cfg: remove setup_requires (we have a pyproject.toml for that), #7574
-- do not crash for empty archives list in borg rlist date based matching, #7522
+- do not crash for empty archives list in bork rlist date based matching, #7522
 - sanitize paths during archive creation and extraction, #7108 #7099
 - make sure we do not get backslashes into item paths
 
@@ -230,11 +230,11 @@ Other changes:
 - more Highlander options, #6269
 - Windows: simplify building (just use pip)
 - refactor toplevel exception handling, #6018
-- remove nonce management, related repo methods (not needed for borg2)
-- borg.remote: remove support for borg < 1.1.0
+- remove nonce management, related repo methods (not needed for bork2)
+- bork.remote: remove support for bork < 1.1.0
   ($LOG, logging setup, exceptions, rpc tuple data format, version)
 - new remote and progress logging, #7604
-- borg.logger: add logging debugging functionality
+- bork.logger: add logging debugging functionality
 - add function to clear empty directories at end of compact process
 - unify scanning and listing of segment dirs / segment files, #7597
 - replace `LRUCache` internals with `OrderedDict`
@@ -242,7 +242,7 @@ Other changes:
 
   - add installation instructions for Windows
   - improve --one-file-system help and docs (macOS APFS), #5618 #4876
-  - BORG_KEY_FILE: clarify docs, #7444
+  - BORK_KEY_FILE: clarify docs, #7444
   - installation: add link to OS dependencies, #7356
   - update FAQ about locale/unicode issues, #6999
   - improve mount options rendering, #7359
@@ -296,7 +296,7 @@ Fixes:
 - locking (win32): deal with os.rmdir/listdir PermissionErrors
 - locking: thread id must be parsed as hex from lock file name
 - extract: fix mtime when ResourceFork xattr is set (macOS specific), #7234
-- recreate: without --chunker-params borg shall not rechunk, #7336
+- recreate: without --chunker-params bork shall not rechunk, #7336
 - allow mixing --progress and --list in log-json mode
 - add "files changed while reading" to Statistics class, #7354
 - fixed keys determination in Statistics.__add__(), #7355
@@ -322,7 +322,7 @@ Other changes:
 - require and use platformdirs 3.x.x package, tests
 - better included/excluded status chars, docs, #7321
 - undef NDEBUG for chunker and hashindex (make assert() work)
-- assert_id: better be paranoid (add back same crypto code as in old borg), #7362
+- assert_id: better be paranoid (add back same crypto code as in old bork), #7362
 - check --verify_data: always decompress and call assert_id(), #7362
 - make hashindex_compact simpler and probably faster, minor fixes, cleanups, more tests
 - hashindex minor fixes, refactor, tweaks, tests
@@ -339,12 +339,12 @@ Other changes:
 
   - docs and comments consistency, readability and spelling fixes
   - fix --progress display description, #7180
-  - document how borg deals with non-unicode bytes in JSON output
+  - document how bork deals with non-unicode bytes in JSON output
   - document another way to get UTF-8 encoding on stdin/stdout/stderr, #2273
-  - pruning interprets timestamps in the local timezone where borg prune runs
+  - pruning interprets timestamps in the local timezone where bork prune runs
   - shellpattern: add license, use copyright/license markup
   - key change-passphrase: fix --encryption value in examples
-  - remove BORG_LIBB2_PREFIX (not used any more)
+  - remove BORK_LIBB2_PREFIX (not used any more)
   - Installation: Update Fedora in distribution list, #7357
   - add .readthedocs.yaml (use py311, use non-shallow clone)
 - tests:
@@ -352,8 +352,8 @@ Other changes:
   - fix archiver tests on Windows, add running the tests to Windows CI
   - fix tox4 passenv issue, #7199
   - github actions updates (fix deprecation warnings)
-  - add tests for borg transfer/upgrade
-  - fix test hanging reading FIFO when `borg create` failed
+  - add tests for bork transfer/upgrade
+  - fix test hanging reading FIFO when `bork create` failed
   - mypy inspired fixes / updates
   - fix prune tests, prune in localtime
   - do not look up uid 0 / gid 0, but current process uid/gid
@@ -371,7 +371,7 @@ Fixes:
 
 - transfer/upgrade: fix bork < 1.2 chunker_params, #7079
 - transfer/upgrade: do not access Item._dict, #7077
-- transfer/upgrade: fix crash in borg transfer, #7156
+- transfer/upgrade: fix crash in bork transfer, #7156
 - archive.save(): always use metadata from stats, #7072
 - benchmark: fixed TypeError in compression benchmarks, #7075
 - fix repository.scan api minimum requirement
@@ -380,7 +380,7 @@ Fixes:
 Other changes:
 
 - tar_filter: recognize .tar.zst as zstd, #7093
-- adding performance statistics to borg create, #6991
+- adding performance statistics to bork create, #6991
 - docs: add rcompress to usage index
 - tests:
 
@@ -390,7 +390,7 @@ Other changes:
 - vagrant:
 
   - upgrade pyinstaller to 5.6.2 (supports python 3.11)
-  - use python 3.11 to build the borg binary
+  - use python 3.11 to build the bork binary
 
 Version 2.0.0b3 (2022-10-02)
 ----------------------------
@@ -407,7 +407,7 @@ New features:
 
 - rcompress: do a repo-wide (re)compression, #7037
 - implement pattern support for --match-archives, #6504
-- BORG_LOCK_WAIT=n env var to set default for --lock-wait option, #5279
+- BORK_LOCK_WAIT=n env var to set default for --lock-wait option, #5279
 
 Other:
 
@@ -538,8 +538,8 @@ Changes:
 
 - split repo and archive name into separate args, #948
 
-  - use -r or --repo or BORG_REPO env var to give the repository
-  - use --other-repo or BORG_OTHER_REPO to give another repo (e.g. bork transfer)
+  - use -r or --repo or BORK_REPO env var to give the repository
+  - use --other-repo or BORK_OTHER_REPO to give another repo (e.g. bork transfer)
   - use positional argument for archive name or `-a ARCH_GLOB`
 - remove support for scp-style repo specification, use ssh://...
 - simplify stats output: repo ops -> repo stats, archive ops -> archive stats
@@ -609,7 +609,7 @@ New features:
 - benchmark cpu: display benchmarks of cpu bound stuff
 - export-tar: new --tar-format=PAX (default: GNU)
 - import-tar/export-tar: can use PAX format for ctime and atime support
-- import-tar/export-tar: --tar-format=BORG: roundtrip ALL item metadata, #5830
+- import-tar/export-tar: --tar-format=BORK: roundtrip ALL item metadata, #5830
 - repository: create and use version 2 repos only for now
 - repository: implement PUT2: header crc32, overall xxh64, #1704
 

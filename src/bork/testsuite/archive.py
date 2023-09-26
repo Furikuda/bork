@@ -353,7 +353,7 @@ def test_get_item_uid_gid():
     assert gid == 8
 
     if not is_win32:
-        # due to the hack in borg.platform.windows user2uid / group2gid, these always return 0
+        # due to the hack in bork.platform.windows user2uid / group2gid, these always return 0
         # (no matter which username we ask for) and they never raise a KeyError (like e.g. for
         # a non-existing user/group name). Thus, these tests can currently not succeed on win32.
 

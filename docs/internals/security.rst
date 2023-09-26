@@ -105,13 +105,13 @@ client, thereby anchoring the entire DAG, making it impossible for an attacker
 to add, remove or modify any part of the DAG without Bork being able to detect
 the tampering.
 
-Note that when using BORG_PASSPHRASE the attacker cannot swap the *entire*
+Note that when using BORK_PASSPHRASE the attacker cannot swap the *entire*
 repository against a new repository with e.g. repokey mode and no passphrase,
-because Bork will abort access when BORG_PASSPHRASE is incorrect.
+because Bork will abort access when BORK_PASSPHRASE is incorrect.
 
 However, interactively a user might not notice this kind of attack
 immediately, if she assumes that the reason for the absent passphrase
-prompt is a set BORG_PASSPHRASE. See issue :issue:`2169` for details.
+prompt is a set BORK_PASSPHRASE. See issue :issue:`2169` for details.
 
 .. [#] The reason why the authentication tag is stored in the packed
        data itself is that older Bork versions can still read the
@@ -275,8 +275,8 @@ This means that the authorization and transport security properties
 are inherited from SSH and the configuration of the SSH client and the
 SSH server -- Bork RPC does not contain *any* networking
 code. Networking is done by the SSH client running in a separate
-process, Borg only communicates over the standard pipes (stdout,
-stderr and stdin) with this process. This also means that Borg doesn't
+process, Bork only communicates over the standard pipes (stdout,
+stderr and stdin) with this process. This also means that Bork doesn't
 have to use a SSH client directly (or SSH at all). For example,
 ``sudo`` or ``qrexec`` could be used as an intermediary.
 

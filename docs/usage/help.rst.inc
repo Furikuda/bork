@@ -28,7 +28,7 @@ into the matcher will start with ``absolute/``.
 If you give ``../../relative`` as root, the paths will be normalized
 as ``relative/``.
 
-Borg supports different pattern styles. To define a non-default
+Bork supports different pattern styles. To define a non-default
 style for a specific pattern, prefix it with two characters followed
 by a colon ':' (i.e. ``fm:path/*``, ``sh:path/**``).
 
@@ -218,10 +218,10 @@ Examples::
     bork create --pattern=+pics/2018/good --pattern=-pics/2018 archive pics
 
     # back up only JPG/JPEG files (case insensitive) in all home directories:
-    borg create --pattern '+ re:\.jpe?g(?i)$' archive /home
+    bork create --pattern '+ re:\.jpe?g(?i)$' archive /home
 
     # back up homes, but exclude big downloads (like .ISO files) or hidden files:
-    borg create --exclude 're:\.iso(?i)$' --exclude 'sh:home/**/.*' archive /home
+    bork create --exclude 're:\.iso(?i)$' --exclude 'sh:home/**/.*' archive /home
 
     # use a file with patterns (recursion root '/' via command line):
     bork create --patterns-from patterns.lst archive /
@@ -451,14 +451,14 @@ obfuscate,SPEC,C[,L]
 
 Examples::
 
-    borg create --compression lz4 REPO::ARCHIVE data
-    borg create --compression zstd REPO::ARCHIVE data
-    borg create --compression zstd,10 REPO::ARCHIVE data
-    borg create --compression zlib REPO::ARCHIVE data
-    borg create --compression zlib,1 REPO::ARCHIVE data
-    borg create --compression auto,lzma,6 REPO::ARCHIVE data
-    borg create --compression auto,lzma ...
-    borg create --compression obfuscate,110,none ...
-    borg create --compression obfuscate,3,auto,zstd,10 ...
-    borg create --compression obfuscate,2,zstd,6 ...
+    bork create --compression lz4 REPO::ARCHIVE data
+    bork create --compression zstd REPO::ARCHIVE data
+    bork create --compression zstd,10 REPO::ARCHIVE data
+    bork create --compression zlib REPO::ARCHIVE data
+    bork create --compression zlib,1 REPO::ARCHIVE data
+    bork create --compression auto,lzma,6 REPO::ARCHIVE data
+    bork create --compression auto,lzma ...
+    bork create --compression obfuscate,110,none ...
+    bork create --compression obfuscate,3,auto,zstd,10 ...
+    bork create --compression obfuscate,2,zstd,6 ...
 

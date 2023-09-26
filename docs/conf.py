@@ -246,6 +246,6 @@ extensions = [
 ]
 
 extlinks = {
-    "issue": ("https://github.com/borgbackup/borg/issues/%s", "#%s"),
-    "targz_url": ("https://pypi.python.org/packages/source/b/borgbackup/%%s-%s.tar.gz" % version, None),
+    "issue": ("https://github.com/borkbackup/bork/issues/%s", "#%s"),
+    "targz_url": ("https://pypi.python.org/packages/source/b/borkbackup/%%s-%s.tar.gz" % version, None),
 }

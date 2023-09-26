@@ -93,7 +93,7 @@ per directory is controlled by the value of ``segments_per_dir``. If you change
 this value in a non-empty repository, you may also need to relocate the segment
 files manually.
 
-A segment starts with a magic number (``BORG_SEG`` as an eight byte ASCII string),
+A segment starts with a magic number (``BORK_SEG`` as an eight byte ASCII string),
 followed by a number of log entries. Each log entry consists of (in this order):
 
 * crc32 checksum (uint32):
@@ -384,7 +384,7 @@ The *tam* key is part of the :ref:`tertiary authentication mechanism <tam_descri
 the manifest, since an ID check is not possible.
 
 *config* is a general-purpose location for additional metadata. All versions
-of Borg preserve its contents.
+of Bork preserve its contents.
 
 Feature flags
 +++++++++++++
@@ -680,7 +680,7 @@ In memory, the files cache is a key -> value mapping (a Python *dict*) and conta
   - file inode number
   - file size
   - file ctime_ns (or mtime_ns)
-  - age (0 [newest], 1, 2, 3, ..., BORG_FILES_CACHE_TTL - 1)
+  - age (0 [newest], 1, 2, 3, ..., BORK_FILES_CACHE_TTL - 1)
   - list of chunk ids representing the file's contents
 
 To determine whether a file has not changed, cached values are looked up via
@@ -708,7 +708,7 @@ be told to ignore the inode number in the check via --files-cache.
 
 The age value is used for cache management. If a file is "seen" in a backup
 run, its age is reset to 0, otherwise its age is incremented by one.
-If a file was not seen in BORG_FILES_CACHE_TTL backups, its cache entry is
+If a file was not seen in BORK_FILES_CACHE_TTL backups, its cache entry is
 removed. See also: :ref:`always_chunking` and :ref:`a_status_oddity`
 
 The files cache is a python dictionary, storing python objects, which
@@ -843,7 +843,7 @@ The format is easy to read and write, because the buckets array has the same lay
 in memory and on disk. Only the header formats differ. The on-disk header is
 ``struct HashHeader``:
 
-- First, the HashIndex magic, the eight byte ASCII string "BORG_IDX".
+- First, the HashIndex magic, the eight byte ASCII string "BORK_IDX".
 - Second, the signed 32-bit number of entries (i.e. buckets which are not deleted and not empty).
 - Third, the signed 32-bit number of buckets, i.e. the length of the buckets array
   contained in the file, and the modulus for index calculation.
@@ -915,7 +915,7 @@ In both cases, the secrets are generated from random and then encrypted by a
 key derived from your passphrase (this happens on the client before the key
 is stored into the keyfile or as repokey).
 
-The passphrase is passed through the ``BORG_PASSPHRASE`` environment variable
+The passphrase is passed through the ``BORK_PASSPHRASE`` environment variable
 or prompted for interactive usage.
 
 .. _key_files:

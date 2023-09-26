@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-CHECK" 1 "2023-09-14" "" "borg backup tool"
+.TH "BORK-CHECK" 1 "2023-09-14" "" "bork backup tool"
 .SH NAME
 bork-check \- Check repository consistency
 .SH SYNOPSIS
@@ -92,7 +92,7 @@ not use \fB\-\-verify\-data\fP with \fB\-\-repository\-only\fP\&.
 .SS About repair mode
 .sp
 The check command is a readonly task by default. If any corruption is found,
-Borg will report the issue and proceed with checking. To actually repair the
+Bork will report the issue and proceed with checking. To actually repair the
 issues found, pass \fB\-\-repair\fP\&.
 .sp
 \fBNOTE:\fP
@@ -106,7 +106,7 @@ dealing with. \fBBE VERY CAREFUL!\fP
 .UNINDENT
 .sp
 Pursuant to the previous warning it is also highly recommended to test the
-reliability of the hardware running Borg with stress testing software. This
+reliability of the hardware running Bork with stress testing software. This
 especially includes storage and memory testers. Unreliable hardware might lead
 to additional data loss.
 .sp
@@ -114,7 +114,7 @@ It is highly recommended to create a backup of your repository before running
 in repair mode (i.e. running it with \fB\-\-repair\fP).
 .sp
 Repair mode will attempt to fix any corruptions found. Fixing corruptions does
-not mean recovering lost data: Borg can not magically restore data lost due to
+not mean recovering lost data: Bork can not magically restore data lost due to
 e.g. a hardware failure. Repairing a repository means sacrificing some data
 for the sake of the repository as a whole and the remaining data. Hence it is,
 by definition, a potentially lossy task.
@@ -143,18 +143,18 @@ the \fBextract\fP command will distinctly warn about it. The FUSE filesystem
 created by the \fBmount\fP command will reject reading such a \(dqzero\-patched\(dq
 file unless a special mount option is given.
 .sp
-As mentioned earlier, Borg might be able to \(dqheal\(dq a \(dqzero\-patched\(dq file in
+As mentioned earlier, Bork might be able to \(dqheal\(dq a \(dqzero\-patched\(dq file in
 repair mode, if all its previously lost chunks reappear (e.g. via a later
-backup). This is achieved by Borg not only keeping track of the all\-zero
+backup). This is achieved by Bork not only keeping track of the all\-zero
 replacement chunks, but also by keeping metadata about the lost chunks. In
-repair mode Borg will check whether a previously lost chunk reappeared and will
+repair mode Bork will check whether a previously lost chunk reappeared and will
 replace the all\-zero replacement chunk by the reappeared chunk. If all lost
 chunks of a \(dqzero\-patched\(dq file reappear, this effectively \(dqheals\(dq the file.
 Consequently, if lost chunks were repaired earlier, it is advised to run
 \fB\-\-repair\fP a second time after creating some new backups.
 .SH OPTIONS
 .sp
-See \fIborg\-common(1)\fP for common options of Borg commands.
+See \fIbork\-common(1)\fP for common options of Bork commands.
 .SS options
 .INDENT 0.0
 .TP

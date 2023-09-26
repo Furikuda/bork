@@ -94,9 +94,9 @@ class TransferMixIn:
                 for item in other_archive.iter_items():
                     is_part = bool(item.get("part", False))
                     if is_part:
-                        # borg 1.x created part files while checkpointing (in addition to the full
-                        # file in the final archive), like <filename>.borg_part_<part> with item.part >= 1.
-                        # borg2 archives do not have such special part items anymore.
+                        # bork 1.x created part files while checkpointing (in addition to the full
+                        # file in the final archive), like <filename>.bork_part_<part> with item.part >= 1.
+                        # bork2 archives do not have such special part items anymore.
                         # so let's remove them from old archives also, considering there is no
                         # code any more that deals with them in special ways (e.g. to get stats right).
                         continue
@@ -178,7 +178,7 @@ class TransferMixIn:
         Optionally, it can also recompress the transferred data.
 
         It is easiest (and fastest) to give ``--compression=COMPRESSION --recompress=never`` using
-        the same COMPRESSION mode as in the SRC_REPO - borg will use that COMPRESSION for metadata (in
+        the same COMPRESSION mode as in the SRC_REPO - bork will use that COMPRESSION for metadata (in
         any case) and keep data compressed "as is" (saves time as no data compression is needed).
 
         If you want to globally change compression while transferring archives to the DST_REPO,
@@ -205,11 +205,11 @@ class TransferMixIn:
         quite similar to the above::
 
             # fast: compress metadata with zstd,3, but keep data chunks compressed as they are:
-            borg --repo=DST_REPO transfer --other-repo=SRC_REPO --upgrader=From12To20 \\
+            bork --repo=DST_REPO transfer --other-repo=SRC_REPO --upgrader=From12To20 \\
                  --compress=zstd,3 --recompress=never
 
             # compress metadata and recompress data with zstd,3
-            borg --repo=DST_REPO transfer --other-repo=SRC_REPO --upgrader=From12To20 \\
+            bork --repo=DST_REPO transfer --other-repo=SRC_REPO --upgrader=From12To20 \\
                  --compress=zstd,3 --recompress=always
 
 
@@ -254,7 +254,7 @@ class TransferMixIn:
             type=CompressionSpec,
             default=CompressionSpec("lz4"),
             action=Highlander,
-            help="select compression algorithm, see the output of the " '"borg help compression" command for details.',
+            help="select compression algorithm, see the output of the " '"bork help compression" command for details.',
         )
         subparser.add_argument(
             "--recompress",

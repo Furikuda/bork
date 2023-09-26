@@ -1231,7 +1231,7 @@ class MetadataCollector:
 # remember a few recently used all-zero chunk hashes in this mapping.
 # (hash_func, chunk_length) -> chunk_hash
 # we play safe and have the hash_func in the mapping key, in case we
-# have different hash_funcs within the same borg run.
+# have different hash_funcs within the same bork run.
 zero_chunk_ids = LRUCache(10)  # type: ignore[var-annotated]
 
 
@@ -1286,10 +1286,10 @@ class ChunksProcessor:
     def write_part_file(self, item):
         self.prepare_checkpoint()
         item = Item(internal_dict=item.as_dict())
-        # for borg recreate, we already have a size member in the source item (giving the total file size),
+        # for bork recreate, we already have a size member in the source item (giving the total file size),
         # but we consider only a part of the file here, thus we must recompute the size from the chunks:
         item.get_size(memorize=True, from_chunks=True)
-        item.path += ".borg_part"
+        item.path += ".bork_part"
         self.add_item(item, show_progress=False)
         self.write_checkpoint()
 
@@ -1605,9 +1605,9 @@ class TarfileObjectProcessors:
     @contextmanager
     def create_helper(self, tarinfo, status=None, type=None):
         ph = tarinfo.pax_headers
-        if ph and "BORG.item.version" in ph:
-            assert ph["BORG.item.version"] == "1"
-            meta_bin = base64.b64decode(ph["BORG.item.meta"])
+        if ph and "BORK.item.version" in ph:
+            assert ph["BORK.item.version"] == "1"
+            meta_bin = base64.b64decode(ph["BORK.item.meta"])
             meta_dict = msgpack.unpackb(meta_bin, object_hook=StableDict)
             item = Item(internal_dict=meta_dict)
         else:
@@ -1916,7 +1916,7 @@ class ArchiveChecker:
                 # run will find missing chunks and replace them with all-zero replacement
                 # chunks and flag the files as "repaired".
                 # if another backup is done later and the missing chunks get backed up again,
-                # a "borg check" afterwards can heal all files where this chunk was missing.
+                # a "bork check" afterwards can heal all files where this chunk was missing.
                 logger.warning(
                     "Found defect chunks. They will be deleted now, so affected files can "
                     "get repaired now and maybe healed later."
@@ -2000,9 +2000,9 @@ class ArchiveChecker:
                 except IntegrityError as integrity_error:
                     # TAM issues - do not accept this archive!
                     # either somebody is trying to attack us with a fake archive data or
-                    # we have an ancient archive made before TAM was a thing (borg < 1.0.9) **and** this repo
-                    # was not correctly upgraded to borg 1.2.5 (see advisory at top of the changelog).
-                    # borg can't tell the difference, so it has to assume this archive might be an attack
+                    # we have an ancient archive made before TAM was a thing (bork < 1.0.9) **and** this repo
+                    # was not correctly upgraded to bork 1.2.5 (see advisory at top of the changelog).
+                    # bork can't tell the difference, so it has to assume this archive might be an attack
                     # and drops this archive.
                     name = archive.get(b"name", b"<unknown>").decode("ascii", "replace")
                     logger.error("Archive TAM authentication issue for archive %s: %s", name, integrity_error)
@@ -2270,7 +2270,7 @@ class ArchiveChecker:
                     archive, salt = self.key.unpack_and_verify_archive(data)
                 except IntegrityError as integrity_error:
                     # looks like there is a TAM issue with this archive, this might be an attack!
-                    # when upgrading to borg 1.2.5, users are expected to TAM-authenticate all archives they
+                    # when upgrading to bork 1.2.5, users are expected to TAM-authenticate all archives they
                     # trust, so there shouldn't be any without TAM.
                     logger.error("Archive TAM authentication issue for archive %s: %s", info.name, integrity_error)
                     logger.error("This archive will be *removed* from the manifest! It will be deleted.")

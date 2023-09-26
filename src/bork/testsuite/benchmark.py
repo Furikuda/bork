@@ -17,12 +17,12 @@ from ..constants import zeros
 
 @pytest.fixture
 def repo_url(request, tmpdir, monkeypatch):
-    monkeypatch.setenv("BORG_PASSPHRASE", "123456")
-    monkeypatch.setenv("BORG_CHECK_I_KNOW_WHAT_I_AM_DOING", "YES")
-    monkeypatch.setenv("BORG_DELETE_I_KNOW_WHAT_I_AM_DOING", "YES")
-    monkeypatch.setenv("BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK", "yes")
-    monkeypatch.setenv("BORG_KEYS_DIR", str(tmpdir.join("keys")))
-    monkeypatch.setenv("BORG_CACHE_DIR", str(tmpdir.join("cache")))
+    monkeypatch.setenv("BORK_PASSPHRASE", "123456")
+    monkeypatch.setenv("BORK_CHECK_I_KNOW_WHAT_I_AM_DOING", "YES")
+    monkeypatch.setenv("BORK_DELETE_I_KNOW_WHAT_I_AM_DOING", "YES")
+    monkeypatch.setenv("BORK_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK", "yes")
+    monkeypatch.setenv("BORK_KEYS_DIR", str(tmpdir.join("keys")))
+    monkeypatch.setenv("BORK_CACHE_DIR", str(tmpdir.join("cache")))
     yield str(tmpdir.join("repository"))
     tmpdir.remove(rec=1)
 

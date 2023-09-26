@@ -1,6 +1,6 @@
 .. include:: key_change-location.rst.inc
 
-.. _borg-change-passphrase:
+.. _bork-change-passphrase:
 
 .. include:: key_change-passphrase.rst.inc
 
@@ -31,15 +31,15 @@ Examples
     # Import a previously-exported key into the specified
     # key file (creating or overwriting the output key)
     # (keyfile repositories only)
-    $ BORG_KEY_FILE=/path/to/output-key bork key import /path/to/exported
+    $ BORK_KEY_FILE=/path/to/output-key bork key import /path/to/exported
 
 Fully automated using environment variables:
 
 ::
 
-    $ BORG_NEW_PASSPHRASE=old borg rcreate --encryption=repokey-aes-ocb
+    $ BORK_NEW_PASSPHRASE=old bork rcreate --encryption=repokey-aes-ocb
     # now "old" is the current passphrase.
-    $ BORG_PASSPHRASE=old BORG_NEW_PASSPHRASE=new bork key change-passphrase
+    $ BORK_PASSPHRASE=old BORK_NEW_PASSPHRASE=new bork key change-passphrase
     # now "new" is the current passphrase.
 
 

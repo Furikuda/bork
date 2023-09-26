@@ -7,7 +7,7 @@ import os
 from ._common import with_repository, with_archive, build_matcher, Highlander
 from ..archive import Archive
 from ..constants import *  # NOQA
-from ..helpers import BaseFormatter, DiffFormatter, archivename_validator, BorgJsonEncoder
+from ..helpers import BaseFormatter, DiffFormatter, archivename_validator, BorkJsonEncoder
 from ..manifest import Manifest
 from ..logger import create_logger
 
@@ -24,7 +24,7 @@ class DiffMixIn:
         elif args.content_only:
             format = "{content}{link}{directory}{blkdev}{chrdev}{fifo} {path}{NL}"
         else:
-            format = os.environ.get("BORG_DIFF_FORMAT", "{change} {path}{NL}")
+            format = os.environ.get("BORK_DIFF_FORMAT", "{change} {path}{NL}")
 
         archive1 = archive
         archive2 = Archive(manifest, args.other_name)
@@ -65,7 +65,7 @@ class DiffMixIn:
                             ],
                         },
                         sort_keys=True,
-                        cls=BorgJsonEncoder,
+                        cls=BorkJsonEncoder,
                     )
                 )
             else:
@@ -87,7 +87,7 @@ class DiffMixIn:
                 """
         This command finds differences (file contents, metadata) between ARCHIVE1 and ARCHIVE2.
 
-        For more help on include/exclude patterns, see the :ref:`borg_patterns` command output.
+        For more help on include/exclude patterns, see the :ref:`bork_patterns` command output.
 
         .. man NOTES
 
@@ -100,13 +100,13 @@ class DiffMixIn:
         Examples:
         ::
 
-            $ borg diff --format '{content:30} {path}{NL}' ArchiveFoo ArchiveBar
+            $ bork diff --format '{content:30} {path}{NL}' ArchiveFoo ArchiveBar
             modified:  +4.1 kB  -1.0 kB    file-diff
             ...
 
             # {VAR:<NUMBER} - pad to NUMBER columns left-aligned.
             # {VAR:>NUMBER} - pad to NUMBER columns right-aligned.
-            $ borg diff --format '{content:>30} {path}{NL}' ArchiveFoo ArchiveBar
+            $ bork diff --format '{content:>30} {path}{NL}' ArchiveFoo ArchiveBar
                modified:  +4.1 kB  -1.0 kB file-diff
             ...
 

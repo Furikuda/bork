@@ -35,7 +35,7 @@ bork diff
     +-------------------------------------------------------+---------------------------------------+----------------------------------------------------------------------------------+
     |                                                       | ``--content-only``                    | Only compare differences in content (exclude metadata differences)               |
     +-------------------------------------------------------+---------------------------------------+----------------------------------------------------------------------------------+
-    | .. class:: borg-common-opt-ref                                                                                                                                                   |
+    | .. class:: bork-common-opt-ref                                                                                                                                                   |
     |                                                                                                                                                                                  |
     | :ref:`common_options`                                                                                                                                                            |
     +-------------------------------------------------------+---------------------------------------+----------------------------------------------------------------------------------+
@@ -92,7 +92,7 @@ Description
 
 This command finds differences (file contents, metadata) between ARCHIVE1 and ARCHIVE2.
 
-For more help on include/exclude patterns, see the :ref:`borg_patterns` command output.
+For more help on include/exclude patterns, see the :ref:`bork_patterns` command output.
 
 .. man NOTES
 
@@ -105,13 +105,13 @@ The ``--format`` option uses python's `format string syntax
 Examples:
 ::
 
-    $ borg diff --format '{content:30} {path}{NL}' ArchiveFoo ArchiveBar
+    $ bork diff --format '{content:30} {path}{NL}' ArchiveFoo ArchiveBar
     modified:  +4.1 kB  -1.0 kB    file-diff
     ...
 
     # {VAR:<NUMBER} - pad to NUMBER columns left-aligned.
     # {VAR:>NUMBER} - pad to NUMBER columns right-aligned.
-    $ borg diff --format '{content:>30} {path}{NL}' ArchiveFoo ArchiveBar
+    $ bork diff --format '{content:>30} {path}{NL}' ArchiveFoo ArchiveBar
        modified:  +4.1 kB  -1.0 kB file-diff
     ...
 

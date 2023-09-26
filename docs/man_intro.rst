@@ -13,8 +13,8 @@ DESCRIPTION
 BorkBackup (short: Bork) is a deduplicating backup program.
 Optionally, it supports compression and authenticated encryption.
 
-The main goal of Borg is to provide an efficient and secure way to back data up.
-The data deduplication technique used makes Borg suitable for daily backups
+The main goal of Bork is to provide an efficient and secure way to back data up.
+The data deduplication technique used makes Bork suitable for daily backups
 since only changes are stored.
 The authenticated encryption technique makes it suitable for backups to targets not
 fully trusted.

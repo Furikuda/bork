@@ -60,7 +60,7 @@ class BenchmarkMixIn:
 
         @contextmanager
         def test_files(path, count, size, random):
-            with tempfile.TemporaryDirectory(prefix="borg-test-data-", dir=path) as path:
+            with tempfile.TemporaryDirectory(prefix="bork-test-data-", dir=path) as path:
                 z_buff = None if random else memoryview(zeros)[:size] if size <= len(zeros) else b"\0" * size
                 for i in range(count):
                     fname = os.path.join(path, "file_%d" % i)
@@ -69,7 +69,7 @@ class BenchmarkMixIn:
                         fd.write(data)
                 yield path
 
-        if "_BORG_BENCHMARK_CRUD_TEST" in os.environ:
+        if "_BORK_BENCHMARK_CRUD_TEST" in os.environ:
             tests = [("Z-TEST", 1, 1, False), ("R-TEST", 1, 1, True)]
         else:
             tests = [
@@ -242,7 +242,7 @@ class BenchmarkMixIn:
 
         If your repository is encrypted and bork needs a passphrase to unlock the key, use::
 
-            BORG_PASSPHRASE=mysecret bork benchmark crud REPO PATH
+            BORK_PASSPHRASE=mysecret bork benchmark crud REPO PATH
 
         Measurements are done with different input file sizes and counts.
         The file contents are very artificial (either all zero or all random),

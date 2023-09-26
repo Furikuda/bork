@@ -14,7 +14,7 @@ def packages_debianoid(user)
     echo "set grub-pc/install_devices /dev/sda" | debconf-communicate
     apt-get -y -qq update
     apt-get -y -qq dist-upgrade
-    # for building borgbackup and dependencies:
+    # for building borkbackup and dependencies:
     apt install -y pkg-config
     apt install -y libssl-dev libacl1-dev libxxhash-dev liblz4-dev libzstd-dev || true
     apt install -y libfuse-dev fuse || true
@@ -29,7 +29,7 @@ def packages_debianoid(user)
     # for building python:
     apt install -y zlib1g-dev libbz2-dev libncurses5-dev libreadline-dev liblzma-dev libsqlite3-dev libffi-dev
     # older debian / ubuntu have no .pc file for these, so we need to point at the lib/header location:
-    echo 'export BORG_LIBXXHASH_PREFIX=/usr' >> ~vagrant/.bash_profile
+    echo 'export BORK_LIBXXHASH_PREFIX=/usr' >> ~vagrant/.bash_profile
   EOF
 end
 
@@ -65,7 +65,7 @@ def packages_freebsd
     # install all the (security and other) updates, packages
     pkg update
     yes | pkg upgrade
-    echo 'export BORG_OPENSSL_PREFIX=/usr' >> ~vagrant/.bash_profile
+    echo 'export BORK_OPENSSL_PREFIX=/usr' >> ~vagrant/.bash_profile
     # (re)mount / with acls
     mount -o acls /
   EOF
@@ -133,7 +133,7 @@ def packages_openindiana
 end
 
 
-# Build and install borg dependencies from source
+# Build and install bork dependencies from source
 def install_source_dependencies(user)
   return <<-EOF
     set -e -o pipefail
@@ -146,7 +146,7 @@ def install_source_dependencies(user)
     echo 'export PKG_CONFIG_PATH="'${PKG_CONFIG_PATH}'"' >> ~#{user}/.bash_profile
 
     # All source packages integrate with pkg-config, remove any previous overrides
-    sed -i '/BORG_.*_PREFIX/d' ~#{user}/.bash_profile
+    sed -i '/BORK_.*_PREFIX/d' ~#{user}/.bash_profile
 
     # Setup pyenv to pick up the custom openssl version (python >= 3.9 requires openssl >= 1.1.1)
     echo 'export PYTHON_CONFIGURE_OPTS="--with-openssl='"${PREFIX}"' --with-openssl-rpath=auto"' >> ~#{user}/.bash_profile
@@ -261,11 +261,11 @@ end
 def build_pyenv_venv(boxname)
   return <<-EOF
     . ~/.bash_profile
-    cd /vagrant/borg
+    cd /vagrant/bork
     # use the latest 3.11 release
     pyenv global 3.11.5
-    pyenv virtualenv 3.11.5 borg-env
-    ln -s ~/.pyenv/versions/borg-env .
+    pyenv virtualenv 3.11.5 bork-env
+    ln -s ~/.pyenv/versions/bork-env .
   EOF
 end
 
@@ -286,8 +286,8 @@ end
 def install_pyinstaller()
   return <<-EOF
     . ~/.bash_profile
-    cd /vagrant/borg
-    . borg-env/bin/activate
+    cd /vagrant/bork
+    . bork-env/bin/activate
     pip install 'pyinstaller==5.13.2'
   EOF
 end
@@ -361,7 +361,7 @@ Vagrant.configure(2) do |config|
     b.vm.provision "fs init", :type => :shell, :inline => fs_init("vagrant")
     b.vm.provision "packages debianoid", :type => :shell, :inline => packages_debianoid("vagrant")
     b.vm.provision "build env", :type => :shell, :privileged => false, :inline => build_sys_venv("lunar64")
-    b.vm.provision "install borg", :type => :shell, :privileged => false, :inline => install_borg("llfuse")
+    b.vm.provision "install bork", :type => :shell, :privileged => false, :inline => install_bork("llfuse")
     b.vm.provision "run tests", :type => :shell, :privileged => false, :inline => run_tests("lunar64", ".*none.*")
   end
 
@@ -387,7 +387,7 @@ Vagrant.configure(2) do |config|
     b.vm.provision "install pyenv", :type => :shell, :privileged => false, :inline => install_pyenv("bookworm64")
     b.vm.provision "install pythons", :type => :shell, :privileged => false, :inline => install_pythons("bookworm64")
     b.vm.provision "build env", :type => :shell, :privileged => false, :inline => build_pyenv_venv("bookworm64")
-    b.vm.provision "install borg", :type => :shell, :privileged => false, :inline => install_borg("llfuse")
+    b.vm.provision "install bork", :type => :shell, :privileged => false, :inline => install_bork("llfuse")
     b.vm.provision "install pyinstaller", :type => :shell, :privileged => false, :inline => install_pyinstaller()
     b.vm.provision "build binary with pyinstaller", :type => :shell, :privileged => false, :inline => build_binary_with_pyinstaller("bookworm64")
     b.vm.provision "run tests", :type => :shell, :privileged => false, :inline => run_tests("bookworm64", ".*none.*")
@@ -436,7 +436,7 @@ Vagrant.configure(2) do |config|
     b.vm.provision "install pyenv", :type => :shell, :privileged => false, :inline => install_pyenv("stretch64")
     b.vm.provision "install pythons", :type => :shell, :privileged => false, :inline => install_pythons("stretch64")
     b.vm.provision "build env", :type => :shell, :privileged => false, :inline => build_pyenv_venv("stretch64")
-    b.vm.provision "install borg", :type => :shell, :privileged => false, :inline => install_borg("llfuse")
+    b.vm.provision "install bork", :type => :shell, :privileged => false, :inline => install_bork("llfuse")
     b.vm.provision "install pyinstaller", :type => :shell, :privileged => false, :inline => install_pyinstaller()
     b.vm.provision "build binary with pyinstaller", :type => :shell, :privileged => false, :inline => build_binary_with_pyinstaller("stretch64")
     b.vm.provision "run tests", :type => :shell, :privileged => false, :inline => run_tests("stretch64", ".*none.*")

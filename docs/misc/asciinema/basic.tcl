@@ -5,7 +5,7 @@ set send_human {.05 .1 1 .01 .2}
 
 set script {
 # Here you'll see some basic commands to start working with bork.
-# Note: This teaser screencast was made with __BORG_VERSION__ – older or newer bork versions may behave differently.
+# Note: This teaser screencast was made with __BORK_VERSION__ – older or newer bork versions may behave differently.
 # But let's start.
 
 # First of all, you can always get help:
@@ -60,7 +60,7 @@ bork init --encryption=repokey borkdemo@remoteserver.example:./demo
 }
 
 set script [string trim $script]
-set script [string map [list __BORG_VERSION__ [exec bork -V]] $script]
+set script [string map [list __BORK_VERSION__ [exec bork -V]] $script]
 set script [split $script \n]
 
 foreach line $script {

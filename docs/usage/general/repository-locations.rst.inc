@@ -2,7 +2,7 @@ Repository Locations / Archive names
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Many commands need to know the repository location, give it via ``-r`` / ``--repo``
-or use the ``BORG_REPO`` environment variable.
+or use the ``BORK_REPO`` environment variable.
 
 Commands needing one or two archive names usually get them as positional argument.
 

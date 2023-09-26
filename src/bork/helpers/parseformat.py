@@ -463,7 +463,7 @@ class Location:
     )
 
     def __init__(self, text="", overrides={}, other=False):
-        self.repo_env_var = "BORG_OTHER_REPO" if other else "BORG_REPO"
+        self.repo_env_var = "BORK_OTHER_REPO" if other else "BORK_REPO"
         self.valid = False
         self.proto = None
         self.user = None
@@ -633,10 +633,10 @@ comment_validator = text_validator(name="comment", max_length=10000)
 
 
 def archivename_validator(text):
-    # we make sure that the archive name can be used as directory name (for borg mount)
+    # we make sure that the archive name can be used as directory name (for bork mount)
     MAX_PATH = 260  # Windows default. Since Win10, there is a registry setting LongPathsEnabled to get more.
     MAX_DIRNAME = MAX_PATH - len("12345678.123")
-    SAFETY_MARGIN = 48  # borgfs path: mountpoint / archivename / dir / dir / ... / file
+    SAFETY_MARGIN = 48  # borkfs path: mountpoint / archivename / dir / dir / ... / file
     MAX_ARCHIVENAME = MAX_DIRNAME - SAFETY_MARGIN
     invalid_ctrl_chars = "".join(chr(i) for i in range(32))
     # note: ":" is also an invalid path char on windows, but we can not blacklist it,
@@ -688,7 +688,7 @@ class BaseFormatter(metaclass=abc.ABCMeta):
     def format_item(self, item, jsonline=False, sort=False):
         data = self.get_item_data(item, jsonline)
         return (
-            f"{json.dumps(data, cls=BorgJsonEncoder, sort_keys=sort)}\n" if jsonline else self.format.format_map(data)
+            f"{json.dumps(data, cls=BorkJsonEncoder, sort_keys=sort)}\n" if jsonline else self.format.format_map(data)
         )
 
     @classmethod
@@ -715,7 +715,7 @@ class ArchiveFormatter(BaseFormatter):
         "archive": "archive name",
         "name": 'alias of "archive"',
         "comment": "archive comment",
-        # *start* is the key used by borg-info for this timestamp, this makes the formats more compatible
+        # *start* is the key used by bork-info for this timestamp, this makes the formats more compatible
         "start": "time (start) of creation of the archive",
         "time": 'alias of "start"',
         "end": "time (end) of creation of the archive",

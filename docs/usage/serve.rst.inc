@@ -55,12 +55,12 @@ Description
 
 This command starts a repository server process.
 
-borg serve can currently support:
+bork serve can currently support:
 
-- Getting automatically started via ssh when the borg client uses a ssh://...
-  remote repository. In this mode, `borg serve` will live until that ssh connection
+- Getting automatically started via ssh when the bork client uses a ssh://...
+  remote repository. In this mode, `bork serve` will live until that ssh connection
   gets terminated.
 
-- Getting started by some other means (not by the borg client) as a long-running socket
-  server to be used for borg clients using a socket://... repository (see the `--socket`
+- Getting started by some other means (not by the bork client) as a long-running socket
+  server to be used for bork clients using a socket://... repository (see the `--socket`
   option if you do not want to use the default path for the socket and pid file).

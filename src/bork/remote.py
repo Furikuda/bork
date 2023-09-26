@@ -17,7 +17,7 @@ import time
 import traceback
 from subprocess import Popen, PIPE
 
-import borg.logger
+import bork.logger
 from . import __version__
 from .compress import Compressor
 from .constants import *  # NOQA
@@ -30,7 +30,7 @@ from .helpers import format_file_size
 from .helpers import safe_unlink
 from .helpers import prepare_subprocess_env, ignore_sigint
 from .helpers import get_socket_filename
-from .logger import create_logger, borg_serve_log_queue
+from .logger import create_logger, bork_serve_log_queue
 from .helpers import msgpack
 from .repository import Repository
 from .version import parse_version, format_version
@@ -39,7 +39,7 @@ from .helpers.datastruct import EfficientCollectionQueue
 
 logger = create_logger(__name__)
 
-BORG_VERSION = parse_version(__version__)
+BORK_VERSION = parse_version(__version__)
 MSGID, MSG, ARGS, RESULT, LOG = "i", "m", "a", "r", "l"
 
 MAX_INFLIGHT = 100
@@ -165,8 +165,8 @@ class RepositoryServer:  # pragma: no cover
     def send_queued_log(self):
         while True:
             try:
-                # lr_dict contents see BorgQueueHandler
-                lr_dict = borg_serve_log_queue.get_nowait()
+                # lr_dict contents see BorkQueueHandler
+                lr_dict = bork_serve_log_queue.get_nowait()
             except queue.Empty:
                 break
             else:
@@ -288,7 +288,7 @@ class RepositoryServer:  # pragma: no cover
             sock.bind(self.socket_path)  # this creates the socket file in the fs
             sock.listen(0)  # no backlog
             os.chmod(self.socket_path, mode=0o0770)  # group members may use the socket, too.
-            print(f"borg serve: PID {pid}, listening on socket {self.socket_path} ...", file=sys.stderr)
+            print(f"bork serve: PID {pid}, listening on socket {self.socket_path} ...", file=sys.stderr)
 
             while True:
                 connection, client_address = sock.accept()
@@ -306,10 +306,10 @@ class RepositoryServer:  # pragma: no cover
         if isinstance(client_data, dict):
             self.client_version = client_data["client_version"]
         else:
-            self.client_version = BORG_VERSION  # seems to be newer than current version (no known old format)
+            self.client_version = BORK_VERSION  # seems to be newer than current version (no known old format)
 
         # not a known old format, send newest negotiate this version knows
-        return {"server_version": BORG_VERSION}
+        return {"server_version": BORK_VERSION}
 
     def _resolve_path(self, path):
         if isinstance(path, bytes):
@@ -367,7 +367,7 @@ class RepositoryServer:  # pragma: no cover
         if self.repository is not None:
             self.repository.__exit__(None, None, None)
             self.repository = None
-        borg.logger.flush_logging()
+        bork.logger.flush_logging()
         self.send_queued_log()
 
     def inject_exception(self, kind):
@@ -553,16 +553,16 @@ class RemoteRepository:
         self._args = args
         if self.location.proto == "ssh":
             testing = location.host == "__testsuite__"
-            # when testing, we invoke and talk to a borg process directly (no ssh).
-            # when not testing, we invoke the system-installed ssh binary to talk to a remote borg.
+            # when testing, we invoke and talk to a bork process directly (no ssh).
+            # when not testing, we invoke the system-installed ssh binary to talk to a remote bork.
             env = prepare_subprocess_env(system=not testing)
-            borg_cmd = self.borg_cmd(args, testing)
+            bork_cmd = self.bork_cmd(args, testing)
             if not testing:
-                borg_cmd = self.ssh_cmd(location) + borg_cmd
-            logger.debug("SSH command line: %s", borg_cmd)
-            # we do not want the ssh getting killed by Ctrl-C/SIGINT because it is needed for clean shutdown of borg.
-            # borg's SIGINT handler tries to write a checkpoint and requires the remote repo connection.
-            self.p = Popen(borg_cmd, bufsize=0, stdin=PIPE, stdout=PIPE, stderr=PIPE, env=env, preexec_fn=ignore_sigint)
+                bork_cmd = self.ssh_cmd(location) + bork_cmd
+            logger.debug("SSH command line: %s", bork_cmd)
+            # we do not want the ssh getting killed by Ctrl-C/SIGINT because it is needed for clean shutdown of bork.
+            # bork's SIGINT handler tries to write a checkpoint and requires the remote repo connection.
+            self.p = Popen(bork_cmd, bufsize=0, stdin=PIPE, stdout=PIPE, stderr=PIPE, env=env, preexec_fn=ignore_sigint)
             self.stdin_fd = self.p.stdin.fileno()
             self.stdout_fd = self.p.stdout.fileno()
             self.stderr_fd = self.p.stderr.fileno()
@@ -581,7 +581,7 @@ class RemoteRepository:
                 raise Error(f"The socket file {socket_path} does not exist.")
             except ConnectionRefusedError:
                 self.sock = None
-                raise Error(f"There is no borg serve running for the socket file {socket_path}.")
+                raise Error(f"There is no bork serve running for the socket file {socket_path}.")
             self.stdin_fd = self.sock.makefile("wb").fileno()
             self.stdout_fd = self.sock.makefile("rb").fileno()
             self.stderr_fd = None
@@ -600,9 +600,9 @@ class RemoteRepository:
 
         try:
             try:
-                version = self.call("negotiate", {"client_data": {"client_version": BORG_VERSION}})
+                version = self.call("negotiate", {"client_data": {"client_version": BORK_VERSION}})
             except ConnectionClosed:
-                raise ConnectionClosedWithHint("Is borg working on the server?") from None
+                raise ConnectionClosedWithHint("Is bork working on the server?") from None
             if isinstance(version, dict):
                 self.server_version = version["server_version"]
             else:
@@ -701,13 +701,13 @@ class RemoteRepository:
         if testing:
             return env_vars + [sys.executable, "-m", "bork", "serve"] + opts + self.extra_test_args
         else:  # pragma: no cover
-            remote_path = args.remote_path or os.environ.get("BORG_REMOTE_PATH", "bork")
+            remote_path = args.remote_path or os.environ.get("BORK_REMOTE_PATH", "bork")
             remote_path = replace_placeholders(remote_path)
             return env_vars + [remote_path, "serve"] + opts
 
     def ssh_cmd(self, location):
         """return a ssh command line that can be prefixed to a bork command line"""
-        rsh = self._args.rsh or os.environ.get("BORG_RSH", "ssh")
+        rsh = self._args.rsh or os.environ.get("BORK_RSH", "ssh")
         args = shlex.split(rsh)
         if location.port:
             args += ["-p", str(location.port)]
@@ -862,7 +862,7 @@ class RemoteRepository:
                     # now we have complete lines in <lines> and any partial line in self.stderr_received.
                     _logger = logging.getLogger()
                     for line in lines:
-                        # borg serve (remote/server side) should not emit stuff on stderr,
+                        # bork serve (remote/server side) should not emit stuff on stderr,
                         # but e.g. the ssh process (local/client side) might output errors there.
                         assert line.endswith((b"\r", b"\n"))
                         # something came in on stderr, log it to not lose it.

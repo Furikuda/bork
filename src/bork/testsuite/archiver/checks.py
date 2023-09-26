@@ -47,7 +47,7 @@ def cmd_raises_unknown_feature(archiver, args):
 def test_repository_swap_detection(archivers, request):
     archiver = request.getfixturevalue(archivers)
     create_test_files(archiver.input_path)
-    os.environ["BORG_PASSPHRASE"] = "passphrase"
+    os.environ["BORK_PASSPHRASE"] = "passphrase"
     cmd(archiver, "rcreate", RK_ENCRYPTION)
     repository_id = _extract_repository_id(archiver.repository_path)
     cmd(archiver, "create", "test", "input")
@@ -68,7 +68,7 @@ def test_repository_swap_detection2(archivers, request):
     original_location = archiver.repository_location
     archiver.repository_location = original_location + "_unencrypted"
     cmd(archiver, "rcreate", "--encryption=none")
-    os.environ["BORG_PASSPHRASE"] = "passphrase"
+    os.environ["BORK_PASSPHRASE"] = "passphrase"
     archiver.repository_location = original_location + "_encrypted"
     cmd(archiver, "rcreate", RK_ENCRYPTION)
     cmd(archiver, "create", "test", "input")
@@ -84,7 +84,7 @@ def test_repository_swap_detection2(archivers, request):
 def test_repository_swap_detection_no_cache(archivers, request):
     archiver = request.getfixturevalue(archivers)
     create_test_files(archiver.input_path)
-    os.environ["BORG_PASSPHRASE"] = "passphrase"
+    os.environ["BORK_PASSPHRASE"] = "passphrase"
     cmd(archiver, "rcreate", RK_ENCRYPTION)
     repository_id = _extract_repository_id(archiver.repository_path)
     cmd(archiver, "create", "test", "input")
@@ -106,7 +106,7 @@ def test_repository_swap_detection2_no_cache(archivers, request):
     create_test_files(archiver.input_path)
     archiver.repository_location = original_location + "_unencrypted"
     cmd(archiver, "rcreate", "--encryption=none")
-    os.environ["BORG_PASSPHRASE"] = "passphrase"
+    os.environ["BORK_PASSPHRASE"] = "passphrase"
     archiver.repository_location = original_location + "_encrypted"
     cmd(archiver, "rcreate", RK_ENCRYPTION)
     cmd(archiver, "create", "test", "input")
@@ -133,14 +133,14 @@ def test_repository_swap_detection_repokey_blank_passphrase(archivers, request, 
     # Attacker replaces it with her own repository, which is encrypted but has no passphrase set
     shutil.rmtree(archiver.repository_path)
 
-    monkeypatch.setenv("BORG_PASSPHRASE", "")
+    monkeypatch.setenv("BORK_PASSPHRASE", "")
     cmd(archiver, "rcreate", RK_ENCRYPTION)
     # Delete cache & security database, AKA switch to user perspective
     cmd(archiver, "rdelete", "--cache-only")
     shutil.rmtree(get_security_directory(archiver.repository_path))
 
-    monkeypatch.delenv("BORG_PASSPHRASE")
-    # This is the part were the user would be tricked, e.g. she assumes that BORG_PASSPHRASE
+    monkeypatch.delenv("BORK_PASSPHRASE")
+    # This is the part were the user would be tricked, e.g. she assumes that BORK_PASSPHRASE
     # is set, while it isn't. Previously this raised no warning,
     # since the repository is, technically, encrypted.
     if archiver.FORK_DEFAULT:
@@ -156,9 +156,9 @@ def test_repository_move(archivers, request, monkeypatch):
     security_dir = get_security_directory(archiver.repository_path)
     os.replace(archiver.repository_path, archiver.repository_path + "_new")
     archiver.repository_location += "_new"
-    monkeypatch.setenv("BORG_RELOCATED_REPO_ACCESS_IS_OK", "yes")
+    monkeypatch.setenv("BORK_RELOCATED_REPO_ACCESS_IS_OK", "yes")
     cmd(archiver, "rinfo")
-    monkeypatch.delenv("BORG_RELOCATED_REPO_ACCESS_IS_OK")
+    monkeypatch.delenv("BORK_RELOCATED_REPO_ACCESS_IS_OK")
     with open(os.path.join(security_dir, "location")) as fd:
         location = fd.read()
         assert location == Location(archiver.repository_location).canonical_path()
@@ -199,7 +199,7 @@ def test_unknown_unencrypted(archivers, request, monkeypatch):
     else:
         with pytest.raises(Cache.CacheInitAbortedError):
             cmd(archiver, "rinfo")
-    monkeypatch.setenv("BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK", "yes")
+    monkeypatch.setenv("BORK_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK", "yes")
     cmd(archiver, "rinfo")
 
 

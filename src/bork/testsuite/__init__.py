@@ -13,7 +13,7 @@ import sysconfig
 import tempfile
 import unittest
 
-# Note: this is used by borg.selftest, do not *require* pytest functionality here.
+# Note: this is used by bork.selftest, do not *require* pytest functionality here.
 try:
     from pytest import raises
 except:  # noqa

@@ -6,11 +6,11 @@ in RAM, not a magnetic or flash disk.
 
 assuming /dev/shm is a tmpfs (in memory filesystem), one can use this:
 
-dd if=/dev/zero of=/dev/shm/borg-disk bs=1M count=700
-mkfs.ext4 /dev/shm/borg-disk
-mkdir /tmp/borg-mount
-sudo mount /dev/shm/borg-disk /tmp/borg-mount
-sudo chown myuser /tmp/borg-mount/
+dd if=/dev/zero of=/dev/shm/bork-disk bs=1M count=700
+mkfs.ext4 /dev/shm/bork-disk
+mkdir /tmp/bork-mount
+sudo mount /dev/shm/bork-disk /tmp/bork-mount
+sudo chown myuser /tmp/bork-mount/
 
 if the directory does not exist, the test will be skipped.
 """
@@ -44,8 +44,8 @@ def make_files(dir, count, size, rnd=True):
 @pytest.mark.skipif(not os.path.exists(DF_MOUNT), reason="needs a 700MB fs mounted on %s" % DF_MOUNT)
 @pytest.mark.parametrize("test_pass", range(10))
 def test_disk_full(test_pass, cmd_fixture, monkeypatch):
-    monkeypatch.setenv("BORG_CHECK_I_KNOW_WHAT_I_AM_DOING", "YES")
-    monkeypatch.setenv("BORG_DELETE_I_KNOW_WHAT_I_AM_DOING", "YES")
+    monkeypatch.setenv("BORK_CHECK_I_KNOW_WHAT_I_AM_DOING", "YES")
+    monkeypatch.setenv("BORK_DELETE_I_KNOW_WHAT_I_AM_DOING", "YES")
     repo = os.path.join(DF_MOUNT, "repo")
     input = os.path.join(DF_MOUNT, "input")
     shutil.rmtree(repo, ignore_errors=True)
@@ -78,7 +78,7 @@ def test_disk_full(test_pass, cmd_fixture, monkeypatch):
                     shutil.rmtree(os.path.join(repo, "lock.roster"), ignore_errors=True)
         finally:
             # now some error happened, likely we are out of disk space.
-            # free some space such that we can expect borg to be able to work normally:
+            # free some space such that we can expect bork to be able to work normally:
             shutil.rmtree(input, ignore_errors=True)
         rc, out = cmd_fixture(f"--repo={repo}", "rlist")
         if rc != EXIT_SUCCESS:

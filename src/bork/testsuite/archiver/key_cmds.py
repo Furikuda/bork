@@ -19,10 +19,10 @@ pytest_generate_tests = lambda metafunc: generate_archiver_tests(metafunc, kinds
 def test_change_passphrase(archivers, request):
     archiver = request.getfixturevalue(archivers)
     cmd(archiver, "rcreate", RK_ENCRYPTION)
-    os.environ["BORG_NEW_PASSPHRASE"] = "newpassphrase"
-    # here we have both BORG_PASSPHRASE and BORG_NEW_PASSPHRASE set:
+    os.environ["BORK_NEW_PASSPHRASE"] = "newpassphrase"
+    # here we have both BORK_PASSPHRASE and BORK_NEW_PASSPHRASE set:
     cmd(archiver, "key", "change-passphrase")
-    os.environ["BORG_PASSPHRASE"] = "newpassphrase"
+    os.environ["BORK_PASSPHRASE"] = "newpassphrase"
     cmd(archiver, "rlist")
 
 
@@ -76,7 +76,7 @@ def test_key_export_keyfile(archivers, request):
     with open(export_file) as fd:
         export_contents = fd.read()
 
-    assert export_contents.startswith("BORG_KEY " + bin_to_hex(repo_id) + "\n")
+    assert export_contents.startswith("BORK_KEY " + bin_to_hex(repo_id) + "\n")
 
     key_file = archiver.keys_path + "/" + os.listdir(archiver.keys_path)[0]
 
@@ -95,7 +95,7 @@ def test_key_export_keyfile(archivers, request):
     assert key_contents2 == key_contents
 
 
-def test_key_import_keyfile_with_borg_key_file(archivers, request, monkeypatch):
+def test_key_import_keyfile_with_bork_key_file(archivers, request, monkeypatch):
     archiver = request.getfixturevalue(archivers)
     cmd(archiver, "rcreate", KF_ENCRYPTION)
 
@@ -108,9 +108,9 @@ def test_key_import_keyfile_with_borg_key_file(archivers, request, monkeypatch):
     os.unlink(key_file)
 
     imported_key_file = os.path.join(archiver.output_path, "imported")
-    monkeypatch.setenv("BORG_KEY_FILE", imported_key_file)
+    monkeypatch.setenv("BORK_KEY_FILE", imported_key_file)
     cmd(archiver, "key", "import", exported_key_file)
-    assert not os.path.isfile(key_file), '"borg key import" should respect BORG_KEY_FILE'
+    assert not os.path.isfile(key_file), '"bork key import" should respect BORK_KEY_FILE'
 
     with open(imported_key_file) as fd:
         imported_key_contents = fd.read()
@@ -127,7 +127,7 @@ def test_key_export_repokey(archivers, request):
     with open(export_file) as fd:
         export_contents = fd.read()
 
-    assert export_contents.startswith("BORG_KEY " + bin_to_hex(repo_id) + "\n")
+    assert export_contents.startswith("BORK_KEY " + bin_to_hex(repo_id) + "\n")
 
     with Repository(archiver.repository_path) as repository:
         repo_key = AESOCBRepoKey(repository)
@@ -193,11 +193,11 @@ def test_key_import_errors(archivers, request):
     if archiver.FORK_DEFAULT:
         cmd(archiver, "key", "import", export_file, exit_code=2)
     else:
-        with pytest.raises(NotABorgKeyFile):
+        with pytest.raises(NotABorkKeyFile):
             cmd(archiver, "key", "import", export_file)
 
     with open(export_file, "w") as fd:
-        fd.write("BORG_KEY a0a0a0\n")
+        fd.write("BORK_KEY a0a0a0\n")
 
     if archiver.FORK_DEFAULT:
         cmd(archiver, "key", "import", export_file, exit_code=2)
@@ -225,9 +225,9 @@ def test_key_export_paperkey(archivers, request):
 
     assert (
         export_contents
-        == """To restore key use borg key import --paper /path/to/repo
+        == """To restore key use bork key import --paper /path/to/repo
 
-BORG PAPER KEY v1
+BORK PAPER KEY v1
 id: 2 / e29442 3506da 4e1ea7 / 25f62a 5a3d41 - 02
  1: 616263 646566 676869 6a6b6c 6d6e6f 707172 - 6d
  2: 737475 - 88
@@ -282,7 +282,7 @@ def test_key_import_paperkey(archivers, request):
 
 
 def test_init_defaults_to_argon2(archivers, request):
-    """https://github.com/borgbackup/borg/issues/747#issuecomment-1076160401"""
+    """https://github.com/borkbackup/bork/issues/747#issuecomment-1076160401"""
     archiver = request.getfixturevalue(archivers)
     cmd(archiver, "rcreate", RK_ENCRYPTION)
     with Repository(archiver.repository_path) as repository:
@@ -293,7 +293,7 @@ def test_init_defaults_to_argon2(archivers, request):
 def test_change_passphrase_does_not_change_algorithm_argon2(archivers, request):
     archiver = request.getfixturevalue(archivers)
     cmd(archiver, "rcreate", RK_ENCRYPTION)
-    os.environ["BORG_NEW_PASSPHRASE"] = "newpassphrase"
+    os.environ["BORK_NEW_PASSPHRASE"] = "newpassphrase"
     cmd(archiver, "key", "change-passphrase")
 
     with Repository(archiver.repository_path) as repository:

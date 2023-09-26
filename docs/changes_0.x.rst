@@ -13,8 +13,8 @@ Compatibility notes:
   See the "general" section in the usage docs.
 - for bork create, you need --list (additionally to -v) to see the long file
   list (was needed so you can have e.g. --stats alone without the long list)
-- see below about BORG_DELETE_I_KNOW_WHAT_I_AM_DOING (was:
-  BORG_CHECK_I_KNOW_WHAT_I_AM_DOING)
+- see below about BORK_DELETE_I_KNOW_WHAT_I_AM_DOING (was:
+  BORK_CHECK_I_KNOW_WHAT_I_AM_DOING)
 
 Bug fixes:
 
@@ -28,7 +28,7 @@ Bug fixes:
 - unset LD_LIBRARY_PATH before invoking ssh, fixes strange OpenSSL library
   version warning when using the bork binary, #514
 - add some error handling/fallback for C library loading, #494
-- added BORG_DELETE_I_KNOW_WHAT_I_AM_DOING for check in "bork delete", #503
+- added BORK_DELETE_I_KNOW_WHAT_I_AM_DOING for check in "bork delete", #503
 - remove unused "repair" rpc method name
 
 New features:
@@ -123,7 +123,7 @@ New features:
 - add --debug and --info (same as --verbose) to set the log level of the
   builtin logging configuration (which otherwise defaults to warning), #426
   note: there are few messages emitted at DEBUG level currently.
-- optionally configure logging via env var BORG_LOGGING_CONF
+- optionally configure logging via env var BORK_LOGGING_CONF
 - add --filter option for status characters: e.g. to show only the added
   or modified files (and also errors), use "bork create -v --filter=AME ...".
 - more progress indicators, #394
@@ -219,7 +219,7 @@ New features:
 
 Bug fixes:
 
-- setup.py: fix bug related to BORG_LZ4_PREFIX processing
+- setup.py: fix bug related to BORK_LZ4_PREFIX processing
 - fix "check" for repos that have incomplete chunks, fixes #364
 - bork mount: fix unlocking of repository at umount time, fixes #331
 - fix reading files without touching their atime, #334
@@ -348,7 +348,7 @@ Version 0.26.0 (2015-09-19)
 New features:
 
 - Faster cache sync (do all in one pass, remove tar/compression stuff), #163
-- BORG_REPO env var to specify the default repo, #168
+- BORK_REPO env var to specify the default repo, #168
 - read special files as if they were regular files, #79
 - implement bork create --dry-run, attic issue #267
 - Normalize paths before pattern matching on OS X, #143
@@ -542,7 +542,7 @@ Other changes:
   - added docs about development
   - add some words about resource usage in general
   - document how to back up a raw disk
-  - add note about how to run borg from virtual env
+  - add note about how to run bork from virtual env
   - add solutions for (ll)fuse installation problems
   - document what bork check does, fixes #138
   - reorganize borkbackup.github.io sidebar, prev/next at top
@@ -581,7 +581,7 @@ Incompatible changes (compared to attic, fork related):
 
 - changed sw name and cli command to "bork", updated docs
 - package name (and name in urls) uses "borkbackup" to have fewer collisions
-- changed repo / cache internal magic strings from ATTIC* to BORG*,
+- changed repo / cache internal magic strings from ATTIC* to BORK*,
   changed cache location to .cache/bork/ - this means that it currently won't
   accept attic repos (see issue #21 about improving that)
 

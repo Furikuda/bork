@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-PRUNE" 1 "2023-09-14" "" "borg backup tool"
+.TH "BORK-PRUNE" 1 "2023-09-14" "" "bork backup tool"
 .SH NAME
 bork-prune \- Prune repository archives according to specified rules
 .SH SYNOPSIS
@@ -74,9 +74,9 @@ up to 7 most recent days with backups (days without backups do not count).
 The rules are applied from secondly to yearly, and backups selected by previous
 rules do not count towards those of later rules. The time that each backup
 starts is used for pruning purposes. Dates and times are interpreted in the local
-timezone of the system where borg prune runs, and weeks go from Monday to Sunday.
+timezone of the system where bork prune runs, and weeks go from Monday to Sunday.
 Specifying a negative number of archives to keep means that there is no limit.
-As of borg 1.2.0, borg will retain the oldest archive if any of the secondly,
+As of bork 1.2.0, bork will retain the oldest archive if any of the secondly,
 minutely, hourly, daily, weekly, monthly, or yearly rules was not otherwise able to
 meet its retention target. This enables the first chronological archive to continue
 aging until it is replaced by a newer archive that meets the retention criteria.
@@ -92,10 +92,10 @@ Please note that the \(dqAll archives\(dq stats refer to the state after pruning
 .sp
 You can influence how the \fB\-\-list\fP output is formatted by using the \fB\-\-short\fP
 option (less wide output) or by giving a custom format using \fB\-\-format\fP (see
-the \fBborg rlist\fP description for more details about the format string).
+the \fBbork rlist\fP description for more details about the format string).
 .SH OPTIONS
 .sp
-See \fIborg\-common(1)\fP for common options of Borg commands.
+See \fIbork\-common(1)\fP for common options of Bork commands.
 .SS options
 .INDENT 0.0
 .TP
@@ -154,7 +154,7 @@ write checkpoint every SECONDS seconds (Default: 1800)
 .INDENT 0.0
 .TP
 .BI \-a \ PATTERN\fR,\fB \ \-\-match\-archives \ PATTERN
-only consider archive names matching the pattern. see \(dqborg help match\-archives\(dq.
+only consider archive names matching the pattern. see \(dqbork help match\-archives\(dq.
 .TP
 .BI \-\-oldest \ TIMESPAN
 consider archives between the oldest archive\(aqs timestamp and (oldest + TIMESPAN), e.g. 7d or 12m.
@@ -191,7 +191,7 @@ $ bork prune \-v \-\-list \-\-dry\-run \-\-keep\-daily=7 \-\-keep\-weekly=4
 
 # Same as above but only apply to archive names starting with the hostname
 # of the machine followed by a \(dq\-\(dq character:
-$ borg prune \-v \-\-list \-\-keep\-daily=7 \-\-keep\-weekly=4 \-a \(aqsh:{hostname}\-*\(aq
+$ bork prune \-v \-\-list \-\-keep\-daily=7 \-\-keep\-weekly=4 \-a \(aqsh:{hostname}\-*\(aq
 # actually free disk space:
 $ bork compact
 

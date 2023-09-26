@@ -67,11 +67,11 @@ def test_bork1_bork2_transition(key):
     len_data = len(data)
     repo_objs1 = RepoObj1(key)
     id = repo_objs1.id_hash(data)
-    borg1_cdata = repo_objs1.format(id, meta, data)
+    bork1_cdata = repo_objs1.format(id, meta, data)
     meta1, compr_data1 = repo_objs1.parse(
-        id, borg1_cdata, decompress=True, want_compressed=True
+        id, bork1_cdata, decompress=True, want_compressed=True
     )  # avoid re-compression
-    # in borg 1, we can only get this metadata after decrypting the whole chunk (and we do not have "size" here):
+    # in bork 1, we can only get this metadata after decrypting the whole chunk (and we do not have "size" here):
     assert meta1["ctype"] == LZ4.ID  # default compression
     assert meta1["clevel"] == 0xFF  # lz4 does not know levels (yet?)
     assert meta1["csize"] < len_data  # lz4 should make it smaller

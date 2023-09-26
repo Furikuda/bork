@@ -444,7 +444,7 @@ class AESKeyBase(KeyBase):
 
 
 class FlexiKey:
-    FILE_ID = "BORG_KEY"
+    FILE_ID = "BORK_KEY"
     STORAGE: ClassVar[str] = KeyBlobStorage.NO_STORAGE  # override in subclass
 
     @classmethod
@@ -502,7 +502,7 @@ class FlexiKey:
 
     @staticmethod
     def pbkdf2(passphrase, salt, iterations, output_len_in_bytes):
-        if os.environ.get("BORG_TESTONLY_WEAKEN_KDF") == "1":
+        if os.environ.get("BORK_TESTONLY_WEAKEN_KDF") == "1":
             iterations = 1
         return pbkdf2_hmac("sha256", passphrase.encode("utf-8"), salt, iterations, output_len_in_bytes)
 
@@ -516,7 +516,7 @@ class FlexiKey:
         parallelism: int,
         type: Literal["i", "d", "id"],
     ) -> bytes:
-        if os.environ.get("BORG_TESTONLY_WEAKEN_KDF") == "1":
+        if os.environ.get("BORK_TESTONLY_WEAKEN_KDF") == "1":
             time_cost = 1
             parallelism = 1
             # 8 is the smallest value that avoids the "Memory cost is too small" exception
@@ -643,26 +643,26 @@ class FlexiKey:
                 raise KeyfileInvalidError(self.repository._location.canonical_path(), filename)
             if fd.read(len(repo_id)) != repo_id:
                 raise KeyfileMismatchError(self.repository._location.canonical_path(), filename)
-        # we get here if it really looks like a borg key for this repo,
-        # do some more checks that are close to how borg reads/parses the key.
+        # we get here if it really looks like a bork key for this repo,
+        # do some more checks that are close to how bork reads/parses the key.
         with open(filename, "r") as fd:
             lines = fd.readlines()
             if len(lines) < 2:
-                logger.warning(f"borg key sanity check: expected 2+ lines total. [{filename}]")
+                logger.warning(f"bork key sanity check: expected 2+ lines total. [{filename}]")
                 raise KeyfileInvalidError(self.repository._location.canonical_path(), filename)
             if len(lines[0].rstrip()) > len(file_id) + len(repo_id):
-                logger.warning(f"borg key sanity check: key line 1 seems too long. [{filename}]")
+                logger.warning(f"bork key sanity check: key line 1 seems too long. [{filename}]")
                 raise KeyfileInvalidError(self.repository._location.canonical_path(), filename)
             key_b64 = "".join(lines[1:])
             try:
                 key = a2b_base64(key_b64)
             except binascii.Error:
-                logger.warning(f"borg key sanity check: key line 2+ does not look like base64. [{filename}]")
+                logger.warning(f"bork key sanity check: key line 2+ does not look like base64. [{filename}]")
                 raise KeyfileInvalidError(self.repository._location.canonical_path(), filename)
             if len(key) < 20:
                 # this is in no way a precise check, usually we have about 400b key data.
                 logger.warning(
-                    f"borg key sanity check: binary encrypted key data from key line 2+ suspiciously short."
+                    f"bork key sanity check: binary encrypted key data from key line 2+ suspiciously short."
                     f" [{filename}]"
                 )
                 raise KeyfileInvalidError(self.repository._location.canonical_path(), filename)
@@ -719,7 +719,7 @@ class FlexiKey:
             raise TypeError("Unsupported bork key storage type")
 
     def _find_key_file_from_environment(self):
-        keyfile = os.environ.get("BORG_KEY_FILE")
+        keyfile = os.environ.get("BORK_KEY_FILE")
         if keyfile:
             return os.path.abspath(keyfile)
 
@@ -761,7 +761,7 @@ class FlexiKey:
         if self.STORAGE == KeyBlobStorage.KEYFILE:
             if create and os.path.isfile(target):
                 # if a new keyfile key repository is created, ensure that an existing keyfile of another
-                # keyfile key repo is not accidentally overwritten by careless use of the BORG_KEY_FILE env var.
+                # keyfile key repo is not accidentally overwritten by careless use of the BORK_KEY_FILE env var.
                 # see issue #6036
                 raise Error('Aborting because key in "%s" already exists.' % target)
             with SaveFile(target) as fd:
@@ -905,18 +905,18 @@ class AEADKeyBase(KeyBase):
 
     def assert_id(self, id, data):
         # Comparing the id hash here would not be needed any more for the new AEAD crypto **IF** we
-        # could be sure that chunks were created by normal (not tampered, not evil) borg code:
+        # could be sure that chunks were created by normal (not tampered, not evil) bork code:
         # We put the id into AAD when storing the chunk, so it gets into the authentication tag computation.
         # when decrypting, we provide the id we **want** as AAD for the auth tag verification, so
         # decrypting only succeeds if we got the ciphertext we wrote **for that chunk id**.
         # So, basically the **repository** can not cheat on us by giving us a different chunk.
         #
-        # **BUT**, if chunks are created by tampered, evil borg code, the borg client code could put
+        # **BUT**, if chunks are created by tampered, evil bork code, the bork client code could put
         # a wrong chunkid into AAD and then AEAD-encrypt-and-auth this and store it into the
         # repository using this bad chunkid as key (violating the usual chunkid == id_hash(data)).
         # Later, when reading such a bad chunk, AEAD-auth-and-decrypt would not notice any
         # issue and decrypt successfully.
-        # Thus, to notice such evil borg activity, we must check for such violations here:
+        # Thus, to notice such evil bork activity, we must check for such violations here:
         if id and id != Manifest.MANIFEST_ID:
             id_computed = self.id_hash(data)
             if not hmac.compare_digest(id_computed, id):

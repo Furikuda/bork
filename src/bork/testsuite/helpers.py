@@ -99,13 +99,13 @@ class TestLocationWithoutEnv:
     @pytest.fixture
     def keys_dir(self, tmpdir, monkeypatch):
         tmpdir = str(tmpdir)
-        monkeypatch.setenv("BORG_KEYS_DIR", tmpdir)
+        monkeypatch.setenv("BORK_KEYS_DIR", tmpdir)
         if not tmpdir.endswith(os.path.sep):
             tmpdir += os.path.sep
         return tmpdir
 
     def test_ssh(self, monkeypatch, keys_dir):
-        monkeypatch.delenv("BORG_REPO", raising=False)
+        monkeypatch.delenv("BORK_REPO", raising=False)
         assert (
             repr(Location("ssh://user@host:1234/some/path"))
             == "Location(proto='ssh', user='user', host='host', port=1234, path='/some/path')"
@@ -187,7 +187,7 @@ class TestLocationWithoutEnv:
         )
 
     def test_socket(self, monkeypatch, keys_dir):
-        monkeypatch.delenv("BORG_REPO", raising=False)
+        monkeypatch.delenv("BORK_REPO", raising=False)
         assert (
             repr(Location("socket:///repo/path"))
             == "Location(proto='socket', user=None, host=None, port=None, path='/repo/path')"
@@ -195,7 +195,7 @@ class TestLocationWithoutEnv:
         assert Location("socket:///some/path").to_key_filename() == keys_dir + "some_path"
 
     def test_file(self, monkeypatch, keys_dir):
-        monkeypatch.delenv("BORG_REPO", raising=False)
+        monkeypatch.delenv("BORK_REPO", raising=False)
         assert (
             repr(Location("file:///some/path"))
             == "Location(proto='file', user=None, host=None, port=None, path='/some/path')"
@@ -207,7 +207,7 @@ class TestLocationWithoutEnv:
         assert Location("file:///some/path").to_key_filename() == keys_dir + "some_path"
 
     def test_smb(self, monkeypatch, keys_dir):
-        monkeypatch.delenv("BORG_REPO", raising=False)
+        monkeypatch.delenv("BORK_REPO", raising=False)
         assert (
             repr(Location("file:////server/share/path"))
             == "Location(proto='file', user=None, host=None, port=None, path='//server/share/path')"
@@ -215,16 +215,16 @@ class TestLocationWithoutEnv:
         assert Location("file:////server/share/path").to_key_filename() == keys_dir + "server_share_path"
 
     def test_folder(self, monkeypatch, keys_dir):
-        monkeypatch.delenv("BORG_REPO", raising=False)
+        monkeypatch.delenv("BORK_REPO", raising=False)
         assert repr(Location("path")) == "Location(proto='file', user=None, host=None, port=None, path='path')"
         assert Location("path").to_key_filename() == keys_dir + "path"
 
     def test_long_path(self, monkeypatch, keys_dir):
-        monkeypatch.delenv("BORG_REPO", raising=False)
+        monkeypatch.delenv("BORK_REPO", raising=False)
         assert Location(os.path.join(*(40 * ["path"]))).to_key_filename() == keys_dir + "_".join(20 * ["path"]) + "_"
 
     def test_abspath(self, monkeypatch, keys_dir):
-        monkeypatch.delenv("BORG_REPO", raising=False)
+        monkeypatch.delenv("BORK_REPO", raising=False)
         assert (
             repr(Location("/some/absolute/path"))
             == "Location(proto='file', user=None, host=None, port=None, path='/some/absolute/path')"
@@ -241,7 +241,7 @@ class TestLocationWithoutEnv:
         assert Location("ssh://user@host/some/path").to_key_filename() == keys_dir + "host__some_path"
 
     def test_relpath(self, monkeypatch, keys_dir):
-        monkeypatch.delenv("BORG_REPO", raising=False)
+        monkeypatch.delenv("BORK_REPO", raising=False)
         assert (
             repr(Location("some/relative/path"))
             == "Location(proto='file', user=None, host=None, port=None, path='some/relative/path')"
@@ -263,7 +263,7 @@ class TestLocationWithoutEnv:
         assert Location("ssh://user@host/~/some/path").to_key_filename() == keys_dir + "host__some_path"
 
     def test_with_colons(self, monkeypatch, keys_dir):
-        monkeypatch.delenv("BORG_REPO", raising=False)
+        monkeypatch.delenv("BORK_REPO", raising=False)
         assert (
             repr(Location("/abs/path:w:cols"))
             == "Location(proto='file', user=None, host=None, port=None, path='/abs/path:w:cols')"
@@ -279,7 +279,7 @@ class TestLocationWithoutEnv:
         assert Location("/abs/path:with:colons").to_key_filename() == keys_dir + "abs_path_with_colons"
 
     def test_canonical_path(self, monkeypatch):
-        monkeypatch.delenv("BORG_REPO", raising=False)
+        monkeypatch.delenv("BORK_REPO", raising=False)
         locations = [
             "some/path",
             "file://some/path",
@@ -458,11 +458,11 @@ class MockArchive:
 
 # This is the local timezone of the system running the tests.
 # We need this e.g. to construct archive timestamps for the prune tests,
-# because borg prune operates in the local timezone (it first converts the
+# because bork prune operates in the local timezone (it first converts the
 # archive timestamp to the local timezone). So, if we want the y/m/d/h/m/s
 # values which prune uses to be exactly the ones we give [and NOT shift them
 # by tzoffset], we need to give the timestamps in the same local timezone.
-# Please note that the timestamps in a real borg archive or manifest are
+# Please note that the timestamps in a real bork archive or manifest are
 # stored in UTC timezone.
 local_tz = datetime.now(tz=timezone.utc).astimezone(tz=None).tzinfo
 
@@ -622,7 +622,7 @@ def test_parse_timestamp():
 
 def test_get_base_dir(monkeypatch):
     """test that get_base_dir respects environment"""
-    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    monkeypatch.delenv("BORK_BASE_DIR", raising=False)
     monkeypatch.delenv("HOME", raising=False)
     monkeypatch.delenv("USER", raising=False)
     assert get_base_dir(legacy=True) == os.path.expanduser("~")
@@ -630,197 +630,197 @@ def test_get_base_dir(monkeypatch):
     assert get_base_dir(legacy=True) == os.path.expanduser("~root")
     monkeypatch.setenv("HOME", "/var/tmp/home")
     assert get_base_dir(legacy=True) == "/var/tmp/home"
-    monkeypatch.setenv("BORG_BASE_DIR", "/var/tmp/base")
+    monkeypatch.setenv("BORK_BASE_DIR", "/var/tmp/base")
     assert get_base_dir(legacy=True) == "/var/tmp/base"
     # non-legacy is much easier:
-    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    monkeypatch.delenv("BORK_BASE_DIR", raising=False)
     assert get_base_dir(legacy=False) is None
-    monkeypatch.setenv("BORG_BASE_DIR", "/var/tmp/base")
+    monkeypatch.setenv("BORK_BASE_DIR", "/var/tmp/base")
     assert get_base_dir(legacy=False) == "/var/tmp/base"
 
 
 def test_get_base_dir_compat(monkeypatch):
     """test that it works the same for legacy and for non-legacy implementation"""
-    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
-    # old way: if BORG_BASE_DIR is not set, make something up with HOME/USER/~
-    # new way: if BORG_BASE_DIR is not set, return None and let caller deal with it.
+    monkeypatch.delenv("BORK_BASE_DIR", raising=False)
+    # old way: if BORK_BASE_DIR is not set, make something up with HOME/USER/~
+    # new way: if BORK_BASE_DIR is not set, return None and let caller deal with it.
     assert get_base_dir(legacy=False) is None
-    # new and old way: BORG_BASE_DIR overrides all other "base path determination".
-    monkeypatch.setenv("BORG_BASE_DIR", "/var/tmp/base")
+    # new and old way: BORK_BASE_DIR overrides all other "base path determination".
+    monkeypatch.setenv("BORK_BASE_DIR", "/var/tmp/base")
     assert get_base_dir(legacy=False) == get_base_dir(legacy=True)
 
 
 def test_get_config_dir(monkeypatch):
     """test that get_config_dir respects environment"""
-    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    monkeypatch.delenv("BORK_BASE_DIR", raising=False)
     home_dir = os.path.expanduser("~")
     if is_win32:
-        monkeypatch.delenv("BORG_CONFIG_DIR", raising=False)
-        assert get_config_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "borg", "borg")
-        monkeypatch.setenv("BORG_CONFIG_DIR", home_dir)
+        monkeypatch.delenv("BORK_CONFIG_DIR", raising=False)
+        assert get_config_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "bork", "bork")
+        monkeypatch.setenv("BORK_CONFIG_DIR", home_dir)
         assert get_config_dir(create=False) == home_dir
     elif is_darwin:
-        monkeypatch.delenv("BORG_CONFIG_DIR", raising=False)
-        assert get_config_dir(create=False) == os.path.join(home_dir, "Library", "Application Support", "borg")
-        monkeypatch.setenv("BORG_CONFIG_DIR", "/var/tmp")
+        monkeypatch.delenv("BORK_CONFIG_DIR", raising=False)
+        assert get_config_dir(create=False) == os.path.join(home_dir, "Library", "Application Support", "bork")
+        monkeypatch.setenv("BORK_CONFIG_DIR", "/var/tmp")
         assert get_config_dir(create=False) == "/var/tmp"
     else:
         monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
-        monkeypatch.delenv("BORG_CONFIG_DIR", raising=False)
-        assert get_config_dir(create=False) == os.path.join(home_dir, ".config", "borg")
+        monkeypatch.delenv("BORK_CONFIG_DIR", raising=False)
+        assert get_config_dir(create=False) == os.path.join(home_dir, ".config", "bork")
         monkeypatch.setenv("XDG_CONFIG_HOME", "/var/tmp/.config")
-        assert get_config_dir(create=False) == os.path.join("/var/tmp/.config", "borg")
-        monkeypatch.setenv("BORG_CONFIG_DIR", "/var/tmp")
+        assert get_config_dir(create=False) == os.path.join("/var/tmp/.config", "bork")
+        monkeypatch.setenv("BORK_CONFIG_DIR", "/var/tmp")
         assert get_config_dir(create=False) == "/var/tmp"
 
 
 def test_get_config_dir_compat(monkeypatch):
     """test that it works the same for legacy and for non-legacy implementation"""
-    monkeypatch.delenv("BORG_CONFIG_DIR", raising=False)
-    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    monkeypatch.delenv("BORK_CONFIG_DIR", raising=False)
+    monkeypatch.delenv("BORK_BASE_DIR", raising=False)
     monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
     if not is_darwin and not is_win32:
-        # fails on macOS: assert '/Users/tw/Library/Application Support/borg' == '/Users/tw/.config/borg'
+        # fails on macOS: assert '/Users/tw/Library/Application Support/bork' == '/Users/tw/.config/bork'
         # fails on win32 MSYS2 (but we do not need legacy compat there).
         assert get_config_dir(legacy=False, create=False) == get_config_dir(legacy=True, create=False)
         monkeypatch.setenv("XDG_CONFIG_HOME", "/var/tmp/xdg.config.d")
-        # fails on macOS: assert '/Users/tw/Library/Application Support/borg' == '/var/tmp/xdg.config.d'
+        # fails on macOS: assert '/Users/tw/Library/Application Support/bork' == '/var/tmp/xdg.config.d'
         # fails on win32 MSYS2 (but we do not need legacy compat there).
         assert get_config_dir(legacy=False, create=False) == get_config_dir(legacy=True, create=False)
-    monkeypatch.setenv("BORG_BASE_DIR", "/var/tmp/base")
+    monkeypatch.setenv("BORK_BASE_DIR", "/var/tmp/base")
     assert get_config_dir(legacy=False, create=False) == get_config_dir(legacy=True, create=False)
-    monkeypatch.setenv("BORG_CONFIG_DIR", "/var/tmp/borg.config.d")
+    monkeypatch.setenv("BORK_CONFIG_DIR", "/var/tmp/bork.config.d")
     assert get_config_dir(legacy=False, create=False) == get_config_dir(legacy=True, create=False)
 
 
 def test_get_cache_dir(monkeypatch):
     """test that get_cache_dir respects environment"""
-    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    monkeypatch.delenv("BORK_BASE_DIR", raising=False)
     home_dir = os.path.expanduser("~")
     if is_win32:
-        monkeypatch.delenv("BORG_CACHE_DIR", raising=False)
-        assert get_cache_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "borg", "borg", "Cache")
-        monkeypatch.setenv("BORG_CACHE_DIR", home_dir)
+        monkeypatch.delenv("BORK_CACHE_DIR", raising=False)
+        assert get_cache_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "bork", "bork", "Cache")
+        monkeypatch.setenv("BORK_CACHE_DIR", home_dir)
         assert get_cache_dir(create=False) == home_dir
     elif is_darwin:
-        monkeypatch.delenv("BORG_CACHE_DIR", raising=False)
-        assert get_cache_dir(create=False) == os.path.join(home_dir, "Library", "Caches", "borg")
-        monkeypatch.setenv("BORG_CACHE_DIR", "/var/tmp")
+        monkeypatch.delenv("BORK_CACHE_DIR", raising=False)
+        assert get_cache_dir(create=False) == os.path.join(home_dir, "Library", "Caches", "bork")
+        monkeypatch.setenv("BORK_CACHE_DIR", "/var/tmp")
         assert get_cache_dir(create=False) == "/var/tmp"
     else:
         monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
-        monkeypatch.delenv("BORG_CACHE_DIR", raising=False)
-        assert get_cache_dir(create=False) == os.path.join(home_dir, ".cache", "borg")
+        monkeypatch.delenv("BORK_CACHE_DIR", raising=False)
+        assert get_cache_dir(create=False) == os.path.join(home_dir, ".cache", "bork")
         monkeypatch.setenv("XDG_CACHE_HOME", "/var/tmp/.cache")
-        assert get_cache_dir(create=False) == os.path.join("/var/tmp/.cache", "borg")
-        monkeypatch.setenv("BORG_CACHE_DIR", "/var/tmp")
+        assert get_cache_dir(create=False) == os.path.join("/var/tmp/.cache", "bork")
+        monkeypatch.setenv("BORK_CACHE_DIR", "/var/tmp")
         assert get_cache_dir(create=False) == "/var/tmp"
 
 
 def test_get_cache_dir_compat(monkeypatch):
     """test that it works the same for legacy and for non-legacy implementation"""
-    monkeypatch.delenv("BORG_CACHE_DIR", raising=False)
-    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    monkeypatch.delenv("BORK_CACHE_DIR", raising=False)
+    monkeypatch.delenv("BORK_BASE_DIR", raising=False)
     monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
     if not is_darwin and not is_win32:
-        # fails on macOS: assert '/Users/tw/Library/Caches/borg' == '/Users/tw/.cache/borg'
+        # fails on macOS: assert '/Users/tw/Library/Caches/bork' == '/Users/tw/.cache/bork'
         # fails on win32 MSYS2 (but we do not need legacy compat there).
         assert get_cache_dir(legacy=False, create=False) == get_cache_dir(legacy=True, create=False)
-        # fails on macOS: assert '/Users/tw/Library/Caches/borg' == '/var/tmp/xdg.cache.d'
+        # fails on macOS: assert '/Users/tw/Library/Caches/bork' == '/var/tmp/xdg.cache.d'
         # fails on win32 MSYS2 (but we do not need legacy compat there).
         monkeypatch.setenv("XDG_CACHE_HOME", "/var/tmp/xdg.cache.d")
         assert get_cache_dir(legacy=False, create=False) == get_cache_dir(legacy=True, create=False)
-    monkeypatch.setenv("BORG_BASE_DIR", "/var/tmp/base")
+    monkeypatch.setenv("BORK_BASE_DIR", "/var/tmp/base")
     assert get_cache_dir(legacy=False, create=False) == get_cache_dir(legacy=True, create=False)
-    monkeypatch.setenv("BORG_CACHE_DIR", "/var/tmp/borg.cache.d")
+    monkeypatch.setenv("BORK_CACHE_DIR", "/var/tmp/bork.cache.d")
     assert get_cache_dir(legacy=False, create=False) == get_cache_dir(legacy=True, create=False)
 
 
 def test_get_keys_dir(monkeypatch):
     """test that get_keys_dir respects environment"""
-    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    monkeypatch.delenv("BORK_BASE_DIR", raising=False)
     home_dir = os.path.expanduser("~")
     if is_win32:
-        monkeypatch.delenv("BORG_KEYS_DIR", raising=False)
-        assert get_keys_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "borg", "borg", "keys")
-        monkeypatch.setenv("BORG_KEYS_DIR", home_dir)
+        monkeypatch.delenv("BORK_KEYS_DIR", raising=False)
+        assert get_keys_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "bork", "bork", "keys")
+        monkeypatch.setenv("BORK_KEYS_DIR", home_dir)
         assert get_keys_dir(create=False) == home_dir
     elif is_darwin:
-        monkeypatch.delenv("BORG_KEYS_DIR", raising=False)
-        assert get_keys_dir(create=False) == os.path.join(home_dir, "Library", "Application Support", "borg", "keys")
-        monkeypatch.setenv("BORG_KEYS_DIR", "/var/tmp")
+        monkeypatch.delenv("BORK_KEYS_DIR", raising=False)
+        assert get_keys_dir(create=False) == os.path.join(home_dir, "Library", "Application Support", "bork", "keys")
+        monkeypatch.setenv("BORK_KEYS_DIR", "/var/tmp")
         assert get_keys_dir(create=False) == "/var/tmp"
     else:
         monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
-        monkeypatch.delenv("BORG_KEYS_DIR", raising=False)
-        assert get_keys_dir(create=False) == os.path.join(home_dir, ".config", "borg", "keys")
+        monkeypatch.delenv("BORK_KEYS_DIR", raising=False)
+        assert get_keys_dir(create=False) == os.path.join(home_dir, ".config", "bork", "keys")
         monkeypatch.setenv("XDG_CONFIG_HOME", "/var/tmp/.config")
-        assert get_keys_dir(create=False) == os.path.join("/var/tmp/.config", "borg", "keys")
-        monkeypatch.setenv("BORG_KEYS_DIR", "/var/tmp")
+        assert get_keys_dir(create=False) == os.path.join("/var/tmp/.config", "bork", "keys")
+        monkeypatch.setenv("BORK_KEYS_DIR", "/var/tmp")
         assert get_keys_dir(create=False) == "/var/tmp"
 
 
 def test_get_security_dir(monkeypatch):
     """test that get_security_dir respects environment"""
-    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    monkeypatch.delenv("BORK_BASE_DIR", raising=False)
     home_dir = os.path.expanduser("~")
     if is_win32:
-        monkeypatch.delenv("BORG_SECURITY_DIR", raising=False)
-        assert get_security_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "borg", "borg", "security")
+        monkeypatch.delenv("BORK_SECURITY_DIR", raising=False)
+        assert get_security_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "bork", "bork", "security")
         assert get_security_dir(repository_id="1234", create=False) == os.path.join(
-            home_dir, "AppData", "Local", "borg", "borg", "security", "1234"
+            home_dir, "AppData", "Local", "bork", "bork", "security", "1234"
         )
-        monkeypatch.setenv("BORG_SECURITY_DIR", home_dir)
+        monkeypatch.setenv("BORK_SECURITY_DIR", home_dir)
         assert get_security_dir(create=False) == home_dir
     elif is_darwin:
-        monkeypatch.delenv("BORG_SECURITY_DIR", raising=False)
+        monkeypatch.delenv("BORK_SECURITY_DIR", raising=False)
         assert get_security_dir(create=False) == os.path.join(
-            home_dir, "Library", "Application Support", "borg", "security"
+            home_dir, "Library", "Application Support", "bork", "security"
         )
         assert get_security_dir(repository_id="1234", create=False) == os.path.join(
-            home_dir, "Library", "Application Support", "borg", "security", "1234"
+            home_dir, "Library", "Application Support", "bork", "security", "1234"
         )
-        monkeypatch.setenv("BORG_SECURITY_DIR", "/var/tmp")
+        monkeypatch.setenv("BORK_SECURITY_DIR", "/var/tmp")
         assert get_security_dir(create=False) == "/var/tmp"
     else:
         monkeypatch.delenv("XDG_DATA_HOME", raising=False)
-        monkeypatch.delenv("BORG_SECURITY_DIR", raising=False)
-        assert get_security_dir(create=False) == os.path.join(home_dir, ".local", "share", "borg", "security")
+        monkeypatch.delenv("BORK_SECURITY_DIR", raising=False)
+        assert get_security_dir(create=False) == os.path.join(home_dir, ".local", "share", "bork", "security")
         assert get_security_dir(repository_id="1234", create=False) == os.path.join(
-            home_dir, ".local", "share", "borg", "security", "1234"
+            home_dir, ".local", "share", "bork", "security", "1234"
         )
         monkeypatch.setenv("XDG_DATA_HOME", "/var/tmp/.config")
-        assert get_security_dir(create=False) == os.path.join("/var/tmp/.config", "borg", "security")
-        monkeypatch.setenv("BORG_SECURITY_DIR", "/var/tmp")
+        assert get_security_dir(create=False) == os.path.join("/var/tmp/.config", "bork", "security")
+        monkeypatch.setenv("BORK_SECURITY_DIR", "/var/tmp")
         assert get_security_dir(create=False) == "/var/tmp"
 
 
 def test_get_runtime_dir(monkeypatch):
     """test that get_runtime_dir respects environment"""
-    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    monkeypatch.delenv("BORK_BASE_DIR", raising=False)
     home_dir = os.path.expanduser("~")
     if is_win32:
-        monkeypatch.delenv("BORG_RUNTIME_DIR", raising=False)
-        assert get_runtime_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "Temp", "borg", "borg")
-        monkeypatch.setenv("BORG_RUNTIME_DIR", home_dir)
+        monkeypatch.delenv("BORK_RUNTIME_DIR", raising=False)
+        assert get_runtime_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "Temp", "bork", "bork")
+        monkeypatch.setenv("BORK_RUNTIME_DIR", home_dir)
         assert get_runtime_dir(create=False) == home_dir
     elif is_darwin:
-        monkeypatch.delenv("BORG_RUNTIME_DIR", raising=False)
-        assert get_runtime_dir(create=False) == os.path.join(home_dir, "Library", "Caches", "TemporaryItems", "borg")
-        monkeypatch.setenv("BORG_RUNTIME_DIR", "/var/tmp")
+        monkeypatch.delenv("BORK_RUNTIME_DIR", raising=False)
+        assert get_runtime_dir(create=False) == os.path.join(home_dir, "Library", "Caches", "TemporaryItems", "bork")
+        monkeypatch.setenv("BORK_RUNTIME_DIR", "/var/tmp")
         assert get_runtime_dir(create=False) == "/var/tmp"
     else:
         monkeypatch.delenv("XDG_RUNTIME_DIR", raising=False)
-        monkeypatch.delenv("BORG_RUNTIME_DIR", raising=False)
+        monkeypatch.delenv("BORK_RUNTIME_DIR", raising=False)
         uid = str(os.getuid())
         assert get_runtime_dir(create=False) in [
-            os.path.join("/run/user", uid, "borg"),
-            os.path.join("/var/run/user", uid, "borg"),
-            os.path.join(f"/tmp/runtime-{uid}", "borg"),
+            os.path.join("/run/user", uid, "bork"),
+            os.path.join("/var/run/user", uid, "bork"),
+            os.path.join(f"/tmp/runtime-{uid}", "bork"),
         ]
         monkeypatch.setenv("XDG_RUNTIME_DIR", "/var/tmp/.cache")
-        assert get_runtime_dir(create=False) == os.path.join("/var/tmp/.cache", "borg")
-        monkeypatch.setenv("BORG_RUNTIME_DIR", "/var/tmp")
+        assert get_runtime_dir(create=False) == os.path.join("/var/tmp/.cache", "bork")
+        monkeypatch.setenv("BORK_RUNTIME_DIR", "/var/tmp")
         assert get_runtime_dir(create=False) == "/var/tmp"
 
 
@@ -1372,13 +1372,13 @@ def test_safe_unlink_is_safe_ENOSPC(tmpdir, monkeypatch):
 class TestPassphrase:
     def test_passphrase_new_verification(self, capsys, monkeypatch):
         monkeypatch.setattr(getpass, "getpass", lambda prompt: "1234aöäü")
-        monkeypatch.setenv("BORG_DISPLAY_PASSPHRASE", "no")
+        monkeypatch.setenv("BORK_DISPLAY_PASSPHRASE", "no")
         Passphrase.new()
         out, err = capsys.readouterr()
         assert "1234" not in out
         assert "1234" not in err
 
-        monkeypatch.setenv("BORG_DISPLAY_PASSPHRASE", "yes")
+        monkeypatch.setenv("BORK_DISPLAY_PASSPHRASE", "yes")
         passphrase = Passphrase.new()
         out, err = capsys.readouterr()
         assert "3132333461c3b6c3a4c3bc" not in out
@@ -1392,7 +1392,7 @@ class TestPassphrase:
         assert "1234/@=" in err
 
     def test_passphrase_new_empty(self, capsys, monkeypatch):
-        monkeypatch.delenv("BORG_PASSPHRASE", False)
+        monkeypatch.delenv("BORK_PASSPHRASE", False)
         monkeypatch.setattr(getpass, "getpass", lambda prompt: "")
         with pytest.raises(PasswordRetriesExceeded):
             Passphrase.new(allow_empty=False)
@@ -1400,7 +1400,7 @@ class TestPassphrase:
         assert "must not be blank" in err
 
     def test_passphrase_new_retries(self, monkeypatch):
-        monkeypatch.delenv("BORG_PASSPHRASE", False)
+        monkeypatch.delenv("BORK_PASSPHRASE", False)
         ascending_numbers = iter(range(20))
         monkeypatch.setattr(getpass, "getpass", lambda prompt: str(next(ascending_numbers)))
         with pytest.raises(PasswordRetriesExceeded):

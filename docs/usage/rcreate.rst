@@ -7,7 +7,7 @@ Examples
 ::
 
     # Local repository
-    $ export BORG_REPO=/path/to/repo
+    $ export BORK_REPO=/path/to/repo
     # recommended repokey AEAD crypto modes
     $ bork rcreate --encryption=repokey-aes-ocb
     $ bork rcreate --encryption=repokey-chacha20-poly1305
@@ -19,7 +19,7 @@ Examples
     $ bork rcreate --encryption=none
 
     # Remote repository (accesses a remote bork via ssh)
-    $ export BORG_REPO=ssh://user@hostname/~/backup
+    $ export BORK_REPO=ssh://user@hostname/~/backup
     # repokey: stores the (encrypted) key into <REPO_DIR>/config
     $ bork rcreate --encryption=repokey-aes-ocb
     # keyfile: stores the (encrypted) key into ~/.config/bork/keys/

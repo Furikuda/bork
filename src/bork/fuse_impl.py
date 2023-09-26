@@ -4,9 +4,9 @@ load library for lowlevel FUSE implementation
 
 import os
 
-BORG_FUSE_IMPL = os.environ.get("BORG_FUSE_IMPL", "pyfuse3,llfuse")
+BORK_FUSE_IMPL = os.environ.get("BORK_FUSE_IMPL", "pyfuse3,llfuse")
 
-for FUSE_IMPL in BORG_FUSE_IMPL.split(","):
+for FUSE_IMPL in BORK_FUSE_IMPL.split(","):
     FUSE_IMPL = FUSE_IMPL.strip()
     if FUSE_IMPL == "pyfuse3":
         try:
@@ -29,7 +29,7 @@ for FUSE_IMPL in BORG_FUSE_IMPL.split(","):
     elif FUSE_IMPL == "none":
         pass
     else:
-        raise RuntimeError("unknown fuse implementation in BORG_FUSE_IMPL: '%s'" % BORG_FUSE_IMPL)
+        raise RuntimeError("unknown fuse implementation in BORK_FUSE_IMPL: '%s'" % BORK_FUSE_IMPL)
 else:
     llfuse = None  # noqa
     has_llfuse = False

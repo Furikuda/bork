@@ -2264,7 +2264,7 @@ function create_qrcode(text, errorCorrectionLevel) {
 
 function placeholder_paperkey() {
 
-    var res = "BORG PAPER KEY v1\n"
+    var res = "BORK PAPER KEY v1\n"
     res += "id: ?? / ?????? ?????? ?????? / ?????? ?????? - ??\n"
     for (var i = 1; i <= 19; i++) {
         res += (i < 10 ? ' ' : '') + i.toString();
@@ -2310,7 +2310,7 @@ function create_paperkey(text) {
     var first_line = lines.shift();
 
     var binary = atob(lines.join('\n'));
-    export_ += 'BORG PAPER KEY v1\n';
+    export_ += 'BORK PAPER KEY v1\n';
     lines = Math.ceil(binary.length / 18);
     var repoid = first_line.substr(9, 18)
     var complete_checksum = sha256_truncated(binary, 12)

@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-PATTERNS" 1 "2023-09-14" "" "borg backup tool"
+.TH "BORK-PATTERNS" 1 "2023-09-14" "" "bork backup tool"
 .SH NAME
 bork-patterns \- Details regarding patterns
 .SH DESCRIPTION
@@ -60,7 +60,7 @@ into the matcher will start with \fBabsolute/\fP\&.
 If you give \fB\&../../relative\fP as root, the paths will be normalized
 as \fBrelative/\fP\&.
 .sp
-Borg supports different pattern styles. To define a non\-default
+Bork supports different pattern styles. To define a non\-default
 style for a specific pattern, prefix it with two characters followed
 by a colon \(aq:\(aq (i.e. \fBfm:path/*\fP, \fBsh:path/**\fP).
 .INDENT 0.0
@@ -288,10 +288,10 @@ Examples:
 bork create \-\-pattern=+pics/2018/good \-\-pattern=\-pics/2018 archive pics
 
 # back up only JPG/JPEG files (case insensitive) in all home directories:
-borg create \-\-pattern \(aq+ re:\e.jpe?g(?i)$\(aq archive /home
+bork create \-\-pattern \(aq+ re:\e.jpe?g(?i)$\(aq archive /home
 
 # back up homes, but exclude big downloads (like .ISO files) or hidden files:
-borg create \-\-exclude \(aqre:\e.iso(?i)$\(aq \-\-exclude \(aqsh:home/**/.*\(aq archive /home
+bork create \-\-exclude \(aqre:\e.iso(?i)$\(aq \-\-exclude \(aqsh:home/**/.*\(aq archive /home
 
 # use a file with patterns (recursion root \(aq/\(aq via command line):
 bork create \-\-patterns\-from patterns.lst archive /

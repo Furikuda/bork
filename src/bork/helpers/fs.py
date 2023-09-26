@@ -43,15 +43,15 @@ def ensure_dir(path, mode=stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO, pretty_dea
 
 
 def get_base_dir(*, legacy=False):
-    """Get home directory / base directory for borg:
+    """Get home directory / base directory for bork:
 
-    - BORG_BASE_DIR, if set
+    - BORK_BASE_DIR, if set
     - HOME, if set
     - ~$USER, if USER is set
     - ~
     """
     if legacy:
-        base_dir = os.environ.get("BORG_BASE_DIR") or os.environ.get("HOME")
+        base_dir = os.environ.get("BORK_BASE_DIR") or os.environ.get("HOME")
         # os.path.expanduser() behaves differently for '~' and '~someuser' as
         # parameters: when called with an explicit username, the possibly set
         # environment variable HOME is no longer respected. So we have to check if
@@ -59,9 +59,9 @@ def get_base_dir(*, legacy=False):
         if not base_dir:
             base_dir = os.path.expanduser("~%s" % os.environ.get("USER", ""))
     else:
-        # we only care for BORG_BASE_DIR here, as it can be used to override the base dir
+        # we only care for BORK_BASE_DIR here, as it can be used to override the base dir
         # and not use any more or less platform specific way to determine the base dir.
-        base_dir = os.environ.get("BORG_BASE_DIR")
+        base_dir = os.environ.get("BORK_BASE_DIR")
     return base_dir
 
 
@@ -73,7 +73,7 @@ def join_base_dir(*paths, **kw):
 
 def get_keys_dir(*, legacy=False, create=True):
     """Determine where to repository keys and cache"""
-    keys_dir = os.environ.get("BORG_KEYS_DIR")
+    keys_dir = os.environ.get("BORK_KEYS_DIR")
     if keys_dir is None:
         # note: do not just give this as default to the environment.get(), see issue #5979.
         keys_dir = os.path.join(get_config_dir(legacy=legacy), "keys")
@@ -84,7 +84,7 @@ def get_keys_dir(*, legacy=False, create=True):
 
 def get_security_dir(repository_id=None, *, legacy=False, create=True):
     """Determine where to store local security information."""
-    security_dir = os.environ.get("BORG_SECURITY_DIR")
+    security_dir = os.environ.get("BORK_SECURITY_DIR")
     if security_dir is None:
         get_dir = get_config_dir if legacy else get_data_dir
         # note: do not just give this as default to the environment.get(), see issue #5979.
@@ -97,10 +97,10 @@ def get_security_dir(repository_id=None, *, legacy=False, create=True):
 
 
 def get_data_dir(*, legacy=False, create=True):
-    """Determine where to store borg changing data on the client"""
-    assert legacy is False, "there is no legacy variant of the borg data dir"
+    """Determine where to store bork changing data on the client"""
+    assert legacy is False, "there is no legacy variant of the bork data dir"
     data_dir = os.environ.get(
-        "BORG_DATA_DIR", join_base_dir(".local", "share", "borg", legacy=legacy) or platformdirs.user_data_dir("borg")
+        "BORK_DATA_DIR", join_base_dir(".local", "share", "bork", legacy=legacy) or platformdirs.user_data_dir("bork")
     )
     if create:
         ensure_dir(data_dir)
@@ -109,9 +109,9 @@ def get_data_dir(*, legacy=False, create=True):
 
 def get_runtime_dir(*, legacy=False, create=True):
     """Determine where to store runtime files, like sockets, PID files, ..."""
-    assert legacy is False, "there is no legacy variant of the borg runtime dir"
+    assert legacy is False, "there is no legacy variant of the bork runtime dir"
     runtime_dir = os.environ.get(
-        "BORG_RUNTIME_DIR", join_base_dir(".cache", "borg", legacy=legacy) or platformdirs.user_runtime_dir("borg")
+        "BORK_RUNTIME_DIR", join_base_dir(".cache", "bork", legacy=legacy) or platformdirs.user_runtime_dir("bork")
     )
     if create:
         ensure_dir(runtime_dir)
@@ -119,7 +119,7 @@ def get_runtime_dir(*, legacy=False, create=True):
 
 
 def get_socket_filename():
-    return os.path.join(get_runtime_dir(), "borg.sock")
+    return os.path.join(get_runtime_dir(), "bork.sock")
 
 
 def get_cache_dir(*, legacy=False, create=True):
@@ -128,14 +128,14 @@ def get_cache_dir(*, legacy=False, create=True):
     if legacy:
         # Get cache home path
         cache_home = join_base_dir(".cache", legacy=legacy)
-        # Try to use XDG_CACHE_HOME instead if BORG_BASE_DIR isn't explicitly set
-        if not os.environ.get("BORG_BASE_DIR"):
+        # Try to use XDG_CACHE_HOME instead if BORK_BASE_DIR isn't explicitly set
+        if not os.environ.get("BORK_BASE_DIR"):
             cache_home = os.environ.get("XDG_CACHE_HOME", cache_home)
-        # Use BORG_CACHE_DIR if set, otherwise assemble final path from cache home path
-        cache_dir = os.environ.get("BORG_CACHE_DIR", os.path.join(cache_home, "borg"))
+        # Use BORK_CACHE_DIR if set, otherwise assemble final path from cache home path
+        cache_dir = os.environ.get("BORK_CACHE_DIR", os.path.join(cache_home, "bork"))
     else:
         cache_dir = os.environ.get(
-            "BORG_CACHE_DIR", join_base_dir(".cache", "borg", legacy=legacy) or platformdirs.user_cache_dir("borg")
+            "BORK_CACHE_DIR", join_base_dir(".cache", "bork", legacy=legacy) or platformdirs.user_cache_dir("bork")
         )
     if create:
         ensure_dir(cache_dir)
@@ -145,7 +145,7 @@ def get_cache_dir(*, legacy=False, create=True):
                 CACHE_TAG_CONTENTS
                 + textwrap.dedent(
                     """
-            # This file is a cache directory tag created by Borg.
+            # This file is a cache directory tag created by Bork.
             # For information about cache directory tags, see:
             #       http://www.bford.info/cachedir/spec.html
             """
@@ -164,14 +164,14 @@ def get_config_dir(*, legacy=False, create=True):
     # Get config home path
     if legacy:
         config_home = join_base_dir(".config", legacy=legacy)
-        # Try to use XDG_CONFIG_HOME instead if BORG_BASE_DIR isn't explicitly set
-        if not os.environ.get("BORG_BASE_DIR"):
+        # Try to use XDG_CONFIG_HOME instead if BORK_BASE_DIR isn't explicitly set
+        if not os.environ.get("BORK_BASE_DIR"):
             config_home = os.environ.get("XDG_CONFIG_HOME", config_home)
-        # Use BORG_CONFIG_DIR if set, otherwise assemble final path from config home path
-        config_dir = os.environ.get("BORG_CONFIG_DIR", os.path.join(config_home, "borg"))
+        # Use BORK_CONFIG_DIR if set, otherwise assemble final path from config home path
+        config_dir = os.environ.get("BORK_CONFIG_DIR", os.path.join(config_home, "bork"))
     else:
         config_dir = os.environ.get(
-            "BORG_CONFIG_DIR", join_base_dir(".config", "borg", legacy=legacy) or platformdirs.user_config_dir("borg")
+            "BORK_CONFIG_DIR", join_base_dir(".config", "bork", legacy=legacy) or platformdirs.user_config_dir("bork")
         )
     if create:
         ensure_dir(config_dir)
@@ -267,11 +267,11 @@ def assert_sanitized_path(path):
 
 def to_sanitized_path(path):
     assert isinstance(path, str)
-    # Legacy versions of Borg still allowed non-sanitized paths
+    # Legacy versions of Bork still allowed non-sanitized paths
     # to be stored. So, we sanitize them when reading.
     #
-    # Borg 2 ensures paths are safe before storing them. Thus, when
-    # support for reading Borg 1 archives is dropped, this should be
+    # Bork 2 ensures paths are safe before storing them. Thus, when
+    # support for reading Bork 1 archives is dropped, this should be
     # changed to a simple check to verify paths aren't malicious.
     # Namely, absolute paths and paths containing '..' elements must
     # be rejected.
@@ -312,8 +312,8 @@ class HardLinkManager:
     def bork1_hardlinkable(self, mode):  # legacy
         return stat.S_ISREG(mode) or stat.S_ISBLK(mode) or stat.S_ISCHR(mode) or stat.S_ISFIFO(mode)
 
-    def borg1_hardlink_master(self, item):  # legacy
-        return item.get("hardlink_master", False) and "source" not in item and self.borg1_hardlinkable(item.mode)
+    def bork1_hardlink_master(self, item):  # legacy
+        return item.get("hardlink_master", False) and "source" not in item and self.bork1_hardlinkable(item.mode)
 
     def bork1_hardlink_slave(self, item):  # legacy
         return "source" in item and self.bork1_hardlinkable(item.mode)

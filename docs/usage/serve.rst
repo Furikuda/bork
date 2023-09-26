@@ -14,22 +14,22 @@ options. This list currently contains:
 - ``--lock-wait`` to allow the client to control how long to wait before
   giving up and aborting the operation when another process is holding a lock.
 
-Environment variables (such as BORG_XXX) contained in the original
-command sent by the client are *not* interpreted, but ignored. If BORG_XXX environment
+Environment variables (such as BORK_XXX) contained in the original
+command sent by the client are *not* interpreted, but ignored. If BORK_XXX environment
 variables should be set on the ``bork serve`` side, then these must be set in system-specific
 locations like ``/etc/environment`` or in the forced command itself (example below).
 
 ::
 
-    # Allow an SSH keypair to run only borg, and only have access to /path/to/repo.
+    # Allow an SSH keypair to run only bork, and only have access to /path/to/repo.
     # Use key options to disable unneeded and potentially dangerous SSH functionality.
     # This will help to secure an automated remote backup system.
     $ cat ~/.ssh/authorized_keys
     command="bork serve --restrict-to-path /path/to/repo",restrict ssh-rsa AAAAB3[...]
 
-    # Set a BORG_XXX environment variable on the "bork serve" side
+    # Set a BORK_XXX environment variable on the "bork serve" side
     $ cat ~/.ssh/authorized_keys
-    command="export BORG_XXX=value; bork serve [...]",restrict ssh-rsa [...]
+    command="export BORK_XXX=value; bork serve [...]",restrict ssh-rsa [...]
 
 .. note::
     The examples above use the ``restrict`` directive. This does automatically

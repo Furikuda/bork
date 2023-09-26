@@ -22,7 +22,7 @@ mount an archive to restore from a backup.
 *Repositories* are filesystem directories acting as self-contained stores of archives.
 Repositories can be accessed locally via path or remotely via ssh. Under the hood,
 repositories contain data blocks and a manifest that tracks which blocks are in each
-archive. If some data hasn't changed between backups, Borg simply
+archive. If some data hasn't changed between backups, Bork simply
 references an already uploaded data chunk (deduplication).
 
 .. _about_free_space:
@@ -35,9 +35,9 @@ of free space on the destination filesystem that has your backup repository
 (and also on ~/.cache). A few GB should suffice for most hard-drive sized
 repositories. See also :ref:`cache-memory-usage`.
 
-Borg doesn't use space reserved for root on repository disks (even when run as root).
+Bork doesn't use space reserved for root on repository disks (even when run as root).
 On file systems which do not support this mechanism (e.g. XFS) we recommend to reserve
-some space in Borg itself just to be safe by adjusting the ``additional_free_space``
+some space in Bork itself just to be safe by adjusting the ``additional_free_space``
 setting (a good starting point is ``2G``)::
 
     bork config additional_free_space 2G
@@ -48,7 +48,7 @@ by deleting/pruning archives. This mechanism is not bullet-proof in some
 circumstances [1]_.
 
 If you do run out of disk space, it can be hard or impossible to free space,
-because Borg needs free space to operate - even to delete backup archives.
+because Bork needs free space to operate - even to delete backup archives.
 
 You can use some monitoring process or just include the free space information
 in your backup log files (you check them regularly anyway, right?).
@@ -71,15 +71,15 @@ Also helpful:
 Important note about permissions
 --------------------------------
 
-To avoid permission issues (in your borg repository or borg cache), **always
+To avoid permission issues (in your bork repository or bork cache), **always
 access the repository using the same user account**.
 
 If you want to back up files of other users or the operating system, running
-borg as root likely will be required (otherwise you get `Permission denied`
+bork as root likely will be required (otherwise you get `Permission denied`
 errors).
 If you only back up your own files, run it as your normal user (i.e. not root).
 
-For a local repository always use the same user to invoke borg.
+For a local repository always use the same user to invoke bork.
 
 For a remote repository: always use e.g. ssh://bork@remote_host. You can use this
 from different local users, the remote user running bork and accessing the
@@ -115,14 +115,14 @@ common techniques to achieve this.
 
 - Shut down containers before backing up their storage volumes.
 
-For some systems, Borg might work well enough without these
+For some systems, Bork might work well enough without these
 precautions.  If you are simply backing up the files on a system that
 isn't very active (e.g. in a typical home directory), Bork usually
 works well enough without further care for consistency.  Log files and
 caches might not be in a perfect state, but this is rarely a problem.
 
 For databases, virtual machines, and containers, there are specific
-techniques for backing them up that do not simply use Borg to back up
+techniques for backing them up that do not simply use Bork to back up
 the underlying filesystem.  For databases, check your database
 documentation for techniques that will save the database state between
 transactions.  For virtual machines, consider running the backup on
@@ -138,7 +138,7 @@ complete operating system) to a repository ``~/backup/main``  on a remote server
 Some files which aren't necessarily needed in this backup are excluded. See
 :ref:`bork_patterns` on how to add more exclude options.
 
-After the backup, this script also uses the :ref:`borg_prune` subcommand to keep
+After the backup, this script also uses the :ref:`bork_prune` subcommand to keep
 a certain number of old archives and deletes the others.
 
 Finally, it uses the :ref:`bork_compact` subcommand to remove deleted objects
@@ -159,10 +159,10 @@ backed up and that the ``prune`` command keeps and deletes the correct backups.
     #!/bin/sh
 
     # Setting this, so the repo does not need to be given on the commandline:
-    export BORG_REPO=ssh://username@example.com:2022/~/backup/main
+    export BORK_REPO=ssh://username@example.com:2022/~/backup/main
 
     # See the section "Passphrase notes" for more infos.
-    export BORG_PASSPHRASE='XYZl0ngandsecurepa_55_phrasea&&123'
+    export BORK_PASSPHRASE='XYZl0ngandsecurepa_55_phrasea&&123'
 
     # some helpers and error handling:
     info() { printf "\n%s %s\n\n" "$( date )" "$*" >&2; }
@@ -234,12 +234,12 @@ backed up and that the ``prune`` command keeps and deletes the correct backups.
 Pitfalls with shell variables and environment variables
 -------------------------------------------------------
 
-This applies to all environment variables you want Borg to see, not just
-``BORG_PASSPHRASE``. TL;DR: always ``export`` your variable,
+This applies to all environment variables you want Bork to see, not just
+``BORK_PASSPHRASE``. TL;DR: always ``export`` your variable,
 and use single quotes if you're unsure of the details of your shell's expansion
 behavior. E.g.::
 
-    export BORG_PASSPHRASE='complicated & long'
+    export BORK_PASSPHRASE='complicated & long'
 
 This is because ``export`` exposes variables to subprocesses, which Bork may be
 one of. More on ``export`` can be found in the "ENVIRONMENT" section of the
@@ -248,22 +248,22 @@ bash(1) man page.
 Beware of how ``sudo`` interacts with environment variables. For example, you
 may be surprised that the following ``export`` has no effect on your command::
 
-   export BORG_PASSPHRASE='complicated & long'
+   export BORK_PASSPHRASE='complicated & long'
    sudo ./yourborkwrapper.sh  # still prompts for password
 
 For more information, refer to the sudo(8) man page and ``env_keep`` in
 the sudoers(5) man page.
 
 .. Tip::
-    To debug what your borg process sees, find its PID
-    (``ps aux|grep borg``) and then look into ``/proc/<PID>/environ``.
+    To debug what your bork process sees, find its PID
+    (``ps aux|grep bork``) and then look into ``/proc/<PID>/environ``.
 
 .. passphrase_notes:
 
 Passphrase notes
 ----------------
 
-If you use encryption (or authentication), Borg will ask you interactively
+If you use encryption (or authentication), Bork will ask you interactively
 for a passphrase to encrypt/decrypt the keyfile / repokey.
 
 A passphrase should be a single line of text. Any trailing linefeed will be
@@ -273,7 +273,7 @@ Do not use empty passphrases, as these can be trivially guessed, which does not
 leave any encrypted data secure. 
 
 Avoid passphrases containing non-ASCII characters.
-Borg can process any unicode text, but problems may arise at input due to text
+Bork can process any unicode text, but problems may arise at input due to text
 encoding or differing keyboard layouts, so best just avoid non-ASCII stuff.
 
 See: https://xkcd.com/936/
@@ -284,24 +284,24 @@ directly or indirectly with the use of environment variables.
 Supply a passphrase directly::
 
     # use this passphrase (use safe permissions on the script!):
-    export BORG_PASSPHRASE='my super secret passphrase'
+    export BORK_PASSPHRASE='my super secret passphrase'
 
 Or delegate to an external program to supply the passphrase::
 
     # use the "pass" password manager to get the passphrase:
-    export BORG_PASSCOMMAND='pass show backup'
+    export BORK_PASSCOMMAND='pass show backup'
 
     # use GPG to get the passphrase contained in a gpg-encrypted file:
-    export BORG_PASSCOMMAND='gpg --decrypt bork-passphrase.gpg'
+    export BORK_PASSCOMMAND='gpg --decrypt bork-passphrase.gpg'
 
 Or read the passphrase from an open file descriptor::
 
-    export BORG_PASSPHRASE_FD=42
+    export BORK_PASSPHRASE_FD=42
 
 Using hardware crypto devices (like Nitrokey, Yubikey and others) is not
 directly supported by bork, but you can use these indirectly.
 E.g. if your crypto device supports GPG and bork calls ``gpg`` via
-``BORG_PASSCOMMAND``, it should just work.
+``BORK_PASSCOMMAND``, it should just work.
 
 .. backup_compression:
 
@@ -364,7 +364,7 @@ Key material is stored in encrypted form and can be only decrypted by providing
 the correct passphrase.
 
 For automated backups the passphrase can be specified using the
-`BORG_PASSPHRASE` environment variable.
+`BORK_PASSPHRASE` environment variable.
 
 .. note:: Be careful about how you set that environment, see
           :ref:`this note about password environments <password_env>`
@@ -435,12 +435,12 @@ avoids issues such as:
 - mapping of user/group names to user/group IDs
 - permissions
 
-You likely already have a working borg setup there, including perhaps:
+You likely already have a working bork setup there, including perhaps:
 
   - an environment variable for the key passphrase (for encrypted repos),
   - a keyfile for the repo (not needed for repokey mode),
   - a ssh key for the repo server (not needed for locally mounted repos),
-  - a valid borg cache for that repo (quicker than cache rebuild).
+  - a valid bork cache for that repo (quicker than cache rebuild).
 
 The **user** might be:
 
@@ -467,7 +467,7 @@ The **key** can be located:
   This may cause a bit more effort:
 
   - if you have just lost that home directory and you first need to restore the
-    borg key (e.g. from the separate backup you made of it or from another
+    bork key (e.g. from the separate backup you made of it or from another
     user or machine accessing the same repository).
   - if you first must find out the correct machine / user / home directory
     (where the bork client was run to make the backups).
@@ -477,7 +477,7 @@ The **passphrase** for the key has been either:
 - entered interactively at backup time
   (not practical if backup is automated / unattended).
 - acquired via some environment variable driven mechanism in the backup script
-  (look there for BORG_PASSPHRASE, BORG_PASSCOMMAND, etc. and just do it like
+  (look there for BORK_PASSPHRASE, BORK_PASSCOMMAND, etc. and just do it like
   that).
 
 There are **2 ways to restore** files from a bork backup repository:
@@ -491,7 +491,7 @@ There are **2 ways to restore** files from a bork backup repository:
   - you don't care for restoring stuff that FUSE mount does not implement yet
     (like special fs flags, ACLs)
   - you have a client with good resources (RAM, CPU, temporary disk space)
-  - you would rather use some filemanager to restore (copy) files than borg
+  - you would rather use some filemanager to restore (copy) files than bork
     extract shell commands
 
 - **bork extract** - use this if:

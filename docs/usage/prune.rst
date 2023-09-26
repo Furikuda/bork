@@ -22,7 +22,7 @@ first so you will see what it would do without it actually doing anything.
 
     # Same as above but only apply to archive names starting with the hostname
     # of the machine followed by a "-" character:
-    $ borg prune -v --list --keep-daily=7 --keep-weekly=4 -a 'sh:{hostname}-*'
+    $ bork prune -v --list --keep-daily=7 --keep-weekly=4 -a 'sh:{hostname}-*'
     # actually free disk space:
     $ bork compact
 

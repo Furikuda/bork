@@ -14,13 +14,13 @@
 #include "_endian.h"
 
 #if defined(_MSC_VER)
-#   define BORG_PACKED(x) __pragma(pack(push, 1)) x __pragma(pack(pop))
+#   define BORK_PACKED(x) __pragma(pack(push, 1)) x __pragma(pack(pop))
 #else
-#   define BORG_PACKED(x) x __attribute__((packed))
+#   define BORK_PACKED(x) x __attribute__((packed))
 #endif
 
-#define MAGIC  "BORG2IDX"
-#define MAGIC1 "BORG_IDX"  // legacy
+#define MAGIC  "BORK2IDX"
+#define MAGIC1 "BORK_IDX"  // legacy
 #define MAGIC_LEN 8
 
 #define DEBUG 0
@@ -33,7 +33,7 @@
     }                                           \
 } while (0)
 
-BORG_PACKED(
+BORK_PACKED(
 typedef struct {
     char magic[MAGIC_LEN];
     int32_t num_entries;
@@ -42,7 +42,7 @@ typedef struct {
     int8_t  value_size;
 }) HashHeader1;
 
-BORG_PACKED(
+BORK_PACKED(
 typedef struct {
     char magic[MAGIC_LEN];
     int32_t version;
@@ -65,7 +65,7 @@ typedef struct {
     int lower_limit;
     int upper_limit;
     int min_empty;
-#ifndef BORG_NO_PYTHON
+#ifndef BORK_NO_PYTHON
     /* buckets may be backed by a Python buffer. If buckets_buffer.buf is NULL then this is not used. */
     Py_buffer buckets_buffer;
 #endif
@@ -123,7 +123,7 @@ static int hash_sizes[] = {
 #define EPRINTF(msg, ...) fprintf(stderr, "hashindex: " msg "(%s)\n", ##__VA_ARGS__, strerror(errno))
 #define EPRINTF_PATH(path, msg, ...) fprintf(stderr, "hashindex: %s: " msg " (%s)\n", path, ##__VA_ARGS__, strerror(errno))
 
-#ifndef BORG_NO_PYTHON
+#ifndef BORK_NO_PYTHON
 static HashIndex *hashindex_read(PyObject *file_py, int permit_compact, int legacy);
 static void hashindex_write(HashIndex *index, PyObject *file_py, int legacy);
 #endif
@@ -141,7 +141,7 @@ static void hashindex_free(HashIndex *index);
 static void
 hashindex_free_buckets(HashIndex *index)
 {
-#ifndef BORG_NO_PYTHON
+#ifndef BORK_NO_PYTHON
     if(index->buckets_buffer.buf) {
         PyBuffer_Release(&index->buckets_buffer);
     } else
@@ -519,7 +519,7 @@ fail:
 
 /* Public API */
 
-#ifndef BORG_NO_PYTHON
+#ifndef BORK_NO_PYTHON
 static HashIndex *
 hashindex_read(PyObject *file_py, int permit_compact, int legacy)
 {
@@ -630,7 +630,7 @@ hashindex_init(int capacity, int key_size, int value_size)
     index->lower_limit = get_lower_limit(index->num_buckets);
     index->upper_limit = get_upper_limit(index->num_buckets);
     index->min_empty = get_min_empty(index->num_buckets);
-#ifndef BORG_NO_PYTHON
+#ifndef BORK_NO_PYTHON
     index->buckets_buffer.buf = NULL;
 #endif
     for(i = 0; i < capacity; i++) {
@@ -695,7 +695,7 @@ write_hashheader(HashIndex *index, PyObject *file_py)
     return 1;
 }
 
-#ifndef BORG_NO_PYTHON
+#ifndef BORK_NO_PYTHON
 static void
 hashindex_write(HashIndex *index, PyObject *file_py, int legacy)
 {
@@ -879,7 +879,7 @@ hashindex_size(HashIndex *index)
 /*
  * Used by the FuseVersionsIndex.
  */
-BORG_PACKED(
+BORK_PACKED(
 typedef struct {
     uint32_t version;
     char hash[16];

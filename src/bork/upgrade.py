@@ -41,7 +41,7 @@ class UpgraderNoOp:
 
 
 class UpgraderFrom12To20:
-    borg1_header_fmt = Struct(">I")
+    bork1_header_fmt = Struct(">I")
 
     def __init__(self, *, cache):
         self.cache = cache
@@ -94,11 +94,11 @@ class UpgraderFrom12To20:
         # - 'hardlink_master' (superseded by hlid)
         item_dict = item.as_dict()
         new_item_dict = {key: value for key, value in item_dict.items() if key in ITEM_KEY_WHITELIST}
-        # symlink targets were .source for borg1, but borg2 uses .target:
+        # symlink targets were .source for bork1, but bork2 uses .target:
         if "source" in item_dict:
             new_item_dict["target"] = item_dict["source"]
         assert "source" not in new_item_dict
-        # remove some pointless entries older borg put in there:
+        # remove some pointless entries older bork put in there:
         for key in "user", "group":
             if key in new_item_dict and new_item_dict[key] is None:
                 del new_item_dict[key]
@@ -126,10 +126,10 @@ class UpgraderFrom12To20:
         level = 0xFF  # means unknown compression level
 
         if ctype == ObfuscateSize.ID:
-            # in older borg, we used unusual byte order
-            hlen = self.borg1_header_fmt.size
+            # in older bork, we used unusual byte order
+            hlen = self.bork1_header_fmt.size
             csize_bytes = data[2 : 2 + hlen]
-            csize = self.borg1_header_fmt.unpack(csize_bytes)[0]
+            csize = self.bork1_header_fmt.unpack(csize_bytes)[0]
             compressed = data[2 + hlen : 2 + hlen + csize]
             meta, compressed = upgrade_zlib_and_level(meta, compressed)
             meta["psize"] = csize
@@ -155,8 +155,8 @@ class UpgraderFrom12To20:
         for attr in ("time", "time_end"):
             if hasattr(metadata, attr):
                 new_metadata[attr] = getattr(metadata, attr) + "+00:00"
-        # borg 1: cmdline, recreate_cmdline: a copy of sys.argv
-        # borg 2: command_line, recreate_command_line: a single string
+        # bork 1: cmdline, recreate_cmdline: a copy of sys.argv
+        # bork 2: command_line, recreate_command_line: a single string
         if hasattr(metadata, "cmdline"):
             new_metadata["command_line"] = join_cmd(getattr(metadata, "cmdline"))
         if hasattr(metadata, "recreate_cmdline"):
