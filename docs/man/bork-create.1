@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-CREATE" 1 "2022-10-02" "" "bork backup tool"
+.TH "BORG-CREATE" 1 "2023-09-14" "" "borg backup tool"
 .SH NAME
 bork-create \- Create new archive
 .SH SYNOPSIS
@@ -107,9 +107,9 @@ creation of a new archive to ensure fast operation. This is because the file cac
 is used to determine changed files quickly uses absolute filenames.
 If this is not possible, consider creating a bind mount to a stable location.
 .sp
-The \fB\-\-progress\fP option shows (from left to right) Original, Compressed and Deduplicated
-(O, C and D, respectively), then the Number of files (N) processed so far, followed by
-the currently processed path.
+The \fB\-\-progress\fP option shows (from left to right) Original and (uncompressed)
+deduplicated size (O and U respectively), then the Number of files (N) processed so far,
+followed by the currently processed path.
 .sp
 When using \fB\-\-stats\fP, you will get some statistics about how much data was
 added \- the \(dqThis Archive\(dq deduplicated size there is most interesting as that is
@@ -132,7 +132,7 @@ specify the archive name
 .B PATH
 paths to archive
 .UNINDENT
-.SS optional arguments
+.SS options
 .INDENT 0.0
 .TP
 .B  \-n\fP,\fB  \-\-dry\-run
@@ -157,10 +157,10 @@ experimental: do not synchronize the cache. Implies not using the files cache.
 use NAME in archive for stdin data (default: \(aqstdin\(aq)
 .TP
 .BI \-\-stdin\-user \ USER
-set user USER in archive for stdin data (default: \(aqroot\(aq)
+set user USER in archive for stdin data (default: do not store user/uid)
 .TP
 .BI \-\-stdin\-group \ GROUP
-set group GROUP in archive for stdin data (default: \(aqroot\(aq)
+set group GROUP in archive for stdin data (default: do not store group/gid)
 .TP
 .BI \-\-stdin\-mode \ M
 set mode to M in archive for stdin data (default: 0660)
@@ -169,15 +169,15 @@ set mode to M in archive for stdin data (default: 0660)
 interpret PATH as command and store its stdout. See also section Reading from stdin below.
 .TP
 .B  \-\-paths\-from\-stdin
-read DELIM\-separated list of paths to backup from stdin. Will not recurse into directories.
+read DELIM\-separated list of paths to back up from stdin. All control is external: it will back up all files given \- no more, no less.
 .TP
 .B  \-\-paths\-from\-command
 interpret PATH as command and treat its output as \fB\-\-paths\-from\-stdin\fP
 .TP
 .BI \-\-paths\-delimiter \ DELIM
-set path delimiter for \fB\-\-paths\-from\-stdin\fP and \fB\-\-paths\-from\-command\fP (default: n)
+set path delimiter for \fB\-\-paths\-from\-stdin\fP and \fB\-\-paths\-from\-command\fP (default: \fB\en\fP)
 .UNINDENT
-.SS Exclusion options
+.SS Include/Exclude options
 .INDENT 0.0
 .TP
 .BI \-e \ PATTERN\fR,\fB \ \-\-exclude \ PATTERN
@@ -208,7 +208,7 @@ exclude files flagged NODUMP
 .INDENT 0.0
 .TP
 .B  \-x\fP,\fB  \-\-one\-file\-system
-stay in the same file system and do not store mount points of other file systems.  This might behave different from your expectations, see the docs.
+stay in the same file system and do not store mount points of other file systems \- this might behave different from your expectations, see the description below.
 .TP
 .B  \-\-numeric\-ids
 only store numeric user and group identifiers
@@ -251,6 +251,9 @@ manually specify the archive creation date/time (yyyy\-mm\-ddThh:mm:ss[(+|\-)HH:
 .TP
 .BI \-c \ SECONDS\fR,\fB \ \-\-checkpoint\-interval \ SECONDS
 write checkpoint every SECONDS seconds (Default: 1800)
+.TP
+.BI \-\-checkpoint\-volume \ BYTES
+write checkpoint every BYTES bytes (Default: 0, meaning no volume based checkpointing)
 .TP
 .BI \-\-chunker\-params \ PARAMS
 specify the chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, HASH_MASK_BITS, HASH_WINDOW_SIZE). default: buzhash,19,23,21,4095
@@ -296,9 +299,8 @@ $ cd ..
 $ fusermount \-u sshfs\-mount
 
 # Make a big effort in fine granular deduplication (big chunk management
-# overhead, needs a lot of RAM and disk space, see formula in internals
-# docs \- same parameters as bork < 1.0):
-$ bork create \-\-chunker\-params buzhash,10,23,16,4095 small /smallstuff
+# overhead, needs a lot of RAM and disk space, see formula in internals docs):
+$ borg create \-\-chunker\-params buzhash,10,23,16,4095 small /smallstuff
 
 # Backup a raw device (must not be active/in use/mounted at that time)
 $ bork create \-\-read\-special \-\-chunker\-params fixed,4194304 my\-sdx /dev/sdX
@@ -334,10 +336,10 @@ $ cd /home/user/Documents
 $ bork create \(aqdaily\-projectA\-{now:%Y\-%m\-%d}\(aq projectA
 
 # Use external command to determine files to archive
-# Use \-\-paths\-from\-stdin with find to only backup files less than 1MB in size
-$ find ~ \-size \-1000k | bork create \-\-paths\-from\-stdin small\-files\-only
-# Use \-\-paths\-from\-command with find to only backup files from a given user
-$ bork create \-\-paths\-from\-command joes\-files \-\- find /srv/samba/shared \-user joe
+# Use \-\-paths\-from\-stdin with find to back up only files less than 1MB in size
+$ find ~ \-size \-1000k | borg create \-\-paths\-from\-stdin small\-files\-only
+# Use \-\-paths\-from\-command with find to back up files from only a given user
+$ borg create \-\-paths\-from\-command joes\-files \-\- find /srv/samba/shared \-user joe
 # Use \-\-paths\-from\-stdin with \-\-paths\-delimiter (for example, for filenames with newlines in them)
 $ find ~ \-size \-1000k \-print0 | bork create \e
     \-\-paths\-from\-stdin \e
@@ -365,13 +367,13 @@ through using the \fB\-\-keep\-exclude\-tags\fP option.
 The \fB\-x\fP or \fB\-\-one\-file\-system\fP option excludes directories, that are mountpoints (and everything in them).
 It detects mountpoints by comparing the device number from the output of \fBstat()\fP of the directory and its
 parent directory. Specifically, it excludes directories for which \fBstat()\fP reports a device number different
-from the device number of their parent. Be aware that in Linux (and possibly elsewhere) there are directories
-with device number different from their parent, which the kernel does not consider a mountpoint and also the
-other way around. Examples are bind mounts (possibly same device number, but always a mountpoint) and ALL
-subvolumes of a btrfs (different device number from parent but not necessarily a mountpoint). Therefore when
-using \fB\-\-one\-file\-system\fP, one should make doubly sure that the backup works as intended especially when using
-btrfs. This is even more important, if the btrfs layout was created by someone else, e.g. a distribution
-installer.
+from the device number of their parent.
+In general: be aware that there are directories with device number different from their parent, which the kernel
+does not consider a mountpoint and also the other way around.
+Linux examples for this are bind mounts (possibly same device number, but always a mountpoint) and ALL
+subvolumes of a btrfs (different device number from parent but not necessarily a mountpoint).
+macOS examples are the apfs mounts of a typical macOS installation.
+Therefore, when using \fB\-\-one\-file\-system\fP, you should double\-check that the backup works as intended.
 .SS Item flags
 .sp
 \fB\-\-list\fP outputs a list of all files, directories and other
@@ -420,11 +422,11 @@ bork usually just stores their metadata:
 Other flags used include:
 .INDENT 0.0
 .IP \(bu 2
+\(aq+\(aq = included, item would be backed up (if not in dry\-run mode)
+.IP \(bu 2
+\(aq\-\(aq = excluded, item would not be / was not backed up
+.IP \(bu 2
 \(aqi\(aq = backup data was read from standard input (stdin)
-.IP \(bu 2
-\(aq\-\(aq = dry run, item was \fInot\fP backed up
-.IP \(bu 2
-\(aqx\(aq = excluded, item was \fInot\fP backed up
 .IP \(bu 2
 \(aq?\(aq = missing status code (if you see this, please file a bug report!)
 .UNINDENT
@@ -477,7 +479,7 @@ By default, the content read from stdin is stored in a file called \(aqstdin\(aq
 Use \fB\-\-stdin\-name\fP to change the name.
 .SH SEE ALSO
 .sp
-\fIbork\-common(1)\fP, \fIbork\-delete(1)\fP, \fIbork\-prune(1)\fP, \fIbork\-check(1)\fP, \fIbork\-patterns(1)\fP, \fIbork\-placeholders(1)\fP, \fIbork\-compression(1)\fP
+\fIborg\-common(1)\fP, \fIborg\-delete(1)\fP, \fIborg\-prune(1)\fP, \fIborg\-check(1)\fP, \fIborg\-patterns(1)\fP, \fIborg\-placeholders(1)\fP, \fIborg\-compression(1)\fP, \fIborg\-rcreate(1)\fP
 .SH AUTHOR
 The Bork Collective
 .\" Generated by docutils manpage writer.

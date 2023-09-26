@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-IMPORT-TAR" 1 "2022-10-02" "" "bork backup tool"
+.TH "BORG-IMPORT-TAR" 1 "2023-09-14" "" "borg backup tool"
 .SH NAME
 bork-import-tar \- Create a backup archive from a tarball
 .SH SYNOPSIS
@@ -49,7 +49,7 @@ based on its file extension and pipe the file through an appropriate filter:
 .IP \(bu 2
 \&.tar.xz or .txz: xz \-d
 .IP \(bu 2
-\&.tar.zstd: zstd \-d
+\&.tar.zstd or .tar.zst: zstd \-d
 .IP \(bu 2
 \&.tar.lz4: lz4 \-d
 .UNINDENT
@@ -80,6 +80,10 @@ UNIX V7 tar
 .IP \(bu 2
 SunOS tar with extended attributes
 .UNINDENT
+.sp
+To import multiple tarballs into a single archive, they can be simply
+concatenated (e.g. using \(dqcat\(dq) into a single file, and imported with an
+\fB\-\-ignore\-zeros\fP option to skip through the stop markers between them.
 .SH OPTIONS
 .sp
 See \fIbork\-common(1)\fP for common options of Bork commands.
@@ -92,7 +96,7 @@ specify the archive name
 .B TARFILE
 input tar file. \(dq\-\(dq to read from stdin instead.
 .UNINDENT
-.SS optional arguments
+.SS options
 .INDENT 0.0
 .TP
 .B  \-\-tar\-filter
@@ -109,6 +113,9 @@ only display items with the given status characters
 .TP
 .B  \-\-json
 output stats as JSON (implies \-\-stats)
+.TP
+.B  \-\-ignore\-zeros
+ignore zero\-filled blocks in the input tarball
 .UNINDENT
 .SS Archive options
 .INDENT 0.0
@@ -121,6 +128,9 @@ manually specify the archive creation date/time (yyyy\-mm\-ddThh:mm:ss[(+|\-)HH:
 .TP
 .BI \-c \ SECONDS\fR,\fB \ \-\-checkpoint\-interval \ SECONDS
 write checkpoint every SECONDS seconds (Default: 1800)
+.TP
+.BI \-\-checkpoint\-volume \ BYTES
+write checkpoint every BYTES bytes (Default: 0, meaning no volume based checkpointing)
 .TP
 .BI \-\-chunker\-params \ PARAMS
 specify the chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, HASH_MASK_BITS, HASH_WINDOW_SIZE). default: buzhash,19,23,21,4095
@@ -166,7 +176,7 @@ Outputs a script that copies all archives from repo1 to repo2:
 .sp
 .nf
 .ft C
-for A T in \(gabork list \-\-format=\(aq{archive} {time:%Y\-%m\-%dT%H:%M:%S}{LF}\(aq\(ga
+for A T in \(gaborg list \-\-format=\(aq{archive} {time:%Y\-%m\-%dT%H:%M:%S}{NL}\(aq\(ga
 do
   echo \(dqbork \-r repo1 export\-tar \-\-tar\-format=BORG $A \- | bork \-r repo2 import\-tar \-\-timestamp=$T $A \-\(dq
 done

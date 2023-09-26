@@ -1,5 +1,72 @@
+[project]
+name = "borgbackup"
+dynamic = ["version"]
+authors = [{name="The Borg Collective (see AUTHORS file)"}]
+maintainers = [
+    {name="Thomas Waldmann", email="tw@waldmann-edv.de"},
+]
+description = "Deduplicated, encrypted, authenticated and compressed backups"
+readme = "README.rst"
+requires-python = ">=3.9"
+keywords = ["backup", "borgbackup"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX :: BSD :: FreeBSD",
+    "Operating System :: POSIX :: BSD :: OpenBSD",
+    "Operating System :: POSIX :: BSD :: NetBSD",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security :: Cryptography",
+    "Topic :: System :: Archiving :: Backup",
+]
+license = {text="BSD"}
+dependencies = [
+  "msgpack >=1.0.3, <=1.0.6",
+  "packaging",
+  "platformdirs >=3.0.0, <4.0.0; sys_platform == 'darwin'",  # for macOS: breaking changes in 3.0.0,
+  "platformdirs >=2.6.0, <4.0.0; sys_platform != 'darwin'",  # for others: 2.6+ works consistently.
+  "argon2-cffi",
+]
+
+[project.optional-dependencies]
+llfuse = ["llfuse >= 1.3.8"]
+pyfuse3 = ["pyfuse3 >= 3.1.1"]
+nofuse = []
+
+[project.urls]
+"Homepage" = "https://borgbackup.org/"
+"Bug Tracker" = "https://github.com/borgbackup/borg/issues"
+"Documentation" = "https://borgbackup.readthedocs.io/"
+"Repository" = "https://github.com/borgbackup/borg"
+"Changelog" = "https://github.com/borgbackup/borg/blob/master/docs/changes.rst"
+
+[project.scripts]
+borg = "borg.archiver:main"
+borgfs = "borg.archiver:main"
+
+[tool.setuptools]
+# See also the MANIFEST.in file.
+# We want to install all the files in the package directories...
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.exclude-package-data]
+# ...except the source files which have been compiled (C extensions):
+"*" = ["*.c", "*.h", "*.pyx"]
+
 [build-system]
-requires = ["setuptools", "pkgconfig", "Cython", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools", "wheel", "pkgconfig", "Cython", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
@@ -12,3 +79,82 @@ write_to_template = "__version__ = version = {version!r}\n"
 [tool.black]
 line-length = 120
 skip-magic-trailing-comma = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
+select = ["E", "F"]
+
+# for reference ...
+#   E402 module level import not at top
+#   E501 line too long
+#   F401 import unused
+#   F405 undefined or defined from star imports
+#   F811 redef of unused var
+
+# borg code style guidelines:
+# Ignoring E203 due to https://github.com/PyCQA/pycodestyle/issues/373
+ignore = ["E203", "F405", "E402"]
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT"]
+unfixable = []
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".cache",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".idea",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".tox",
+    "build",
+    "dist",
+]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# Code style violation exceptions:
+# please note that the values are adjusted so that they do not cause failures
+# with existing code. if you want to change them, you should first fix all
+# ruff failures that appear with your change.
+[tool.ruff.per-file-ignores]
+"setup_docs.py" = ["E501"]
+"src/borg/archive.py" = ["E501"]
+"src/borg/archiver/help_cmd.py" = ["E501"]
+"src/borg/cache.py" = ["E501"]
+"src/borg/helpers/__init__.py" = ["F401"]
+"src/borg/platform/__init__.py" = ["F401"]
+"src/borg/testsuite/archiver/disk_full.py" = ["F811"]
+"src/borg/testsuite/archiver/return_codes.py" = ["F811"]
+"src/borg/testsuite/benchmark.py" = ["F811"]
+"src/borg/testsuite/platform.py" = ["F811"]
+
+[tool.pytest.ini_options]
+python_files = "testsuite/*.py"
+markers = [
+    "allow_cache_wipe",
+]
+
+[tool.mypy]
+python_version = "3.9"
+strict_optional = false
+local_partial_types = true
+show_error_codes = true
+files = "src/borg/**/*.py"
+
+[[tool.mypy.overrides]]
+module = [
+    "msgpack.*",
+    "llfuse",
+    "pyfuse3",
+    "trio",
+    "borg.crypto.low_level",
+    "borg.platform.*",
+]
+ignore_missing_imports = true

@@ -30,7 +30,7 @@ for block devices (like disks, partitions, LVM LVs) or raw disk image files.
 
 ``--chunker-params=fixed,4096,512`` results in fixed 4kiB sized blocks,
 but the first header block will only be 512B long. This might be useful to
-dedup files with 1 header + N fixed size data blocks. Be careful to not
+dedup files with 1 header + N fixed size data blocks. Be careful not to
 produce a too big amount of chunks (like using small block size for huge
 files).
 
@@ -63,7 +63,7 @@ For more details, see :ref:`chunker_details`.
 ``--noatime / --noctime``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use these ``bork create`` options to not store the respective timestamp
+You can use these ``borg create`` options not to store the respective timestamp
 into the archive, in case you do not really need it.
 
 Besides saving a little space for the not archived timestamp, it might also
@@ -74,7 +74,7 @@ won't deduplicate just because of that.
 ``--nobsdflags / --noflags``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use this to not query and store (or not extract and set) flags - in case
+You can use this not to query and store (or not extract and set) flags - in case
 you don't need them or if they are broken somehow for your fs.
 
 On Linux, dealing with the flags needs some additional syscalls. Especially when
@@ -132,7 +132,7 @@ scale and perform better if you do not work via the FUSE mount.
 Example
 +++++++
 
-Imagine you have made some snapshots of logical volumes (LVs) you want to backup.
+Imagine you have made some snapshots of logical volumes (LVs) you want to back up.
 
 .. note::
 
@@ -174,10 +174,8 @@ Now, let's see how to restore some LVs from such a backup.
 Separate compaction
 ~~~~~~~~~~~~~~~~~~~
 
-Bork does not auto-compact the segment files in the repository at commit time
-(at the end of each repository-writing command) any more.
-
-This is new since bork 1.2.0 and requires bork >= 1.2.0 on client and server.
+Borg does not auto-compact the segment files in the repository at commit time
+(at the end of each repository-writing command) any more (since borg 1.2.0).
 
 This causes a similar behaviour of the repository as if it was in append-only
 mode (see below) most of the time (until ``bork compact`` is invoked or an
@@ -236,8 +234,8 @@ in ``.ssh/authorized_keys``:
     command="bork serve --append-only ..." ssh-rsa <key used for not-always-trustable backup clients>
     command="bork serve ..." ssh-rsa <key used for backup management>
 
-Running ``bork init`` via a ``bork serve --append-only`` server will *not* create
-an append-only repository. Running ``bork rcreate --append-only`` creates an append-only
+Running ``borg rcreate`` via a ``borg serve --append-only`` server will *not* create
+an append-only repository. Running ``borg rcreate --append-only`` creates an append-only
 repository regardless of server settings.
 
 Example
@@ -276,7 +274,7 @@ with file 6::
 
 That's all to do in the repository.
 
-If you want to access this rollbacked repository from a client that already has
+If you want to access this rolled back repository from a client that already has
 a cache for this repository, the cache will reflect a newer repository state
 than what you actually have in the repository now, after the rollback.
 
@@ -309,8 +307,8 @@ operation on an append-only repository to catch accidental or malicious corrupti
     # run without append-only mode
     bork check --verify-data && bork compact
 
-Aside from checking repository & archive integrity you may want to also manually check
-backups to ensure their content seems correct.
+Aside from checking repository & archive integrity you may also want to check
+backups manually to ensure their content seems correct.
 
 Further considerations
 ++++++++++++++++++++++

@@ -13,7 +13,7 @@ bork rcompress
     .. class:: bork-options-table
 
     +-------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
-    | **optional arguments**                                                                                                                                                                                       |
+    | **options**                                                                                                                                                                                                  |
     +-------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
     |                                                       | ``-C COMPRESSION``, ``--compression COMPRESSION`` | select compression algorithm, see the output of the "bork help compression" command for details. |
     +-------------------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------+
@@ -38,8 +38,8 @@ bork rcompress
 
 
 
-    optional arguments
-        -C COMPRESSION, --compression COMPRESSION    select compression algorithm, see the output of the "bork help compression" command for details.
+    options
+        -C COMPRESSION, --compression COMPRESSION    select compression algorithm, see the output of the "borg help compression" command for details.
         -s, --stats     print statistics
         -c SECONDS, --checkpoint-interval SECONDS    write checkpoint every SECONDS seconds (Default: 1800)
 

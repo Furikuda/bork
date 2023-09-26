@@ -8,7 +8,8 @@ from ..archive import Archive
 from ..constants import *  # NOQA
 from ..cache import Cache, assert_secure
 from ..helpers import Error
-from ..helpers import SortBySpec, positive_int_validator, location_validator, Location
+from ..helpers import SortBySpec, positive_int_validator, location_validator, Location, relative_time_marker_validator
+from ..helpers import Highlander
 from ..helpers.nanorst import rst_to_terminal
 from ..manifest import Manifest, AI_HUMAN_SORT_KEYS
 from ..patterns import PatternMatcher
@@ -29,7 +30,7 @@ logger = create_logger(__name__)
 
 
 def get_repository(location, *, create, exclusive, lock_wait, lock, append_only, make_parent_dirs, storage_quota, args):
-    if location.proto == "ssh":
+    if location.proto in ("ssh", "socket"):
         repository = RemoteRepository(
             location,
             create=create,
@@ -84,7 +85,8 @@ def with_repository(
     :param manifest: load manifest and repo_objs (key), pass them as keyword arguments
     :param cache: open cache, pass it as keyword argument (implies manifest)
     :param secure: do assert_secure after loading manifest
-    :param compatibility: mandatory if not create and (manifest or cache), specifies mandatory feature categories to check
+    :param compatibility: mandatory if not create and (manifest or cache), specifies mandatory
+           feature categories to check
     """
     # Note: with_repository decorator does not have a "key" argument (yet?)
     compatibility = compat_check(
@@ -149,7 +151,6 @@ def with_repository(
                         progress=getattr(args, "progress", False),
                         lock_wait=self.lock_wait,
                         cache_mode=getattr(args, "files_cache_mode", FILES_CACHE_MODE_DISABLED),
-                        consider_part_files=getattr(args, "consider_part_files", False),
                         iec=getattr(args, "iec", False),
                     ) as cache_:
                         return method(self, args, repository=repository, cache=cache_, **kwargs)
@@ -214,7 +215,6 @@ def with_other_repository(manifest=False, cache=False, compatibility=None):
                         progress=False,
                         lock_wait=self.lock_wait,
                         cache_mode=getattr(args, "files_cache_mode", FILES_CACHE_MODE_DISABLED),
-                        consider_part_files=getattr(args, "consider_part_files", False),
                         iec=getattr(args, "iec", False),
                     ) as cache_:
                         kwargs["other_cache"] = cache_
@@ -240,22 +240,12 @@ def with_archive(method):
             noacls=getattr(args, "noacls", False),
             noxattrs=getattr(args, "noxattrs", False),
             cache=kwargs.get("cache"),
-            consider_part_files=args.consider_part_files,
             log_json=args.log_json,
             iec=args.iec,
         )
         return method(self, args, repository=repository, manifest=manifest, archive=archive, **kwargs)
 
     return wrapper
-
-
-class Highlander(argparse.Action):
-    """make sure some option is only given once"""
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        if getattr(namespace, self.dest, None) != self.default:
-            raise argparse.ArgumentError(self, "There can be only one.")
-        setattr(namespace, self.dest, values)
 
 
 # You can use :ref:`xyz` in the following usage pages. However, for plain-text view,
@@ -342,18 +332,19 @@ def define_exclude_and_patterns(add_option, *, tag_files=False, strip_components
             dest="strip_components",
             type=int,
             default=0,
+            action=Highlander,
             help="Remove the specified number of leading path elements. "
             "Paths with fewer elements will be silently skipped.",
         )
 
 
 def define_exclusion_group(subparser, **kwargs):
-    exclude_group = subparser.add_argument_group("Exclusion options")
+    exclude_group = subparser.add_argument_group("Include/Exclude options")
     define_exclude_and_patterns(exclude_group.add_argument, **kwargs)
     return exclude_group
 
 
-def define_archive_filters_group(subparser, *, sort_by=True, first_last=True):
+def define_archive_filters_group(subparser, *, sort_by=True, first_last=True, oldest_newest=True, older_newer=True):
     filters_group = subparser.add_argument_group(
         "Archive filters", "Archive filters can be applied to repository targets."
     )
@@ -375,6 +366,7 @@ def define_archive_filters_group(subparser, *, sort_by=True, first_last=True):
             dest="sort_by",
             type=SortBySpec,
             default=sort_by_default,
+            action=Highlander,
             help="Comma-separated list of sorting keys; valid keys are: {}; default is: {}".format(
                 ", ".join(AI_HUMAN_SORT_KEYS), sort_by_default
             ),
@@ -386,17 +378,57 @@ def define_archive_filters_group(subparser, *, sort_by=True, first_last=True):
             "--first",
             metavar="N",
             dest="first",
-            default=0,
             type=positive_int_validator,
+            default=0,
+            action=Highlander,
             help="consider first N archives after other filters were applied",
         )
         group.add_argument(
             "--last",
             metavar="N",
             dest="last",
-            default=0,
             type=positive_int_validator,
+            default=0,
+            action=Highlander,
             help="consider last N archives after other filters were applied",
+        )
+
+    if oldest_newest:
+        group = filters_group.add_mutually_exclusive_group()
+        group.add_argument(
+            "--oldest",
+            metavar="TIMESPAN",
+            dest="oldest",
+            type=relative_time_marker_validator,
+            action=Highlander,
+            help="consider archives between the oldest archive's timestamp and (oldest + TIMESPAN), e.g. 7d or 12m.",
+        )
+        group.add_argument(
+            "--newest",
+            metavar="TIMESPAN",
+            dest="newest",
+            type=relative_time_marker_validator,
+            action=Highlander,
+            help="consider archives between the newest archive's timestamp and (newest - TIMESPAN), e.g. 7d or 12m.",
+        )
+
+    if older_newer:
+        group = filters_group.add_mutually_exclusive_group()
+        group.add_argument(
+            "--older",
+            metavar="TIMESPAN",
+            dest="older",
+            type=relative_time_marker_validator,
+            action=Highlander,
+            help="consider archives older than (now - TIMESPAN), e.g. 7d oder 12m.",
+        )
+        group.add_argument(
+            "--newer",
+            metavar="TIMESPAN",
+            dest="newer",
+            type=relative_time_marker_validator,
+            action=Highlander,
+            help="consider archives newer than (now - TIMESPAN), e.g. 7d or 12m.",
         )
 
     return filters_group
@@ -469,6 +501,7 @@ def define_common_options(add_common_option):
         dest="lock_wait",
         type=int,
         default=int(os.environ.get("BORG_LOCK_WAIT", 1)),
+        action=Highlander,
         help="wait at most SECONDS for acquiring a repository/cache lock (default: %(default)d).",
     )
     add_common_option(
@@ -486,19 +519,22 @@ def define_common_options(add_common_option):
         dest="umask",
         type=lambda s: int(s, 8),
         default=UMASK_DEFAULT,
+        action=Highlander,
         help="set umask to M (local only, default: %(default)04o)",
     )
     add_common_option(
         "--remote-path",
         metavar="PATH",
         dest="remote_path",
-        help='use PATH as bork executable on the remote (default: "bork")',
+        action=Highlander,
+        help='use PATH as borg executable on the remote (default: "borg")',
     )
     add_common_option(
         "--upload-ratelimit",
         metavar="RATE",
         dest="upload_ratelimit",
         type=int,
+        action=Highlander,
         help="set network upload rate limit in kiByte/s (default: 0=unlimited)",
     )
     add_common_option(
@@ -506,27 +542,34 @@ def define_common_options(add_common_option):
         metavar="UPLOAD_BUFFER",
         dest="upload_buffer",
         type=int,
+        action=Highlander,
         help="set network upload buffer size in MiB. (default: 0=no buffer)",
-    )
-    add_common_option(
-        "--consider-part-files",
-        dest="consider_part_files",
-        action="store_true",
-        help="treat part files like normal files (e.g. to list/extract them)",
     )
     add_common_option(
         "--debug-profile",
         metavar="FILE",
         dest="debug_profile",
         default=None,
-        help="Write execution profile in Bork format into FILE. For local use a Python-"
+        action=Highlander,
+        help="Write execution profile in Borg format into FILE. For local use a Python-"
         'compatible file can be generated by suffixing FILE with ".pyprof".',
     )
     add_common_option(
         "--rsh",
         metavar="RSH",
         dest="rsh",
-        help="Use this command to connect to the 'bork serve' process (default: 'ssh')",
+        action=Highlander,
+        help="Use this command to connect to the 'borg serve' process (default: 'ssh')",
+    )
+    add_common_option(
+        "--socket",
+        metavar="PATH",
+        dest="use_socket",
+        default=False,
+        const=True,
+        nargs="?",
+        action=Highlander,
+        help="Use UNIX DOMAIN (IPC) socket at PATH for client/server communication with socket: protocol.",
     )
     add_common_option(
         "-r",
@@ -535,6 +578,7 @@ def define_common_options(add_common_option):
         dest="location",
         type=location_validator(other=False),
         default=Location(other=False),
+        action=Highlander,
         help="repository to use",
     )
 
@@ -550,7 +594,7 @@ def build_filter(matcher, strip_components):
     if strip_components:
 
         def item_filter(item):
-            matched = matcher.match(item.path) and os.sep.join(item.path.split(os.sep)[strip_components:])
+            matched = matcher.match(item.path) and len(item.path.split(os.sep)) > strip_components
             return matched
 
     else:

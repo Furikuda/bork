@@ -1,4 +1,3 @@
-import re
 import tempfile
 from binascii import hexlify, unhexlify, a2b_base64
 from unittest.mock import MagicMock
@@ -12,13 +11,8 @@ from ..crypto.key import AEADKeyBase
 from ..crypto.key import AESOCBRepoKey, AESOCBKeyfileKey, CHPORepoKey, CHPOKeyfileKey
 from ..crypto.key import Blake2AESOCBRepoKey, Blake2AESOCBKeyfileKey, Blake2CHPORepoKey, Blake2CHPOKeyfileKey
 from ..crypto.key import ID_HMAC_SHA_256, ID_BLAKE2b_256
-from ..crypto.key import (
-    TAMRequiredError,
-    TAMInvalid,
-    TAMUnsupportedSuiteError,
-    UnsupportedManifestError,
-    UnsupportedKeyFormatError,
-)
+from ..crypto.key import TAMRequiredError, TAMInvalid, TAMUnsupportedSuiteError, ArchiveTAMInvalid
+from ..crypto.key import UnsupportedManifestError, UnsupportedKeyFormatError
 from ..crypto.key import identify_key
 from ..crypto.low_level import IntegrityError as IntegrityErrorBase
 from ..helpers import IntegrityError
@@ -115,12 +109,7 @@ class TestKey:
         _location = _Location()
         id = bytes(32)
         id_str = bin_to_hex(id)
-
-        def get_free_nonce(self):
-            return None
-
-        def commit_nonce_reservation(self, next_unreserved, start_nonce):
-            pass
+        version = 2
 
         def save_key(self, data):
             self.key_data = data
@@ -283,29 +272,19 @@ class TestTAM:
         with pytest.raises(msgpack.UnpackException):
             key.unpack_and_verify_manifest(blob)
 
-    def test_missing_when_required(self, key):
+    def test_missing(self, key):
         blob = msgpack.packb({})
         with pytest.raises(TAMRequiredError):
             key.unpack_and_verify_manifest(blob)
-
-    def test_missing(self, key):
-        blob = msgpack.packb({})
-        key.tam_required = False
-        unpacked, verified = key.unpack_and_verify_manifest(blob)
-        assert unpacked == {}
-        assert not verified
-
-    def test_unknown_type_when_required(self, key):
-        blob = msgpack.packb({"tam": {"type": "HMAC_VOLLBIT"}})
-        with pytest.raises(TAMUnsupportedSuiteError):
-            key.unpack_and_verify_manifest(blob)
+        with pytest.raises(TAMRequiredError):
+            key.unpack_and_verify_archive(blob)
 
     def test_unknown_type(self, key):
         blob = msgpack.packb({"tam": {"type": "HMAC_VOLLBIT"}})
-        key.tam_required = False
-        unpacked, verified = key.unpack_and_verify_manifest(blob)
-        assert unpacked == {}
-        assert not verified
+        with pytest.raises(TAMUnsupportedSuiteError):
+            key.unpack_and_verify_manifest(blob)
+        with pytest.raises(TAMUnsupportedSuiteError):
+            key.unpack_and_verify_archive(blob)
 
     @pytest.mark.parametrize(
         "tam, exc",
@@ -316,12 +295,30 @@ class TestTAM:
             (1234, TAMInvalid),
         ),
     )
-    def test_invalid(self, key, tam, exc):
+    def test_invalid_manifest(self, key, tam, exc):
         blob = msgpack.packb({"tam": tam})
         with pytest.raises(exc):
             key.unpack_and_verify_manifest(blob)
 
-    @pytest.mark.parametrize("hmac, salt", (({}, bytes(64)), (bytes(64), {}), (None, bytes(64)), (bytes(64), None)))
+    @pytest.mark.parametrize(
+        "tam, exc",
+        (
+            ({}, TAMUnsupportedSuiteError),
+            ({"type": b"\xff"}, TAMUnsupportedSuiteError),
+            (None, ArchiveTAMInvalid),
+            (1234, ArchiveTAMInvalid),
+        ),
+    )
+    def test_invalid_archive(self, key, tam, exc):
+        blob = msgpack.packb({"tam": tam})
+        with pytest.raises(exc):
+            key.unpack_and_verify_archive(blob)
+
+    @pytest.mark.parametrize(
+        "hmac, salt",
+        (({}, bytes(64)), (bytes(64), {}), (None, bytes(64)), (bytes(64), None)),
+        ids=["ed-b64", "b64-ed", "n-b64", "b64-n"],
+    )
     def test_wrong_types(self, key, hmac, salt):
         data = {"tam": {"type": "HKDF_HMAC_SHA512", "hmac": hmac, "salt": salt}}
         tam = data["tam"]
@@ -332,24 +329,37 @@ class TestTAM:
         blob = msgpack.packb(data)
         with pytest.raises(TAMInvalid):
             key.unpack_and_verify_manifest(blob)
+        with pytest.raises(ArchiveTAMInvalid):
+            key.unpack_and_verify_archive(blob)
 
-    def test_round_trip(self, key):
+    def test_round_trip_manifest(self, key):
         data = {"foo": "bar"}
-        blob = key.pack_and_authenticate_metadata(data)
+        blob = key.pack_and_authenticate_metadata(data, context=b"manifest")
         assert blob.startswith(b"\x82")
 
         unpacked = msgpack.unpackb(blob)
         assert unpacked["tam"]["type"] == "HKDF_HMAC_SHA512"
 
-        unpacked, verified = key.unpack_and_verify_manifest(blob)
-        assert verified
+        unpacked = key.unpack_and_verify_manifest(blob)
+        assert unpacked["foo"] == "bar"
+        assert "tam" not in unpacked
+
+    def test_round_trip_archive(self, key):
+        data = {"foo": "bar"}
+        blob = key.pack_and_authenticate_metadata(data, context=b"archive")
+        assert blob.startswith(b"\x82")
+
+        unpacked = msgpack.unpackb(blob)
+        assert unpacked["tam"]["type"] == "HKDF_HMAC_SHA512"
+
+        unpacked, _ = key.unpack_and_verify_archive(blob)
         assert unpacked["foo"] == "bar"
         assert "tam" not in unpacked
 
     @pytest.mark.parametrize("which", ("hmac", "salt"))
-    def test_tampered(self, key, which):
+    def test_tampered_manifest(self, key, which):
         data = {"foo": "bar"}
-        blob = key.pack_and_authenticate_metadata(data)
+        blob = key.pack_and_authenticate_metadata(data, context=b"manifest")
         assert blob.startswith(b"\x82")
 
         unpacked = msgpack.unpackb(blob, object_hook=StableDict)
@@ -360,6 +370,21 @@ class TestTAM:
 
         with pytest.raises(TAMInvalid):
             key.unpack_and_verify_manifest(blob)
+
+    @pytest.mark.parametrize("which", ("hmac", "salt"))
+    def test_tampered_archive(self, key, which):
+        data = {"foo": "bar"}
+        blob = key.pack_and_authenticate_metadata(data, context=b"archive")
+        assert blob.startswith(b"\x82")
+
+        unpacked = msgpack.unpackb(blob, object_hook=StableDict)
+        assert len(unpacked["tam"][which]) == 64
+        unpacked["tam"][which] = unpacked["tam"][which][0:32] + bytes(32)
+        assert len(unpacked["tam"][which]) == 64
+        blob = msgpack.packb(unpacked)
+
+        with pytest.raises(ArchiveTAMInvalid):
+            key.unpack_and_verify_archive(blob)
 
 
 def test_decrypt_key_file_unsupported_algorithm():

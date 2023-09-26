@@ -1,9 +1,9 @@
 import argparse
 
-from ._common import with_repository, with_other_repository
+from ._common import with_repository, with_other_repository, Highlander
 from ..cache import Cache
 from ..constants import *  # NOQA
-from ..crypto.key import key_creator, key_argument_names, tam_required_file
+from ..crypto.key import key_creator, key_argument_names
 from ..helpers import EXIT_WARNING
 from ..helpers import location_validator, Location
 from ..helpers import parse_storage_quota
@@ -35,10 +35,6 @@ class RCreateMixIn:
         repository.commit(compact=False)
         with Cache(repository, manifest, warn_if_unencrypted=False):
             pass
-        if key.tam_required:
-            tam_file = tam_required_file(repository)
-            open(tam_file, "w").close()
-
         if key.NAME != "plaintext":
             logger.warning(
                 "\n"
@@ -118,8 +114,8 @@ class RCreateMixIn:
         `repokey` modes: if you want ease-of-use and "passphrase" security is good enough -
         the key will be stored in the repository (in ``repo_dir/config``).
 
-        `keyfile` modes: if you rather want "passphrase and having-the-key" security -
-        the key will be stored in your home directory (in ``~/.config/bork/keys``).
+        `keyfile` modes: if you want "passphrase and having-the-key" security -
+        the key will be stored in your home directory (in ``~/.config/borg/keys``).
 
         The following table is roughly sorted in order of preference, the better ones are
         in the upper part of the table, in the lower part is the old and/or unsafe(r) stuff:
@@ -146,17 +142,20 @@ class RCreateMixIn:
 
         .. nanorst: inline-replace
 
-        `none` mode uses no encryption and no authentication. You're advised to NOT use this mode
+        `none` mode uses no encryption and no authentication. You're advised NOT to use this mode
         as it would expose you to all sorts of issues (DoS, confidentiality, tampering, ...) in
         case of malicious activity in the repository.
 
         If you do **not** want to encrypt the contents of your backups, but still want to detect
         malicious tampering use an `authenticated` mode. It's like `repokey` minus encryption.
+        To normally work with ``authenticated`` repos, you will need the passphrase, but
+        there is an emergency workaround, see ``BORG_WORKAROUNDS=authenticated_no_key`` docs.
 
         Creating a related repository
         +++++++++++++++++++++++++++++
 
-        A related repository uses same secret key material as the other/original repository.
+        You can use ``borg rcreate --other-repo ORIG_REPO ...`` to create a related repository
+        that uses the same secret key material as the given other/original repository.
 
         By default, only the ID key and chunker secret will be the same (these are important
         for deduplication) and the AE crypto keys will be newly generated random keys.
@@ -184,6 +183,7 @@ class RCreateMixIn:
             dest="other_location",
             type=location_validator(other=True),
             default=Location(other=True),
+            action=Highlander,
             help="reuse the key material from the other repository",
         )
         subparser.add_argument(
@@ -193,6 +193,7 @@ class RCreateMixIn:
             dest="encryption",
             required=True,
             choices=key_argument_names(),
+            action=Highlander,
             help="select encryption key mode **(required)**",
         )
         subparser.add_argument(
@@ -210,6 +211,7 @@ class RCreateMixIn:
             dest="storage_quota",
             default=None,
             type=parse_storage_quota,
+            action=Highlander,
             help="Set storage quota of the new repository (e.g. 5G, 1.5T). Default: no quota.",
         )
         subparser.add_argument(

@@ -7,17 +7,13 @@ This section provides information about security and corruption issues.
 
 (nothing to see here yet)
 
-.. _changelog:
+.. _upgradenotes2:
 
-Change Log 2.x
-==============
+Upgrade Notes
+=============
 
-Version 2.0.0b4 (not released yet)
-----------------------------------
-
-Please note:
-
-This is a beta release, only for testing - do not use for production repos.
+borg 1.2.x to borg 2.0
+----------------------
 
 Compatibility notes:
 
@@ -32,6 +28,11 @@ Compatibility notes:
   You can use "bork transfer" to transfer archives from bork 1.1/1.2 repos to
   a new bork 2.0 repo, but it will need some time and space.
 
+  Before using "borg transfer", you must have upgraded to borg >= 1.2.6 (or
+  another borg version that was patched to fix CVE-2023-CVE-2023-36811) and
+  you must have followed the upgrade instructions at top of the change log
+  relating to manifest and archive TAMs (borg2 just requires these TAMs now).
+
 - command line syntax was changed, scripts and wrappers will need changes:
 
   - you will usually either export BORG_REPO=<MYREPO> into your environment or
@@ -40,7 +41,7 @@ Compatibility notes:
   - the scp-style REPO syntax was removed, please use ssh://..., #6697
   - ssh:// URLs: removed support for /~otheruser/, #6855.
     If you used this, just replace it by: ssh://user@host:port/home/otheruser/
-  - -P / --prefix option was removed, please use the similar -a / --glob-archives.
+  - -P / --prefix option was removed, please use the similar -a / --match-archives.
   - the archive name is always given separately from the repository
     (differently than with bork 1.x you must not give repo::archive).
   - the archive name is either given as a positional parameter, like:
@@ -50,9 +51,9 @@ Compatibility notes:
   - or, if the command makes sense for an arbitrary amount of archives, archives
     can be selected using a glob pattern, like:
 
-    - bork delete -a 'myarchive*'
-    - bork recreate -a 'myarchive*'
-  - some bork 1.x commands that supported working on a repo AND on an archive
+    - borg delete -a 'sh:myarchive*'
+    - borg recreate -a 'sh:myarchive*'
+  - some borg 1.x commands that supported working on a repo AND on an archive
     were split into 2 commands, some others were renamed:
 
     - bork 2 repo commands:
@@ -82,6 +83,8 @@ Compatibility notes:
   - removed --numeric-owner (use --numeric-ids)
   - removed --nobsdflags (use --noflags)
   - removed --noatime (default now, see also --atime)
+  - removed --save-space option (does not change behaviour)
+- using --list together with --progress is now disallowed (except with --log-json), #7219
 - the --glob-archives option was renamed to --match-archives (the short option
   name -a is unchanged) and extended to support different pattern styles:
 
@@ -94,19 +97,300 @@ Compatibility notes:
       bork 1.x: --glob-archives 'myserver-*'
       bork 2.0: --match-archives 'sh:myserver-*'
 
+- use platformdirs 3.x.x instead of home-grown code. Due to that:
+
+  - XDG_*_HOME is not honoured on macOS and on Windows.
+  - BORG_BASE_DIR can still be used to enforce some base dir + .config/ or .cache/.
+  - the default macOS config and cache dir will now be in ~/Library/Application Support/borg/.
+- create: different included/excluded status chars, #7321
+
+  - dry-run: now uses "+" (was: "-") and "-" (was: "x") for included/excluded status
+  - non-dry-run: now uses "-" (was: "x") for excluded files
+
+  Option --filter=... might need an update, if you filter for the status chars
+  that were changed.
+- borg is now more strict and disallows giving some options multiple times -
+  if that makes no sense. Highlander options, see #6269. That might make scripts
+  fail now that somehow "worked" before (but maybe didn't work as intended due to
+  the contradicting options).
+
+
+.. _changelog:
+
+Change Log 2.x
+==============
+
+Version 2.0.0b7 (2023-09-14)
+----------------------------
+
+Please note:
+
+This is a beta release, only for testing - do not use for production repos.
+
+For upgrade and compatibility hints, please also read the section "Upgrade Notes"
+above.
+
+New features:
+
+- BORG_WORKAROUNDS=authenticated_no_key to extract from authenticated repos
+  without having the borg key, #7700
+
+Fixes:
+
+- archive tam verify security fix, fixes CVE-2023-36811
+- remote logging/progress: use callback to send queued records, #7662
+- make_path_safe: remove test for backslashes, #7651
+- benchmark cpu: use sanitized path, #7654
+- create: do not try to read parent dir of recursion root, #7746
+
+Other changes:
+
+- always implicitly require archive TAMs (all archives have TAMs since borg 1.2.6)
+- always implicitly require manifest TAMs (manifests have TAMs since borg 1.0.9)
+- rlist: remove support for {tam} placeholder, archives are now always TAM-authenticated.
+- support / test on Python 3.12
+- allow msgpack 1.0.6 (which has py312 wheels), #7810
+- manifest: move item_keys into config dict (manifest.version == 2 now), #7710
+- replace "datetime.utcfromtimestamp" to avoid deprecation warnings with Python 3.12
+- properly normalise paths on Windows (forward slashes, integrate drive letter into path)
+- Docs:
+
+  - move upgrade / compat. notes to own section, see #7546
+  - fix borg delete examples, #7759
+  - improve rcreate / related repos docs
+  - automated-local.rst: use UUID for consistent udev rule
+  - rewrite `borg check` docs, #7578
+  - misc. other docs updates
+- Tests / CI / Vagrant:
+
+  - major testsuite refactoring: a lot more tests now use pytest, #7626
+  - freebsd: add some ACL tests, #7745
+  - fix test_disk_full, #7617
+  - fix failing test_get_runtime_dir test on OpenBSD, #7719
+  - CI: run on ubuntu 22.04
+  - CI: test building the docs
+  - simplify flake8 config, fix some complaints
+  - use pyinstaller 5.13.1 to build the borg binaries
+
+
+Version 2.0.0b6 (2023-06-11)
+----------------------------
+
+New features:
+
+- diff: include changes in ctime and mtime, #7248
+- diff: sort JSON output alphabetically
+- diff --content-only: option added to ignore metadata changes
+- diff: add --format option, #4634
+- import-tar --ignore-zeros: new option to support importing concatenated tars, #7432
+- debug id-hash / parse-obj / format-obj: new debug commands, #7406
+- transfer --compression=C --recompress=M: recompress while transferring, #7529
+- extract --continue: continue a previously interrupted extraction, #1356
+- prune --list-kept/--list-pruned: only list the kept (or pruned) archives, #7511
+- prune --short/--format: enable users to format the list output, #3238
+- implement BORG_<CMD>_FORMAT env vars for prune, list, rlist, #5166
+- rlist: size and nfiles format keys
+- implement unix domain (ipc) socket support, #6183::
+
+      borg serve --socket  # server side (not started automatically!)
+      borg -r socket:///path/to/repo ...  # client side
+- add get_runtime_dir / BORG_RUNTIME_DIR (contains e.g. .sock and .pid file)
+- support shell-style alternatives, like: sh:image.{png,jpg}, #7602
+
+Fixes:
+
+- do not retry on permission errors (pointless)
+- transfer: verify chunks we get using assert_id, #7383
+- fix config/cache dir compatibility issues, #7445
+- xattrs: fix namespace processing on FreeBSD, #6997
+- ProgressIndicatorPercent: fix space computation for wide chars, #3027
+- delete: remove --cache-only option, #7440.
+  for deleting the cache only, use: borg rdelete --cache-only
+- borg debug get-obj/put-obj: fixed chunk id
+- create: ignore empty paths, print warning, #5637
+- extract: support extraction of atime/mtime on win32
+- benchmark crud: use TemporaryDirectory below given path, #4706
+- Ensure that cli options specified with action=Highlander can only be set once, even
+  if the set value is a default value. Add tests for action=Highlander, #7500, #6269.
+- Fix argparse error messages from misc. validators (being more specific).
+- put security infos into data dir, add BORG_DATA_DIR env var, #5760
+- setup.cfg: remove setup_requires (we have a pyproject.toml for that), #7574
+- do not crash for empty archives list in borg rlist date based matching, #7522
+- sanitize paths during archive creation and extraction, #7108 #7099
+- make sure we do not get backslashes into item paths
+
+Other changes:
+
+- allow msgpack 1.0.5 also
+- development.lock.txt: upgrade cython to 0.29.35, misc. other upgrades
+- clarify platformdirs requirements, #7393.
+  3.0.0 is only required for macOS due to breaking changes.
+  2.6.0 was the last breaking change for Linux/UNIX.
+- mount: improve mountpoint error msgs, see #7496
+- more Highlander options, #6269
+- Windows: simplify building (just use pip)
+- refactor toplevel exception handling, #6018
+- remove nonce management, related repo methods (not needed for borg2)
+- borg.remote: remove support for borg < 1.1.0
+  ($LOG, logging setup, exceptions, rpc tuple data format, version)
+- new remote and progress logging, #7604
+- borg.logger: add logging debugging functionality
+- add function to clear empty directories at end of compact process
+- unify scanning and listing of segment dirs / segment files, #7597
+- replace `LRUCache` internals with `OrderedDict`
+- docs:
+
+  - add installation instructions for Windows
+  - improve --one-file-system help and docs (macOS APFS), #5618 #4876
+  - BORG_KEY_FILE: clarify docs, #7444
+  - installation: add link to OS dependencies, #7356
+  - update FAQ about locale/unicode issues, #6999
+  - improve mount options rendering, #7359
+  - make timestamps in manual pages reproducible.
+  - describe performing pull-backups via ssh remote forwarding
+  - suggest to use forced command when using remote-fowarding via ssh
+  - fix some -a / --match-archives docs issues
+  - incl./excl. options header, clarify --path-from-stdin exclusive control
+  - add note about MAX_DATA_SIZE
+  - update security support docs
+  - improve patterns help
+
+- CI / tests / vagrant:
+
+  - added pre-commit for linting purposes, #7476
+  - resolved mode bug and added sleep clause for darwin systems, #7470
+  - "auto" compressor tests: do not assume zlib is better than lz4, #7363
+  - add stretch64 VM with deps built from source
+  - misc. other CI / test fixes and updates
+  - vagrant: add lunar64 VM, fix packages_netbsd
+  - avoid long ids in pytest output
+  - tox: package = editable-legacy, #7580
+  - tox under fakeroot: fix finding setup_docs, #7391
+  - check buzhash chunksize distribution, #7586
+  - use debian/bookworm64 box
+
+
+Version 2.0.0b5 (2023-02-27)
+----------------------------
+
+New features:
+
+- create: implement retries for individual fs files
+  (e.g. if a file changed while we read it, if a file had an OSError)
+- info: add used storage quota, #7121
+- transfer: support --progress
+- create/recreate/import-tar: add --checkpoint-volume option
+- support date-based matching for archive selection,
+  add --newer/--older/--newest/--oldest options, #7062 #7296
+
+Fixes:
+
+- disallow --list with --progress, #7219
+- create: fix --list --dry-run output for directories, #7209
+- do no assume hardlink_master=True if not present, #7175
+- fix item_ptrs orphaned chunks of checkpoint archives
+- avoid orphan content chunks on BackupOSError, #6709
+- transfer: fix bug in obfuscated data upgrade code
+- fs.py: fix bug in f-string (thanks mypy!)
+- recreate: when --target is given, do not detect "nothing to do", #7254
+- locking (win32): deal with os.rmdir/listdir PermissionErrors
+- locking: thread id must be parsed as hex from lock file name
+- extract: fix mtime when ResourceFork xattr is set (macOS specific), #7234
+- recreate: without --chunker-params borg shall not rechunk, #7336
+- allow mixing --progress and --list in log-json mode
+- add "files changed while reading" to Statistics class, #7354
+- fixed keys determination in Statistics.__add__(), #7355
+
+Other changes:
+
+- use local time / local timezone to output timestamps, #7283
+- update development.lock.txt, including a setuptools security fix, #7227
+- remove --save-space option (does not change behaviour)
+- remove part files from final archive
+- remove --consider-part-files, related stats code, update docs
+- transfer: drop part files
+- check: show id of orphaned chunks
+- ArchiveItem.cmdline list-of-str -> .command_line str, #7246
+- Item: symlinks: rename .source to .target, #7245
+- Item: make user/group/uid/gid optional
+- create: do not store user/group for stdin data by default, #7249
+- extract: chown only if we have u/g info in archived item, #7249
+- export-tar: for items w/o uid/gid, default to 0/0, #7249
+- fix some uid/gid lookup code / tests for win32
+- cache.py: be less verbose during cache sync
+- update bash completion script commands and options, #7273
+- require and use platformdirs 3.x.x package, tests
+- better included/excluded status chars, docs, #7321
+- undef NDEBUG for chunker and hashindex (make assert() work)
+- assert_id: better be paranoid (add back same crypto code as in old borg), #7362
+- check --verify_data: always decompress and call assert_id(), #7362
+- make hashindex_compact simpler and probably faster, minor fixes, cleanups, more tests
+- hashindex minor fixes, refactor, tweaks, tests
+- pyinstaller: remove icon
+- validation / placeholders / JSON:
+
+  - implement (text|binary)_to_json: key (text), key_b64 (base64(binary))
+  - remove bpath, barchive, bcomment placeholders / JSON keys
+  - archive metadata: make sure hostname and username have no surrogate escapes
+  - text attributes (like archive name, comment): validate more strictly, #2290
+  - transfer: validate archive names and comment before transfer
+  - json output: use text_to_json (path, target), #6151
+- docs:
+
+  - docs and comments consistency, readability and spelling fixes
+  - fix --progress display description, #7180
+  - document how borg deals with non-unicode bytes in JSON output
+  - document another way to get UTF-8 encoding on stdin/stdout/stderr, #2273
+  - pruning interprets timestamps in the local timezone where borg prune runs
+  - shellpattern: add license, use copyright/license markup
+  - key change-passphrase: fix --encryption value in examples
+  - remove BORG_LIBB2_PREFIX (not used any more)
+  - Installation: Update Fedora in distribution list, #7357
+  - add .readthedocs.yaml (use py311, use non-shallow clone)
+- tests:
+
+  - fix archiver tests on Windows, add running the tests to Windows CI
+  - fix tox4 passenv issue, #7199
+  - github actions updates (fix deprecation warnings)
+  - add tests for borg transfer/upgrade
+  - fix test hanging reading FIFO when `borg create` failed
+  - mypy inspired fixes / updates
+  - fix prune tests, prune in localtime
+  - do not look up uid 0 / gid 0, but current process uid/gid
+  - safe_unlink tests: use os.link to support win32 also
+  - fix test_size_on_disk_accurate for large st_blksize, #7250
+  - relaxed timestamp comparisons, use same_ts_ns
+  - add test for extracted directory mtime
+  - use "fail" chunker to test erroneous input file skipping
+
+
+Version 2.0.0b4 (2022-11-27)
+----------------------------
 
 Fixes:
 
 - transfer/upgrade: fix bork < 1.2 chunker_params, #7079
 - transfer/upgrade: do not access Item._dict, #7077
+- transfer/upgrade: fix crash in borg transfer, #7156
 - archive.save(): always use metadata from stats, #7072
 - benchmark: fixed TypeError in compression benchmarks, #7075
 - fix repository.scan api minimum requirement
+- fix args.paths related argparsing, #6994
 
 Other changes:
 
-- vagrant: use 3.10.7 for binary building
+- tar_filter: recognize .tar.zst as zstd, #7093
+- adding performance statistics to borg create, #6991
 - docs: add rcompress to usage index
+- tests:
+
+  - use github and MSYS2 for Windows CI, #7097
+  - win32 and cygwin: test fixes / skip hanging test
+  - vagrant / github CI: use python 3.11.0 / 3.10.8
+- vagrant:
+
+  - upgrade pyinstaller to 5.6.2 (supports python 3.11)
+  - use python 3.11 to build the borg binary
 
 Version 2.0.0b3 (2022-10-02)
 ----------------------------
@@ -285,7 +569,7 @@ Changes:
     - compression: use the 2 bytes for type and level, #6698
     - use version 2 for new archives
     - convert timestamps int/bigint -> msgpack.Timestamp, see #2323
-    - all hardlinks have chunks, maybe chunks_healty, hlid
+    - all hardlinks have chunks, maybe chunks_healthy, hlid
     - remove the zlib type bytes hack
     - make sure items with chunks have precomputed size
     - removes the csize element from the tuples in the Item.chunks list

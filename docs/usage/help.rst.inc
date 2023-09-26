@@ -24,15 +24,13 @@ confuse the root with the ``PATH`` argument of e.g. `bork extract`.
 
 Starting with Bork 1.2, paths that are matched against patterns always
 appear relative. If you give ``/absolute/`` as root, the paths going
-into the matcher will look relative like ``absolute/.../file.ext``.
-If you give ``../some/path`` as root, the paths will look like
-``some/path/.../file.ext``.
+into the matcher will start with ``absolute/``.
+If you give ``../../relative`` as root, the paths will be normalized
+as ``relative/``.
 
-File patterns support five different styles. If followed by a colon ':',
-the first two characters of a pattern are used as a style selector.
-Explicit style selection is necessary if a non-default style is desired
-or when the desired pattern starts with two alphanumeric characters
-followed by a colon (i.e. ``aa:something/*``).
+Borg supports different pattern styles. To define a non-default
+style for a specific pattern, prefix it with two characters followed
+by a colon ':' (i.e. ``fm:path/*``, ``sh:path/**``).
 
 `Fnmatch <https://docs.python.org/3/library/fnmatch.html>`_, selector ``fm:``
     This is the default style for ``--exclude`` and ``--exclude-from``.
@@ -55,7 +53,8 @@ Shell-style patterns, selector ``sh:``
     Like fnmatch patterns these are similar to shell patterns. The difference
     is that the pattern may include ``**/`` for matching zero or more directory
     levels, ``*`` for matching zero or more arbitrary characters with the
-    exception of any path separator. A leading path separator is always removed.
+    exception of any path separator, ``{}`` containing comma-separated
+    alternative patterns. A leading path separator is always removed.
 
 `Regular expressions <https://docs.python.org/3/library/re.html>`_, selector ``re:``
     Unlike shell patterns, regular expressions are not required to match the full
@@ -175,6 +174,25 @@ before an exclude pattern, the file is backed up. Note that a no-recurse
 exclude stops examination of subdirectories so that potential includes
 will not match - use normal excludes for such use cases.
 
+Example::
+
+    # Define the recursion root
+    R /
+    # Exclude all iso files in any directory
+    - **/*.iso
+    # Explicitly include all inside etc and root
+    + etc/**
+    + root/**
+    # Exclude a specific directory under each user's home directories
+    - home/*/.cache
+    # Explicitly include everything in /home
+    + home/**
+    # Explicitly exclude some directories without recursing into them
+    ! re:^(dev|proc|run|sys|tmp)
+    # Exclude all other files and directories
+    # that are not specifically included earlier.
+    - **
+
 **Tip: You can easily test your patterns with --dry-run and  --list**::
 
     $ bork create --dry-run --list --patterns-from patterns.txt archive
@@ -195,15 +213,15 @@ are added. Exclusion patterns from ``--exclude-from`` files are appended last.
 
 Examples::
 
-    # backup pics, but not the ones from 2018, except the good ones:
+    # back up pics, but not the ones from 2018, except the good ones:
     # note: using = is essential to avoid cmdline argument parsing issues.
     bork create --pattern=+pics/2018/good --pattern=-pics/2018 archive pics
 
-    # backup only JPG/JPEG files (case insensitive) in all home directories:
-    bork create --pattern '+ re:\.jpe?g(?i)$' archive /home
+    # back up only JPG/JPEG files (case insensitive) in all home directories:
+    borg create --pattern '+ re:\.jpe?g(?i)$' archive /home
 
-    # backup homes, but exclude big downloads (like .ISO files) or hidden files:
-    bork create --exclude 're:\.iso(?i)$' --exclude 'sh:home/**/.*' archive /home
+    # back up homes, but exclude big downloads (like .ISO files) or hidden files:
+    borg create --exclude 're:\.iso(?i)$' --exclude 'sh:home/**/.*' archive /home
 
     # use a file with patterns (recursion root '/' via command line):
     bork create --patterns-from patterns.lst archive /
@@ -217,7 +235,7 @@ The patterns.lst file could look like that::
     + home/susan
     # also back up this exact file
     + pf:home/bobby/specialfile.txt
-    # don't backup the other home directories
+    # don't back up the other home directories
     - home/*
     # don't even look in /dev, /proc, /run, /sys, /tmp (note: would exclude files like /device, too)
     ! re:^(dev|proc|run|sys|tmp)
@@ -367,7 +385,6 @@ zstd[,L]
     Use zstd ("zstandard") compression, a modern wide-range algorithm.
     If you do not explicitly give the compression level L (ranging from 1
     to 22), it will use level 3.
-    Archives compressed with zstd are not compatible with bork < 1.1.4.
 
 zlib[,L]
     Use zlib ("gz") compression. Medium speed, medium compression.
@@ -393,40 +410,55 @@ auto,C[,L]
 
 obfuscate,SPEC,C[,L]
     Use compressed-size obfuscation to make fingerprinting attacks based on
-    the observable stored chunk size more difficult.
-    Note:
-    - you must combine this with encryption or it won't make any sense.
-    - your repo size will be bigger, of course.
+    the observable stored chunk size more difficult. Note:
 
-    The SPEC value will determine how the size obfuscation will work:
+    - You must combine this with encryption, or it won't make any sense.
+    - Your repo size will be bigger, of course.
+    - A chunk is limited by the constant ``MAX_DATA_SIZE`` (cur. ~20MiB).
 
-    Relative random reciprocal size variation:
+    The SPEC value determines how the size obfuscation works:
+
+    *Relative random reciprocal size variation* (multiplicative)
+
     Size will increase by a factor, relative to the compressed data size.
-    Smaller factors are often used, larger factors rarely.
-    1: factor 0.01 .. 100.0
-    2: factor 0.1 .. 1000.0
-    3: factor 1.0 .. 10000.0
-    4: factor 10.0 .. 100000.0
-    5: factor 100.0 .. 1000000.0
-    6: factor 1000.0 .. 10000000.0
+    Smaller factors are used often, larger factors rarely.
 
-    Add a randomly sized padding up to the given size:
-    110: 1kiB
-    ...
-    120: 1MiB
-    ...
-    123: 8MiB (max.)
+    Available factors::
+
+      1:     0.01 ..        100
+      2:     0.1  ..      1,000
+      3:     1    ..     10,000
+      4:    10    ..    100,000
+      5:   100    ..  1,000,000
+      6: 1,000    .. 10,000,000
+
+    Example probabilities for SPEC ``1``::
+
+      90   %  0.01 ..   0.1
+       9   %  0.1  ..   1
+       0.9 %  1    ..  10
+       0.09% 10    .. 100
+
+    *Randomly sized padding up to the given size* (additive)
+
+    ::
+
+      110: 1kiB (2 ^ (SPEC - 100))
+      ...
+      120: 1MiB
+      ...
+      123: 8MiB (max.)
 
 Examples::
 
-    bork create --compression lz4 REPO::ARCHIVE data
-    bork create --compression zstd REPO::ARCHIVE data
-    bork create --compression zstd,10 REPO::ARCHIVE data
-    bork create --compression zlib REPO::ARCHIVE data
-    bork create --compression zlib,1 REPO::ARCHIVE data
-    bork create --compression auto,lzma,6 REPO::ARCHIVE data
-    bork create --compression auto,lzma ...
-    bork create --compression obfuscate,3,none ...
-    bork create --compression obfuscate,3,auto,zstd,10 ...
-    bork create --compression obfuscate,2,zstd,6 ...
+    borg create --compression lz4 REPO::ARCHIVE data
+    borg create --compression zstd REPO::ARCHIVE data
+    borg create --compression zstd,10 REPO::ARCHIVE data
+    borg create --compression zlib REPO::ARCHIVE data
+    borg create --compression zlib,1 REPO::ARCHIVE data
+    borg create --compression auto,lzma,6 REPO::ARCHIVE data
+    borg create --compression auto,lzma ...
+    borg create --compression obfuscate,110,none ...
+    borg create --compression obfuscate,3,auto,zstd,10 ...
+    borg create --compression obfuscate,2,zstd,6 ...
 

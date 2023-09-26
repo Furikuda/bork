@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from ._common import with_repository
+from ._common import with_repository, Highlander
 from ..archive import Archive, Statistics
 from ..cache import Cache
 from ..constants import *  # NOQA
@@ -60,7 +60,7 @@ class DeleteMixIn:
 
             def checkpoint_func():
                 manifest.write()
-                repository.commit(compact=False, save_space=args.save_space)
+                repository.commit(compact=False)
                 cache.commit()
 
             msg_delete = "Would delete archive: {} ({}/{})" if dry_run else "Deleting archive: {} ({}/{})"
@@ -79,9 +79,7 @@ class DeleteMixIn:
                         logger_list.info(msg_delete.format(format_archive(archive_info), i, len(archive_names)))
 
                     if not dry_run:
-                        archive = Archive(
-                            manifest, archive_name, cache=cache, consider_part_files=args.consider_part_files
-                        )
+                        archive = Archive(manifest, archive_name, cache=cache)
                         archive.delete(stats, progress=args.progress, forced=args.forced)
                         checkpointed = self.maybe_checkpoint(
                             checkpoint_func=checkpoint_func, checkpoint_interval=args.checkpoint_interval
@@ -145,20 +143,11 @@ class DeleteMixIn:
             "-s", "--stats", dest="stats", action="store_true", help="print statistics for the deleted archive"
         )
         subparser.add_argument(
-            "--cache-only",
-            dest="cache_only",
-            action="store_true",
-            help="delete only the local cache for the given repository",
-        )
-        subparser.add_argument(
             "--force",
             dest="forced",
             action="count",
             default=0,
             help="force deletion of corrupted archives, " "use ``--force --force`` in case ``--force`` does not work.",
-        )
-        subparser.add_argument(
-            "--save-space", dest="save_space", action="store_true", help="work slower, but using less space"
         )
         subparser.add_argument(
             "-c",
@@ -167,6 +156,7 @@ class DeleteMixIn:
             dest="checkpoint_interval",
             type=int,
             default=1800,
+            action=Highlander,
             help="write checkpoint every SECONDS seconds (Default: 1800)",
         )
         define_archive_filters_group(subparser)

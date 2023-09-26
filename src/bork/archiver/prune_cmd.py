@@ -3,13 +3,14 @@ from collections import OrderedDict
 from datetime import datetime, timezone, timedelta
 import logging
 from operator import attrgetter
+import os
 import re
 
-from ._common import with_repository
+from ._common import with_repository, Highlander
 from ..archive import Archive, Statistics
 from ..cache import Cache
 from ..constants import *  # NOQA
-from ..helpers import format_archive, interval, sig_int, log_multi, ProgressIndicatorPercent
+from ..helpers import ArchiveFormatter, interval, sig_int, log_multi, ProgressIndicatorPercent
 from ..manifest import Manifest
 
 from ..logger import create_logger
@@ -82,6 +83,14 @@ class PruneMixIn:
                 '"keep-weekly", "keep-monthly" or "keep-yearly" settings must be specified.'
             )
             return self.exit_code
+        if args.format is not None:
+            format = args.format
+        elif args.short:
+            format = "{archive}"
+        else:
+            format = os.environ.get("BORG_PRUNE_FORMAT", "{archive:<36} {time} [{id}]")
+        formatter = ArchiveFormatter(format, repository, manifest, manifest.key, iec=args.iec)
+
         checkpoint_re = r"\.checkpoint(\.\d+)?"
         archives_checkpoints = manifest.archives.list(
             match=args.match_archives,
@@ -123,7 +132,7 @@ class PruneMixIn:
 
             def checkpoint_func():
                 manifest.write()
-                repository.commit(compact=False, save_space=args.save_space)
+                repository.commit(compact=False)
                 cache.commit()
 
             list_logger = logging.getLogger("bork.output.list")
@@ -142,7 +151,7 @@ class PruneMixIn:
                     else:
                         archives_deleted += 1
                         log_message = "Pruning archive (%d/%d):" % (archives_deleted, to_delete_len)
-                        archive = Archive(manifest, archive.name, cache, consider_part_files=args.consider_part_files)
+                        archive = Archive(manifest, archive.name, cache)
                         archive.delete(stats, forced=args.forced)
                         checkpointed = self.maybe_checkpoint(
                             checkpoint_func=checkpoint_func, checkpoint_interval=args.checkpoint_interval
@@ -155,10 +164,12 @@ class PruneMixIn:
                         log_message = "Keeping archive (rule: {rule} #{num}):".format(
                             rule=kept_because[archive.id][0], num=kept_because[archive.id][1]
                         )
-                if args.output_list:
-                    list_logger.info(
-                        "{message:<40} {archive}".format(message=log_message, archive=format_archive(archive))
-                    )
+                if (
+                    args.output_list
+                    or (args.list_pruned and archive in to_delete)
+                    or (args.list_kept and archive not in to_delete)
+                ):
+                    list_logger.info(f"{log_message:<40} {formatter.format_item(archive, jsonline=False)}")
             pi.finish()
             if sig_int:
                 # Ctrl-C / SIGINT: do not checkpoint (commit) again, we already have a checkpoint in this case.
@@ -170,7 +181,6 @@ class PruneMixIn:
         return self.exit_code
 
     def build_parser_prune(self, subparsers, common_parser, mid_common_parser):
-
         from ._common import process_epilog
         from ._common import define_archive_filters_group
 
@@ -214,12 +224,12 @@ class PruneMixIn:
         up to 7 most recent days with backups (days without backups do not count).
         The rules are applied from secondly to yearly, and backups selected by previous
         rules do not count towards those of later rules. The time that each backup
-        starts is used for pruning purposes. Dates and times are interpreted in
-        the local timezone, and weeks go from Monday to Sunday. Specifying a
-        negative number of archives to keep means that there is no limit. As of bork
-        1.2.0, bork will retain the oldest archive if any of the secondly, minutely,
-        hourly, daily, weekly, monthly, or yearly rules was not otherwise able to meet
-        its retention target. This enables the first chronological archive to continue
+        starts is used for pruning purposes. Dates and times are interpreted in the local
+        timezone of the system where borg prune runs, and weeks go from Monday to Sunday.
+        Specifying a negative number of archives to keep means that there is no limit.
+        As of borg 1.2.0, borg will retain the oldest archive if any of the secondly,
+        minutely, hourly, daily, weekly, monthly, or yearly rules was not otherwise able to
+        meet its retention target. This enables the first chronological archive to continue
         aging until it is replaced by a newer archive that meets the retention criteria.
 
         The ``--keep-last N`` option is doing the same as ``--keep-secondly N`` (and it will
@@ -230,6 +240,10 @@ class PruneMixIn:
         deleted - the "Deleted data" deduplicated size there is most interesting as
         that is how much your repository will shrink.
         Please note that the "All archives" stats refer to the state after pruning.
+
+        You can influence how the ``--list`` output is formatted by using the ``--short``
+        option (less wide output) or by giving a custom format using ``--format`` (see
+        the ``borg rlist`` description for more details about the format string).
         """
         )
         subparser = subparsers.add_parser(
@@ -255,11 +269,26 @@ class PruneMixIn:
         subparser.add_argument(
             "--list", dest="output_list", action="store_true", help="output verbose list of archives it keeps/prunes"
         )
+        subparser.add_argument("--short", dest="short", action="store_true", help="use a less wide archive part format")
+        subparser.add_argument(
+            "--list-pruned", dest="list_pruned", action="store_true", help="output verbose list of archives it prunes"
+        )
+        subparser.add_argument(
+            "--list-kept", dest="list_kept", action="store_true", help="output verbose list of archives it keeps"
+        )
+        subparser.add_argument(
+            "--format",
+            metavar="FORMAT",
+            dest="format",
+            action=Highlander,
+            help="specify format for the archive part " '(default: "{archive:<36} {time} [{id}]")',
+        )
         subparser.add_argument(
             "--keep-within",
             metavar="INTERVAL",
             dest="within",
             type=interval,
+            action=Highlander,
             help="keep all archives within this time interval",
         )
         subparser.add_argument(
@@ -268,30 +297,63 @@ class PruneMixIn:
             dest="secondly",
             type=int,
             default=0,
+            action=Highlander,
             help="number of secondly archives to keep",
         )
         subparser.add_argument(
-            "--keep-minutely", dest="minutely", type=int, default=0, help="number of minutely archives to keep"
+            "--keep-minutely",
+            dest="minutely",
+            type=int,
+            default=0,
+            action=Highlander,
+            help="number of minutely archives to keep",
         )
         subparser.add_argument(
-            "-H", "--keep-hourly", dest="hourly", type=int, default=0, help="number of hourly archives to keep"
+            "-H",
+            "--keep-hourly",
+            dest="hourly",
+            type=int,
+            default=0,
+            action=Highlander,
+            help="number of hourly archives to keep",
         )
         subparser.add_argument(
-            "-d", "--keep-daily", dest="daily", type=int, default=0, help="number of daily archives to keep"
+            "-d",
+            "--keep-daily",
+            dest="daily",
+            type=int,
+            default=0,
+            action=Highlander,
+            help="number of daily archives to keep",
         )
         subparser.add_argument(
-            "-w", "--keep-weekly", dest="weekly", type=int, default=0, help="number of weekly archives to keep"
+            "-w",
+            "--keep-weekly",
+            dest="weekly",
+            type=int,
+            default=0,
+            action=Highlander,
+            help="number of weekly archives to keep",
         )
         subparser.add_argument(
-            "-m", "--keep-monthly", dest="monthly", type=int, default=0, help="number of monthly archives to keep"
+            "-m",
+            "--keep-monthly",
+            dest="monthly",
+            type=int,
+            default=0,
+            action=Highlander,
+            help="number of monthly archives to keep",
         )
         subparser.add_argument(
-            "-y", "--keep-yearly", dest="yearly", type=int, default=0, help="number of yearly archives to keep"
+            "-y",
+            "--keep-yearly",
+            dest="yearly",
+            type=int,
+            default=0,
+            action=Highlander,
+            help="number of yearly archives to keep",
         )
         define_archive_filters_group(subparser, sort_by=False, first_last=False)
-        subparser.add_argument(
-            "--save-space", dest="save_space", action="store_true", help="work slower, but using less space"
-        )
         subparser.add_argument(
             "-c",
             "--checkpoint-interval",
@@ -299,5 +361,6 @@ class PruneMixIn:
             dest="checkpoint_interval",
             type=int,
             default=1800,
+            action=Highlander,
             help="write checkpoint every SECONDS seconds (Default: 1800)",
         )

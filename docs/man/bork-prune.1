@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-PRUNE" 1 "2022-10-02" "" "bork backup tool"
+.TH "BORG-PRUNE" 1 "2023-09-14" "" "borg backup tool"
 .SH NAME
 bork-prune \- Prune repository archives according to specified rules
 .SH SYNOPSIS
@@ -73,12 +73,12 @@ As an example, \fB\-\-keep\-daily 7\fP means to keep the latest backup on each d
 up to 7 most recent days with backups (days without backups do not count).
 The rules are applied from secondly to yearly, and backups selected by previous
 rules do not count towards those of later rules. The time that each backup
-starts is used for pruning purposes. Dates and times are interpreted in
-the local timezone, and weeks go from Monday to Sunday. Specifying a
-negative number of archives to keep means that there is no limit. As of bork
-1.2.0, bork will retain the oldest archive if any of the secondly, minutely,
-hourly, daily, weekly, monthly, or yearly rules was not otherwise able to meet
-its retention target. This enables the first chronological archive to continue
+starts is used for pruning purposes. Dates and times are interpreted in the local
+timezone of the system where borg prune runs, and weeks go from Monday to Sunday.
+Specifying a negative number of archives to keep means that there is no limit.
+As of borg 1.2.0, borg will retain the oldest archive if any of the secondly,
+minutely, hourly, daily, weekly, monthly, or yearly rules was not otherwise able to
+meet its retention target. This enables the first chronological archive to continue
 aging until it is replaced by a newer archive that meets the retention criteria.
 .sp
 The \fB\-\-keep\-last N\fP option is doing the same as \fB\-\-keep\-secondly N\fP (and it will
@@ -89,10 +89,14 @@ When using \fB\-\-stats\fP, you will get some statistics about how much data was
 deleted \- the \(dqDeleted data\(dq deduplicated size there is most interesting as
 that is how much your repository will shrink.
 Please note that the \(dqAll archives\(dq stats refer to the state after pruning.
+.sp
+You can influence how the \fB\-\-list\fP output is formatted by using the \fB\-\-short\fP
+option (less wide output) or by giving a custom format using \fB\-\-format\fP (see
+the \fBborg rlist\fP description for more details about the format string).
 .SH OPTIONS
 .sp
-See \fIbork\-common(1)\fP for common options of Bork commands.
-.SS optional arguments
+See \fIborg\-common(1)\fP for common options of Borg commands.
+.SS options
 .INDENT 0.0
 .TP
 .B  \-n\fP,\fB  \-\-dry\-run
@@ -106,6 +110,18 @@ print statistics for the deleted archive
 .TP
 .B  \-\-list
 output verbose list of archives it keeps/prunes
+.TP
+.B  \-\-short
+use a less wide archive part format
+.TP
+.B  \-\-list\-pruned
+output verbose list of archives it prunes
+.TP
+.B  \-\-list\-kept
+output verbose list of archives it keeps
+.TP
+.BI \-\-format \ FORMAT
+specify format for the archive part (default: \(dq{archive:<36} {time} [{id}]\(dq)
 .TP
 .BI \-\-keep\-within \ INTERVAL
 keep all archives within this time interval
@@ -131,9 +147,6 @@ number of monthly archives to keep
 .B  \-y\fP,\fB  \-\-keep\-yearly
 number of yearly archives to keep
 .TP
-.B  \-\-save\-space
-work slower, but using less space
-.TP
 .BI \-c \ SECONDS\fR,\fB \ \-\-checkpoint\-interval \ SECONDS
 write checkpoint every SECONDS seconds (Default: 1800)
 .UNINDENT
@@ -141,7 +154,19 @@ write checkpoint every SECONDS seconds (Default: 1800)
 .INDENT 0.0
 .TP
 .BI \-a \ PATTERN\fR,\fB \ \-\-match\-archives \ PATTERN
-only consider archive names matching the pattern. see \(dqbork help match\-archives\(dq.
+only consider archive names matching the pattern. see \(dqborg help match\-archives\(dq.
+.TP
+.BI \-\-oldest \ TIMESPAN
+consider archives between the oldest archive\(aqs timestamp and (oldest + TIMESPAN), e.g. 7d or 12m.
+.TP
+.BI \-\-newest \ TIMESPAN
+consider archives between the newest archive\(aqs timestamp and (newest \- TIMESPAN), e.g. 7d or 12m.
+.TP
+.BI \-\-older \ TIMESPAN
+consider archives older than (now \- TIMESPAN), e.g. 7d oder 12m.
+.TP
+.BI \-\-newer \ TIMESPAN
+consider archives newer than (now \- TIMESPAN), e.g. 7d or 12m.
 .UNINDENT
 .SH EXAMPLES
 .sp
@@ -149,7 +174,7 @@ Be careful, prune is a potentially dangerous command, it will remove backup
 archives.
 .sp
 The default of prune is to apply to \fBall archives in the repository\fP unless
-you restrict its operation to a subset of the archives using \fB\-a\fP / \fB\-\-glob\-archives\fP\&.
+you restrict its operation to a subset of the archives using \fB\-a\fP / \fB\-\-match\-archives\fP\&.
 When using \fB\-a\fP, be careful to choose a good pattern \- e.g. do not use a
 prefix \(dqfoo\(dq if you do not also want to match \(dqfoobar\(dq.
 .sp
@@ -166,7 +191,7 @@ $ bork prune \-v \-\-list \-\-dry\-run \-\-keep\-daily=7 \-\-keep\-weekly=4
 
 # Same as above but only apply to archive names starting with the hostname
 # of the machine followed by a \(dq\-\(dq character:
-$ bork prune \-v \-\-list \-\-keep\-daily=7 \-\-keep\-weekly=4 \-a \(aq{hostname}\-*\(aq
+$ borg prune \-v \-\-list \-\-keep\-daily=7 \-\-keep\-weekly=4 \-a \(aqsh:{hostname}\-*\(aq
 # actually free disk space:
 $ bork compact
 

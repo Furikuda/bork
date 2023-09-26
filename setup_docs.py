@@ -6,7 +6,8 @@ import re
 import sys
 import textwrap
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timezone
+import time
 
 from setuptools import Command
 
@@ -51,9 +52,8 @@ class build_usage(Command):
         print("generating usage docs")
         import bork
 
-        bork.doc_mode = "build_man"
-        if not os.path.exists("docs/usage"):
-            os.mkdir("docs/usage")
+        borg.doc_mode = "build_man"
+        os.makedirs("docs/usage", exist_ok=True)
         # allows us to build docs without the C modules fully loaded during help generation
         from bork.archiver import Archiver
 
@@ -285,17 +285,17 @@ class build_man(Command):
     user_options = []
 
     see_also = {
-        "create": ("delete", "prune", "check", "patterns", "placeholders", "compression"),
+        "create": ("delete", "prune", "check", "patterns", "placeholders", "compression", "rcreate"),
         "recreate": ("patterns", "placeholders", "compression"),
-        "list": ("info", "diff", "prune", "patterns"),
-        "info": ("list", "diff"),
-        "rcreate": ("rdelete", "rlist", "check", "key-import", "key-export", "key-change-passphrase"),
+        "list": ("info", "diff", "prune", "patterns", "rlist"),
+        "info": ("list", "diff", "rinfo"),
+        "rcreate": ("rdelete", "rlist", "check", "benchmark-cpu", "key-import", "key-export", "key-change-passphrase"),
         "key-import": ("key-export",),
         "key-export": ("key-import",),
         "mount": ("umount", "extract"),  # Would be cooler if these two were on the same page
         "umount": ("mount",),
         "extract": ("mount",),
-        "delete": ("compact",),
+        "delete": ("compact", "rdelete"),
         "prune": ("compact",),
     }
 
@@ -469,8 +469,9 @@ class build_man(Command):
         self.write_heading(write, title, "=", double_sided=True)
         self.write_heading(write, description, double_sided=True)
         # man page metadata
-        write(":Author: The Bork Collective")
-        write(":Date:", datetime.utcnow().date().isoformat())
+        write(":Author: The Borg Collective")
+        source_date_epoch = int(os.environ.get("SOURCE_DATE_EPOCH", time.time()))
+        write(":Date:", datetime.fromtimestamp(source_date_epoch, timezone.utc).date().isoformat())
         write(":Manual section: 1")
         write(":Manual group: bork backup tool")
         write()

@@ -1,6 +1,6 @@
 # this set must be kept complete, otherwise the RobustUnpacker might malfunction:
 # fmt: off
-ITEM_KEYS = frozenset(['path', 'source', 'rdev', 'chunks', 'chunks_healthy', 'hardlink_master', 'hlid',
+ITEM_KEYS = frozenset(['path', 'source', 'target', 'rdev', 'chunks', 'chunks_healthy', 'hardlink_master', 'hlid',
                        'mode', 'user', 'group', 'uid', 'gid', 'mtime', 'atime', 'ctime', 'birthtime', 'size',
                        'xattrs', 'bsdflags', 'acl_nfs4', 'acl_access', 'acl_default', 'acl_extended',
                        'part'])
@@ -11,17 +11,20 @@ REQUIRED_ITEM_KEYS = frozenset(["path", "mtime"])
 
 # this set must be kept complete, otherwise rebuild_manifest might malfunction:
 # fmt: off
-ARCHIVE_KEYS = frozenset(['version', 'name', 'cmdline', 'hostname', 'username', 'time', 'time_end',
+ARCHIVE_KEYS = frozenset(['version', 'name', 'hostname', 'username', 'time', 'time_end',
                           'items',  # legacy v1 archives
                           'item_ptrs',  # v2+ archives
                           'comment', 'chunker_params',
-                          'recreate_cmdline',
+                          'command_line', 'recreate_command_line',  # v2+ archives
+                          'cmdline', 'recreate_cmdline',  # legacy
                           'recreate_source_id', 'recreate_args', 'recreate_partial_chunks',  # used in 1.1.0b1 .. b2
-                          'size', 'nfiles', 'size_parts', 'nfiles_parts'])
+                          'size', 'nfiles',
+                          'size_parts', 'nfiles_parts',  # legacy v1 archives
+                          ])
 # fmt: on
 
 # this is the set of keys that are always present in archives:
-REQUIRED_ARCHIVE_KEYS = frozenset(["version", "name", "item_ptrs", "cmdline", "time"])
+REQUIRED_ARCHIVE_KEYS = frozenset(["version", "name", "item_ptrs", "command_line", "time"])
 
 # default umask, overridden by --umask, defaults to read/write only for owner
 UMASK_DEFAULT = 0o077
@@ -72,9 +75,16 @@ LIST_SCAN_LIMIT = 100000
 
 FD_MAX_AGE = 4 * 60  # 4 minutes
 
+# Some bounds on segment / segment_dir indexes
+MIN_SEGMENT_INDEX = 0
+MAX_SEGMENT_INDEX = 2**32 - 1
+MIN_SEGMENT_DIR_INDEX = 0
+MAX_SEGMENT_DIR_INDEX = 2**32 - 1
+
 # chunker algorithms
 CH_BUZHASH = "buzhash"
 CH_FIXED = "fixed"
+CH_FAIL = "fail"
 
 # buzhash chunker params
 CHUNK_MIN_EXP = 19  # 2**19 == 512kiB

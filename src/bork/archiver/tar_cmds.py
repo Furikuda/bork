@@ -1,6 +1,5 @@
 import argparse
 import base64
-from datetime import datetime
 import logging
 import os
 import stat
@@ -16,10 +15,9 @@ from ..helpers import dash_open
 from ..helpers import msgpack
 from ..helpers import create_filter_process
 from ..helpers import ChunkIteratorFileWrapper
-from ..helpers import ChunkerParams
-from ..helpers import NameSpec
+from ..helpers import archivename_validator, comment_validator, ChunkerParams
 from ..helpers import remove_surrogates
-from ..helpers import timestamp
+from ..helpers import timestamp, archive_ts_now
 from ..helpers import basic_json_data, json_print
 from ..helpers import log_multi
 from ..manifest import Manifest
@@ -30,6 +28,11 @@ from ._common import build_matcher, build_filter
 from ..logger import create_logger
 
 logger = create_logger(__name__)
+
+# Python 3.12+ gives a deprecation warning if TarFile.extraction_filter is None.
+# https://docs.python.org/3.12/library/tarfile.html#tarfile-extraction-filter
+if hasattr(tarfile, "fully_trusted_filter"):
+    tarfile.TarFile.extraction_filter = staticmethod(tarfile.fully_trusted_filter)  # type: ignore
 
 
 def get_tar_filter(fname, decompress):
@@ -134,8 +137,8 @@ class TarMixIn:
             tarinfo.name = item.path
             tarinfo.mtime = item.mtime / 1e9
             tarinfo.mode = stat.S_IMODE(item.mode)
-            tarinfo.uid = item.uid
-            tarinfo.gid = item.gid
+            tarinfo.uid = item.get("uid", 0)
+            tarinfo.gid = item.get("gid", 0)
             tarinfo.uname = item.get("user", "")
             tarinfo.gname = item.get("group", "")
             # The linkname in tar has 2 uses:
@@ -165,7 +168,7 @@ class TarMixIn:
                 tarinfo.type = tarfile.DIRTYPE
             elif modebits == stat.S_IFLNK:
                 tarinfo.type = tarfile.SYMTYPE
-                tarinfo.linkname = item.source
+                tarinfo.linkname = item.target
             elif modebits == stat.S_IFBLK:
                 tarinfo.type = tarfile.BLKTYPE
                 tarinfo.devmajor = os.major(item.rdev)
@@ -255,7 +258,7 @@ class TarMixIn:
         return self.exit_code
 
     def _import_tar(self, args, repository, manifest, key, cache, tarstream):
-        t0 = datetime.now().astimezone()  # local time with local timezone
+        t0 = archive_ts_now()
         t0_monotonic = time.monotonic()
 
         archive = Archive(
@@ -263,7 +266,6 @@ class TarMixIn:
             args.name,
             cache=cache,
             create=True,
-            checkpoint_interval=args.checkpoint_interval,
             progress=args.progress,
             chunker_params=args.chunker_params,
             start=t0,
@@ -274,8 +276,10 @@ class TarMixIn:
             cache=cache,
             key=key,
             add_item=archive.add_item,
+            prepare_checkpoint=archive.prepare_checkpoint,
             write_checkpoint=archive.write_checkpoint,
             checkpoint_interval=args.checkpoint_interval,
+            checkpoint_volume=args.checkpoint_volume,
             rechunkify=False,
         )
         tfo = TarfileObjectProcessors(
@@ -290,7 +294,7 @@ class TarMixIn:
             file_status_printer=self.print_file_status,
         )
 
-        tar = tarfile.open(fileobj=tarstream, mode="r|")
+        tar = tarfile.open(fileobj=tarstream, mode="r|", ignore_zeros=args.ignore_zeros)
 
         while True:
             tarinfo = tar.next()
@@ -333,7 +337,6 @@ class TarMixIn:
                 log_multi(str(archive), str(archive.stats), logger=logging.getLogger("bork.output.stats"))
 
     def build_parser_tar(self, subparsers, common_parser, mid_common_parser):
-
         from ._common import process_epilog
 
         export_tar_epilog = process_epilog(
@@ -392,7 +395,11 @@ class TarMixIn:
         )
         subparser.set_defaults(func=self.do_export_tar)
         subparser.add_argument(
-            "--tar-filter", dest="tar_filter", default="auto", help="filter program to pipe data through"
+            "--tar-filter",
+            dest="tar_filter",
+            default="auto",
+            action=Highlander,
+            help="filter program to pipe data through",
         )
         subparser.add_argument(
             "--list", dest="output_list", action="store_true", help="output verbose list of items (files, dirs, ...)"
@@ -403,9 +410,10 @@ class TarMixIn:
             dest="tar_format",
             default="GNU",
             choices=("BORG", "PAX", "GNU"),
+            action=Highlander,
             help="select tar format: BORG, PAX or GNU",
         )
-        subparser.add_argument("name", metavar="NAME", type=NameSpec, help="specify the archive name")
+        subparser.add_argument("name", metavar="NAME", type=archivename_validator, help="specify the archive name")
         subparser.add_argument("tarfile", metavar="FILE", help='output tar file. "-" to write to stdout instead.')
         subparser.add_argument(
             "paths", metavar="PATH", nargs="*", type=str, help="paths to extract; patterns are supported"
@@ -447,6 +455,9 @@ class TarMixIn:
         - UNIX V7 tar
         - SunOS tar with extended attributes
 
+        To import multiple tarballs into a single archive, they can be simply
+        concatenated (e.g. using "cat") into a single file, and imported with an
+        ``--ignore-zeros`` option to skip through the stop markers between them.
         """
         )
         subparser = subparsers.add_parser(
@@ -489,16 +500,29 @@ class TarMixIn:
             help="only display items with the given status characters",
         )
         subparser.add_argument("--json", action="store_true", help="output stats as JSON (implies --stats)")
+        subparser.add_argument(
+            "--ignore-zeros",
+            dest="ignore_zeros",
+            action="store_true",
+            help="ignore zero-filled blocks in the input tarball",
+        )
 
         archive_group = subparser.add_argument_group("Archive options")
         archive_group.add_argument(
-            "--comment", dest="comment", metavar="COMMENT", default="", help="add a comment text to the archive"
+            "--comment",
+            metavar="COMMENT",
+            dest="comment",
+            type=comment_validator,
+            default="",
+            action=Highlander,
+            help="add a comment text to the archive",
         )
         archive_group.add_argument(
             "--timestamp",
             dest="timestamp",
             type=timestamp,
             default=None,
+            action=Highlander,
             metavar="TIMESTAMP",
             help="manually specify the archive creation date/time (yyyy-mm-ddThh:mm:ss[(+|-)HH:MM] format, "
             "(+|-)HH:MM is the UTC offset, default: local time zone). Alternatively, give a reference file/directory.",
@@ -509,15 +533,25 @@ class TarMixIn:
             dest="checkpoint_interval",
             type=int,
             default=1800,
+            action=Highlander,
             metavar="SECONDS",
             help="write checkpoint every SECONDS seconds (Default: 1800)",
         )
         archive_group.add_argument(
+            "--checkpoint-volume",
+            metavar="BYTES",
+            dest="checkpoint_volume",
+            type=int,
+            default=0,
+            action=Highlander,
+            help="write checkpoint every BYTES bytes (Default: 0, meaning no volume based checkpointing)",
+        )
+        archive_group.add_argument(
             "--chunker-params",
             dest="chunker_params",
-            action=Highlander,
             type=ChunkerParams,
             default=CHUNKER_PARAMS,
+            action=Highlander,
             metavar="PARAMS",
             help="specify the chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, "
             "HASH_MASK_BITS, HASH_WINDOW_SIZE). default: %s,%d,%d,%d,%d" % CHUNKER_PARAMS,
@@ -529,8 +563,9 @@ class TarMixIn:
             dest="compression",
             type=CompressionSpec,
             default=CompressionSpec("lz4"),
-            help="select compression algorithm, see the output of the " '"bork help compression" command for details.',
+            action=Highlander,
+            help="select compression algorithm, see the output of the " '"borg help compression" command for details.',
         )
 
-        subparser.add_argument("name", metavar="NAME", type=NameSpec, help="specify the archive name")
+        subparser.add_argument("name", metavar="NAME", type=archivename_validator, help="specify the archive name")
         subparser.add_argument("tarfile", metavar="TARFILE", help='input tar file. "-" to read from stdin instead.')

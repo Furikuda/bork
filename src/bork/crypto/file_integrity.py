@@ -13,6 +13,9 @@ logger = create_logger()
 
 
 class FileLikeWrapper:
+    def __init__(self, fd):
+        self.fd = fd
+
     def __enter__(self):
         self.fd.__enter__()
         return self
@@ -59,7 +62,7 @@ class FileHashingWrapper(FileLikeWrapper):
     FACTORY: Callable = None
 
     def __init__(self, backing_fd, write):
-        self.fd = backing_fd
+        super().__init__(backing_fd)
         self.writing = write
         self.hash = self.FACTORY()
 
@@ -128,6 +131,7 @@ class IntegrityCheckedFile(FileLikeWrapper):
         self.writing = write
         mode = "wb" if write else "rb"
         self.file_fd = override_fd or open(path, mode)
+        self.file_opened = override_fd is None
         self.digests = {}
 
         hash_cls = XXH64FileHashingWrapper
@@ -141,7 +145,8 @@ class IntegrityCheckedFile(FileLikeWrapper):
             # TODO: When we're reading but don't have any digests, i.e. no integrity file existed,
             # TODO: then we could just short-circuit.
 
-        self.fd = self.hasher = hash_cls(backing_fd=self.file_fd, write=write)
+        self.hasher = hash_cls(backing_fd=self.file_fd, write=write)
+        super().__init__(self.hasher)
         self.hash_filename(filename)
 
     def load_integrity_data(self, path, integrity_data):
@@ -190,9 +195,14 @@ class IntegrityCheckedFile(FileLikeWrapper):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         exception = exc_type is not None
-        if not exception:
-            self.hash_part("final", is_final=True)
-        self.hasher.__exit__(exc_type, exc_val, exc_tb)
+
+        try:
+            if not exception:
+                self.hash_part("final", is_final=True)
+            self.hasher.__exit__(exc_type, exc_val, exc_tb)
+        finally:
+            if self.file_opened:
+                self.file_fd.close()
         if exception:
             return
         if self.writing:

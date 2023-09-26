@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-KEY-EXPORT" 1 "2022-10-02" "" "bork backup tool"
+.TH "BORG-KEY-EXPORT" 1 "2023-09-14" "" "borg backup tool"
 .SH NAME
 bork-key-export \- Export the repository key for backup
 .SH SYNOPSIS
@@ -36,7 +36,7 @@ bork [common options] key export [options] [PATH]
 .SH DESCRIPTION
 .sp
 If repository encryption is used, the repository is inaccessible
-without the key. This command allows one to backup this essential key.
+without the key. This command allows one to back up this essential key.
 Note that the backup produced does not include the passphrase itself
 (i.e. the exported key stays encrypted). In order to regain access to a
 repository, one needs both the exported key and the original passphrase.
@@ -83,7 +83,7 @@ See \fIbork\-common(1)\fP for common options of Bork commands.
 .B PATH
 where to store the backup
 .UNINDENT
-.SS optional arguments
+.SS options
 .INDENT 0.0
 .TP
 .B  \-\-paper

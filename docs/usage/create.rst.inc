@@ -19,7 +19,7 @@ bork create
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``PATH``                                          | paths to archive                                                                                                                                                                                  |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    | **optional arguments**                                                                                                                                                                                                                                                                                        |
+    | **options**                                                                                                                                                                                                                                                                                                   |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``-n``, ``--dry-run``                             | do not create a backup archive                                                                                                                                                                    |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -35,25 +35,25 @@ bork create
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--stdin-name NAME``                             | use NAME in archive for stdin data (default: 'stdin')                                                                                                                                             |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    |                                                       | ``--stdin-user USER``                             | set user USER in archive for stdin data (default: 'root')                                                                                                                                         |
+    |                                                       | ``--stdin-user USER``                             | set user USER in archive for stdin data (default: do not store user/uid)                                                                                                                          |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    |                                                       | ``--stdin-group GROUP``                           | set group GROUP in archive for stdin data (default: 'root')                                                                                                                                       |
+    |                                                       | ``--stdin-group GROUP``                           | set group GROUP in archive for stdin data (default: do not store group/gid)                                                                                                                       |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--stdin-mode M``                                | set mode to M in archive for stdin data (default: 0660)                                                                                                                                           |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--content-from-command``                        | interpret PATH as command and store its stdout. See also section Reading from stdin below.                                                                                                        |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    |                                                       | ``--paths-from-stdin``                            | read DELIM-separated list of paths to backup from stdin. Will not recurse into directories.                                                                                                       |
+    |                                                       | ``--paths-from-stdin``                            | read DELIM-separated list of paths to back up from stdin. All control is external: it will back up all files given - no more, no less.                                                            |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--paths-from-command``                          | interpret PATH as command and treat its output as ``--paths-from-stdin``                                                                                                                          |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    |                                                       | ``--paths-delimiter DELIM``                       | set path delimiter for ``--paths-from-stdin`` and ``--paths-from-command`` (default: \n)                                                                                                          |
+    |                                                       | ``--paths-delimiter DELIM``                       | set path delimiter for ``--paths-from-stdin`` and ``--paths-from-command`` (default: ``\n``)                                                                                                      |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | .. class:: bork-common-opt-ref                                                                                                                                                                                                                                                                                |
     |                                                                                                                                                                                                                                                                                                               |
     | :ref:`common_options`                                                                                                                                                                                                                                                                                         |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    | **Exclusion options**                                                                                                                                                                                                                                                                                         |
+    | **Include/Exclude options**                                                                                                                                                                                                                                                                                   |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``-e PATTERN``, ``--exclude PATTERN``             | exclude paths matching PATTERN                                                                                                                                                                    |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -73,7 +73,7 @@ bork create
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | **Filesystem options**                                                                                                                                                                                                                                                                                        |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    |                                                       | ``-x``, ``--one-file-system``                     | stay in the same file system and do not store mount points of other file systems.  This might behave different from your expectations, see the docs.                                              |
+    |                                                       | ``-x``, ``--one-file-system``                     | stay in the same file system and do not store mount points of other file systems - this might behave different from your expectations, see the description below.                                 |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--numeric-ids``                                 | only store numeric user and group identifiers                                                                                                                                                     |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -103,6 +103,8 @@ bork create
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``-c SECONDS``, ``--checkpoint-interval SECONDS`` | write checkpoint every SECONDS seconds (Default: 1800)                                                                                                                                            |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+    |                                                       | ``--checkpoint-volume BYTES``                     | write checkpoint every BYTES bytes (Default: 0, meaning no volume based checkpointing)                                                                                                            |
+    +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--chunker-params PARAMS``                       | specify the chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, HASH_MASK_BITS, HASH_WINDOW_SIZE). default: buzhash,19,23,21,4095                                                             |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``-C COMPRESSION``, ``--compression COMPRESSION`` | select compression algorithm, see the output of the "bork help compression" command for details.                                                                                                  |
@@ -124,7 +126,7 @@ bork create
         paths to archive
 
 
-    optional arguments
+    options
         -n, --dry-run    do not create a backup archive
         -s, --stats     print statistics for the created archive
         --list          output verbose list of items (files, dirs, ...)
@@ -132,19 +134,19 @@ bork create
         --json          output stats as JSON. Implies ``--stats``.
         --no-cache-sync    experimental: do not synchronize the cache. Implies not using the files cache.
         --stdin-name NAME    use NAME in archive for stdin data (default: 'stdin')
-        --stdin-user USER    set user USER in archive for stdin data (default: 'root')
-        --stdin-group GROUP    set group GROUP in archive for stdin data (default: 'root')
+        --stdin-user USER    set user USER in archive for stdin data (default: do not store user/uid)
+        --stdin-group GROUP    set group GROUP in archive for stdin data (default: do not store group/gid)
         --stdin-mode M    set mode to M in archive for stdin data (default: 0660)
         --content-from-command    interpret PATH as command and store its stdout. See also section Reading from stdin below.
-        --paths-from-stdin    read DELIM-separated list of paths to backup from stdin. Will not recurse into directories.
+        --paths-from-stdin    read DELIM-separated list of paths to back up from stdin. All control is external: it will back up all files given - no more, no less.
         --paths-from-command    interpret PATH as command and treat its output as ``--paths-from-stdin``
-        --paths-delimiter DELIM    set path delimiter for ``--paths-from-stdin`` and ``--paths-from-command`` (default: \n) 
+        --paths-delimiter DELIM    set path delimiter for ``--paths-from-stdin`` and ``--paths-from-command`` (default: ``\n``) 
 
 
     :ref:`common_options`
         |
 
-    Exclusion options
+    Include/Exclude options
         -e PATTERN, --exclude PATTERN     exclude paths matching PATTERN
         --exclude-from EXCLUDEFILE        read exclude patterns from EXCLUDEFILE, one per line
         --pattern PATTERN                 include/exclude paths matching PATTERN
@@ -156,7 +158,7 @@ bork create
 
 
     Filesystem options
-        -x, --one-file-system     stay in the same file system and do not store mount points of other file systems.  This might behave different from your expectations, see the docs.
+        -x, --one-file-system     stay in the same file system and do not store mount points of other file systems - this might behave different from your expectations, see the description below.
         --numeric-ids             only store numeric user and group identifiers
         --atime                   do store atime into archive
         --noctime                 do not store ctime into archive
@@ -173,6 +175,7 @@ bork create
         --comment COMMENT                             add a comment text to the archive
         --timestamp TIMESTAMP                         manually specify the archive creation date/time (yyyy-mm-ddThh:mm:ss[(+|-)HH:MM] format, (+|-)HH:MM is the UTC offset, default: local time zone). Alternatively, give a reference file/directory.
         -c SECONDS, --checkpoint-interval SECONDS     write checkpoint every SECONDS seconds (Default: 1800)
+        --checkpoint-volume BYTES                     write checkpoint every BYTES bytes (Default: 0, meaning no volume based checkpointing)
         --chunker-params PARAMS                       specify the chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, HASH_MASK_BITS, HASH_WINDOW_SIZE). default: buzhash,19,23,21,4095
         -C COMPRESSION, --compression COMPRESSION     select compression algorithm, see the output of the "bork help compression" command for details.
 
@@ -241,9 +244,9 @@ creation of a new archive to ensure fast operation. This is because the file cac
 is used to determine changed files quickly uses absolute filenames.
 If this is not possible, consider creating a bind mount to a stable location.
 
-The ``--progress`` option shows (from left to right) Original, Compressed and Deduplicated
-(O, C and D, respectively), then the Number of files (N) processed so far, followed by
-the currently processed path.
+The ``--progress`` option shows (from left to right) Original and (uncompressed)
+deduplicated size (O and U respectively), then the Number of files (N) processed so far,
+followed by the currently processed path.
 
 When using ``--stats``, you will get some statistics about how much data was
 added - the "This Archive" deduplicated size there is most interesting as that is
@@ -273,13 +276,13 @@ through using the ``--keep-exclude-tags`` option.
 The ``-x`` or ``--one-file-system`` option excludes directories, that are mountpoints (and everything in them).
 It detects mountpoints by comparing the device number from the output of ``stat()`` of the directory and its
 parent directory. Specifically, it excludes directories for which ``stat()`` reports a device number different
-from the device number of their parent. Be aware that in Linux (and possibly elsewhere) there are directories
-with device number different from their parent, which the kernel does not consider a mountpoint and also the
-other way around. Examples are bind mounts (possibly same device number, but always a mountpoint) and ALL
-subvolumes of a btrfs (different device number from parent but not necessarily a mountpoint). Therefore when
-using ``--one-file-system``, one should make doubly sure that the backup works as intended especially when using
-btrfs. This is even more important, if the btrfs layout was created by someone else, e.g. a distribution
-installer.
+from the device number of their parent.
+In general: be aware that there are directories with device number different from their parent, which the kernel
+does not consider a mountpoint and also the other way around.
+Linux examples for this are bind mounts (possibly same device number, but always a mountpoint) and ALL
+subvolumes of a btrfs (different device number from parent but not necessarily a mountpoint).
+macOS examples are the apfs mounts of a typical macOS installation.
+Therefore, when using ``--one-file-system``, you should double-check that the backup works as intended.
 
 
 .. _list_item_flags:
@@ -319,9 +322,9 @@ bork usually just stores their metadata:
 
 Other flags used include:
 
+- '+' = included, item would be backed up (if not in dry-run mode)
+- '-' = excluded, item would not be / was not backed up
 - 'i' = backup data was read from standard input (stdin)
-- '-' = dry run, item was *not* backed up
-- 'x' = excluded, item was *not* backed up
 - '?' = missing status code (if you see this, please file a bug report!)
 
 Reading from stdin

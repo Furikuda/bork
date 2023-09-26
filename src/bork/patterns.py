@@ -125,8 +125,10 @@ class PatternMatcher:
         self.include_patterns = include_patterns
 
     def get_unmatched_include_patterns(self):
-        "Note that this only returns patterns added via *add_includepaths*."
-        return [p for p in self.include_patterns if p.match_count == 0]
+        """Note that this only returns patterns added via *add_includepaths* and it
+        won't return PathFullPattern patterns as we do not match_count for them.
+        """
+        return [p for p in self.include_patterns if p.match_count == 0 and not isinstance(p, PathFullPattern)]
 
     def add_inclexcl(self, patterns):
         """Add list of patterns (of type CmdTuple) to internal list."""
@@ -151,7 +153,7 @@ class PatternMatcher:
             return self.is_include_cmd[value]
 
         # this is the slow way, if we have many patterns in self._items:
-        for (pattern, cmd) in self._items:
+        for pattern, cmd in self._items:
             if pattern.match(path, normalize=False):
                 self.recurse_dir = pattern.recurse_dir
                 return self.is_include_cmd[cmd]

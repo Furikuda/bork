@@ -1,7 +1,6 @@
 import contextlib
 import os
 import os.path
-import re
 import shlex
 import signal
 import subprocess
@@ -11,7 +10,7 @@ import traceback
 
 from .. import __version__
 
-from ..platformflags import is_win32, is_linux, is_freebsd, is_darwin
+from ..platformflags import is_win32
 from ..logger import create_logger
 
 logger = create_logger()
@@ -211,7 +210,7 @@ class SigIntManager:
 
     def action_completed(self):
         # this must be called when the action triggered is completed,
-        # to avoid that the action is repeatedly triggered.
+        # to avoid repeatedly triggering the action.
         self._action_triggered = False
         self._action_done = True
 
@@ -242,7 +241,7 @@ def ignore_sigint():
 
     Ctrl-C will send a SIGINT to both the main process (bork) and subprocesses
     (e.g. ssh for remote ssh:// repos), but often we do not want the subprocess
-    getting killed (e.g. because it is still needed to cleanly shut down bork).
+    getting killed (e.g. because it is still needed to shut down borg cleanly).
 
     To avoid that: Popen(..., preexec_fn=ignore_sigint)
     """
@@ -341,7 +340,7 @@ def create_filter_process(cmd, stream, stream_close, inbound=True):
                 stdin=filter_stream,
                 log_prefix="filter-process: ",
                 env=env,
-                preexec_fn=ignore_sigint,
+                preexec_fn=None if is_win32 else ignore_sigint,
             )
         else:
             proc = popen_with_error_handling(
@@ -350,7 +349,7 @@ def create_filter_process(cmd, stream, stream_close, inbound=True):
                 stdout=filter_stream,
                 log_prefix="filter-process: ",
                 env=env,
-                preexec_fn=ignore_sigint,
+                preexec_fn=None if is_win32 else ignore_sigint,
             )
         if not proc:
             raise Error(f"filter {cmd}: process creation failed")

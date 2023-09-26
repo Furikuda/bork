@@ -13,8 +13,6 @@ TODO: the screencasts need a remake using bork2, see there:
 
 https://github.com/furikuda/bork/issues/6303
 
-.. |screencast_basic|
-.. More screencasts: `installation`_, `advanced usage`_
 
 What is BorkBackup?
 -------------------
@@ -22,11 +20,11 @@ What is BorkBackup?
 BorkBackup (short: Bork) is a deduplicating backup program.
 Optionally, it supports compression and authenticated encryption.
 
-The main goal of Bork is to provide an efficient and secure way to backup data.
-The data deduplication technique used makes Bork suitable for daily backups
+The main goal of Borg is to provide an efficient and secure way to back up data.
+The data deduplication technique used makes Borg suitable for daily backups
 since only changes are stored.
-The authenticated encryption technique makes it suitable for backups to not
-fully trusted targets.
+The authenticated encryption technique makes it suitable for backups to targets not
+fully trusted.
 
 See the `installation manual`_ or, if you have already
 downloaded Bork, ``docs/installation.rst`` to get started with Bork.

@@ -44,6 +44,7 @@ from .helpers import msgpack
 from .helpers.lrucache import LRUCache
 from .item import Item
 from .platform import uid2user, gid2group
+from .platformflags import is_darwin
 from .remote import RemoteRepository
 
 
@@ -51,7 +52,7 @@ def fuse_main():
     if has_pyfuse3:
         try:
             trio.run(llfuse.main)
-        except:
+        except:  # noqa
             return 1  # TODO return signal number if it was killed by signal
         else:
             return None
@@ -115,7 +116,7 @@ class ItemCache:
         # tend to re-read the same chunks over and over.
         # The capacity is kept low because increasing it does not provide any significant advantage,
         # but makes LRUCache's square behaviour noticeable and consumes more memory.
-        self.chunks = LRUCache(capacity=10, dispose=lambda _: None)
+        self.chunks = LRUCache(capacity=10)
 
         # Instrumentation
         # Count of indirect items, i.e. data is cached in the object cache, not directly in this cache
@@ -147,7 +148,7 @@ class ItemCache:
         else:
             raise ValueError("Invalid entry type in self.meta")
 
-    def iter_archive_items(self, archive_item_ids, filter=None, consider_part_files=False):
+    def iter_archive_items(self, archive_item_ids, filter=None):
         unpacker = msgpack.Unpacker()
 
         # Current offset in the metadata stream, which consists of all metadata chunks glued together
@@ -193,7 +194,7 @@ class ItemCache:
                     break
 
                 item = Item(internal_dict=item)
-                if filter and not filter(item) or not consider_part_files and "part" in item:
+                if filter and not filter(item):
                     msgpacked_bytes = b""
                     continue
 
@@ -252,7 +253,7 @@ class FuseBackend:
         # not contained in archives.
         self._items = {}
         # cache up to <FILES> Items
-        self._inode_cache = LRUCache(capacity=FILES, dispose=lambda _: None)
+        self._inode_cache = LRUCache(capacity=FILES)
         # _inode_count is the current count of synthetic inodes, i.e. those in self._items
         self.inode_count = 0
         # Maps inode numbers to the inode number of the parent
@@ -330,15 +331,13 @@ class FuseBackend:
         """Build FUSE inode hierarchy from archive metadata"""
         self.file_versions = {}  # for versions mode: original path -> version
         t0 = time.perf_counter()
-        archive = Archive(self._manifest, archive_name, consider_part_files=self._args.consider_part_files)
+        archive = Archive(self._manifest, archive_name)
         strip_components = self._args.strip_components
         matcher = build_matcher(self._args.patterns, self._args.paths)
         hlm = HardLinkManager(id_type=bytes, info_type=str)  # hlid -> path
 
         filter = build_filter(matcher, strip_components)
-        for item_inode, item in self.cache.iter_archive_items(
-            archive.metadata.items, filter=filter, consider_part_files=self._args.consider_part_files
-        ):
+        for item_inode, item in self.cache.iter_archive_items(archive.metadata.items, filter=filter):
             if strip_components:
                 item.path = os.sep.join(item.path.split(os.sep)[strip_components:])
             path = os.fsencode(item.path)
@@ -447,8 +446,8 @@ class FuseOperations(llfuse.Operations, FuseBackend):
         self.decrypted_repository = decrypted_repository
         data_cache_capacity = int(os.environ.get("BORG_MOUNT_DATA_CACHE_ENTRIES", os.cpu_count() or 1))
         logger.debug("mount data cache capacity: %d chunks", data_cache_capacity)
-        self.data_cache = LRUCache(capacity=data_cache_capacity, dispose=lambda _: None)
-        self._last_pos = LRUCache(capacity=FILES, dispose=lambda _: None)
+        self.data_cache = LRUCache(capacity=data_cache_capacity)
+        self._last_pos = LRUCache(capacity=FILES)
 
     def sig_info_handler(self, sig_no, stack):
         logger.debug(
@@ -515,6 +514,13 @@ class FuseOperations(llfuse.Operations, FuseBackend):
         options = ["fsname=borkfs", "ro", "default_permissions"]
         if mount_options:
             options.extend(mount_options.split(","))
+        if is_darwin:
+            # macFUSE supports a volname mount option to give what finder displays on desktop / in directory list.
+            volname = pop_option(options, "volname", "", "", str)
+            # if the user did not specify it, we make something up,
+            # because otherwise it would be "macFUSE Volume 0 (Python)", #7690.
+            volname = volname or f"{os.path.basename(mountpoint)} (borgfs)"
+            options.append(f"volname={volname}")
         ignore_permissions = pop_option(options, "ignore_permissions", True, False, bool)
         if ignore_permissions:
             # in case users have a use-case that requires NOT giving "default_permissions",
@@ -564,14 +570,14 @@ class FuseOperations(llfuse.Operations, FuseBackend):
     @async_wrapper
     def statfs(self, ctx=None):
         stat_ = llfuse.StatvfsData()
-        stat_.f_bsize = 512
-        stat_.f_frsize = 512
-        stat_.f_blocks = 0
-        stat_.f_bfree = 0
-        stat_.f_bavail = 0
-        stat_.f_files = 0
-        stat_.f_ffree = 0
-        stat_.f_favail = 0
+        stat_.f_bsize = 512  # Filesystem block size
+        stat_.f_frsize = 512  # Fragment size
+        stat_.f_blocks = 0  # Size of fs in f_frsize units
+        stat_.f_bfree = 0  # Number of free blocks
+        stat_.f_bavail = 0  # Number of free blocks for unprivileged users
+        stat_.f_files = 0  # Number of inodes
+        stat_.f_ffree = 0  # Number of free inodes
+        stat_.f_favail = 0  # Number of free inodes for unprivileged users
         stat_.f_namemax = 255  # == NAME_MAX (depends on archive source OS / FS)
         return stat_
 
@@ -691,7 +697,7 @@ class FuseOperations(llfuse.Operations, FuseBackend):
             size -= n
             if not size:
                 if fh in self._last_pos:
-                    self._last_pos.upd(fh, (chunk_no, chunk_offset))
+                    self._last_pos.replace(fh, (chunk_no, chunk_offset))
                 else:
                     self._last_pos[fh] = (chunk_no, chunk_offset)
                 break
@@ -720,4 +726,4 @@ class FuseOperations(llfuse.Operations, FuseBackend):
     @async_wrapper
     def readlink(self, inode, ctx=None):
         item = self.get_item(inode)
-        return os.fsencode(item.source)
+        return os.fsencode(item.target)

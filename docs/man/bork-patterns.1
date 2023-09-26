@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-PATTERNS" 1 "2022-10-02" "" "bork backup tool"
+.TH "BORG-PATTERNS" 1 "2023-09-14" "" "borg backup tool"
 .SH NAME
 bork-patterns \- Details regarding patterns
 .SH DESCRIPTION
@@ -56,15 +56,13 @@ confuse the root with the \fBPATH\fP argument of e.g. \fIbork extract\fP\&.
 .sp
 Starting with Bork 1.2, paths that are matched against patterns always
 appear relative. If you give \fB/absolute/\fP as root, the paths going
-into the matcher will look relative like \fBabsolute/.../file.ext\fP\&.
-If you give \fB\&../some/path\fP as root, the paths will look like
-\fBsome/path/.../file.ext\fP\&.
+into the matcher will start with \fBabsolute/\fP\&.
+If you give \fB\&../../relative\fP as root, the paths will be normalized
+as \fBrelative/\fP\&.
 .sp
-File patterns support five different styles. If followed by a colon \(aq:\(aq,
-the first two characters of a pattern are used as a style selector.
-Explicit style selection is necessary if a non\-default style is desired
-or when the desired pattern starts with two alphanumeric characters
-followed by a colon (i.e. \fBaa:something/*\fP).
+Borg supports different pattern styles. To define a non\-default
+style for a specific pattern, prefix it with two characters followed
+by a colon \(aq:\(aq (i.e. \fBfm:path/*\fP, \fBsh:path/**\fP).
 .INDENT 0.0
 .TP
 .B \fI\%Fnmatch\fP, selector \fBfm:\fP
@@ -88,7 +86,8 @@ This is the default style for \fB\-\-pattern\fP and \fB\-\-patterns\-from\fP\&.
 Like fnmatch patterns these are similar to shell patterns. The difference
 is that the pattern may include \fB**/\fP for matching zero or more directory
 levels, \fB*\fP for matching zero or more arbitrary characters with the
-exception of any path separator. A leading path separator is always removed.
+exception of any path separator, \fB{}\fP containing comma\-separated
+alternative patterns. A leading path separator is always removed.
 .TP
 .B \fI\%Regular expressions\fP, selector \fBre:\fP
 Unlike shell patterns, regular expressions are not required to match the full
@@ -222,6 +221,33 @@ before an exclude pattern, the file is backed up. Note that a no\-recurse
 exclude stops examination of subdirectories so that potential includes
 will not match \- use normal excludes for such use cases.
 .sp
+Example:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+# Define the recursion root
+R /
+# Exclude all iso files in any directory
+\- **/*.iso
+# Explicitly include all inside etc and root
++ etc/**
++ root/**
+# Exclude a specific directory under each user\(aqs home directories
+\- home/*/.cache
+# Explicitly include everything in /home
++ home/**
+# Explicitly exclude some directories without recursing into them
+! re:^(dev|proc|run|sys|tmp)
+# Exclude all other files and directories
+# that are not specifically included earlier.
+\- **
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
 \fBTip: You can easily test your patterns with \-\-dry\-run and  \-\-list\fP:
 .INDENT 0.0
 .INDENT 3.5
@@ -257,15 +283,15 @@ Examples:
 .sp
 .nf
 .ft C
-# backup pics, but not the ones from 2018, except the good ones:
+# back up pics, but not the ones from 2018, except the good ones:
 # note: using = is essential to avoid cmdline argument parsing issues.
 bork create \-\-pattern=+pics/2018/good \-\-pattern=\-pics/2018 archive pics
 
-# backup only JPG/JPEG files (case insensitive) in all home directories:
-bork create \-\-pattern \(aq+ re:\e.jpe?g(?i)$\(aq archive /home
+# back up only JPG/JPEG files (case insensitive) in all home directories:
+borg create \-\-pattern \(aq+ re:\e.jpe?g(?i)$\(aq archive /home
 
-# backup homes, but exclude big downloads (like .ISO files) or hidden files:
-bork create \-\-exclude \(aqre:\e.iso(?i)$\(aq \-\-exclude \(aqsh:home/**/.*\(aq archive /home
+# back up homes, but exclude big downloads (like .ISO files) or hidden files:
+borg create \-\-exclude \(aqre:\e.iso(?i)$\(aq \-\-exclude \(aqsh:home/**/.*\(aq archive /home
 
 # use a file with patterns (recursion root \(aq/\(aq via command line):
 bork create \-\-patterns\-from patterns.lst archive /
@@ -287,7 +313,7 @@ The patterns.lst file could look like that:
 + home/susan
 # also back up this exact file
 + pf:home/bobby/specialfile.txt
-# don\(aqt backup the other home directories
+# don\(aqt back up the other home directories
 \- home/*
 # don\(aqt even look in /dev, /proc, /run, /sys, /tmp (note: would exclude files like /device, too)
 ! re:^(dev|proc|run|sys|tmp)

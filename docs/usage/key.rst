@@ -1,8 +1,6 @@
 .. include:: key_change-location.rst.inc
 
-.. include:: key_change-algorithm.rst.inc
-
-.. _bork-change-passphrase:
+.. _borg-change-passphrase:
 
 .. include:: key_change-passphrase.rst.inc
 
@@ -39,7 +37,7 @@ Fully automated using environment variables:
 
 ::
 
-    $ BORG_NEW_PASSPHRASE=old bork rcreate -e=repokey
+    $ BORG_NEW_PASSPHRASE=old borg rcreate --encryption=repokey-aes-ocb
     # now "old" is the current passphrase.
     $ BORG_PASSPHRASE=old BORG_NEW_PASSPHRASE=new bork key change-passphrase
     # now "new" is the current passphrase.

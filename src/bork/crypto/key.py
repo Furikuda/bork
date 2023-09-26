@@ -1,9 +1,10 @@
+import binascii
 import hmac
 import os
 import textwrap
 from binascii import a2b_base64, b2a_base64, hexlify
 from hashlib import sha256, pbkdf2_hmac
-from typing import Literal, Callable
+from typing import Literal, Callable, ClassVar
 
 from ..logger import create_logger
 
@@ -14,21 +15,24 @@ import argon2.low_level
 from ..constants import *  # NOQA
 from ..helpers import StableDict
 from ..helpers import Error, IntegrityError
-from ..helpers import get_keys_dir, get_security_dir
+from ..helpers import get_keys_dir
 from ..helpers import get_limited_unpacker
 from ..helpers import bin_to_hex
 from ..helpers.passphrase import Passphrase, PasswordRetriesExceeded, PassphraseWrong
 from ..helpers import msgpack
+from ..helpers import workarounds
 from ..item import Key, EncryptedKey, want_bytes
 from ..manifest import Manifest
 from ..platform import SaveFile
 from ..repoobj import RepoObj
 
 
-from .nonces import NonceManager
 from .low_level import AES, bytes_to_int, num_cipher_blocks, hmac_sha256, blake2b_256, hkdf_hmac_sha512
 from .low_level import AES256_CTR_HMAC_SHA256, AES256_CTR_BLAKE2b, AES256_OCB, CHACHA20_POLY1305
 from . import low_level
+
+# workaround for lost passphrase or key in "authenticated" or "authenticated-blake2" mode
+AUTHENTICATED_NO_KEY = "authenticated_no_key" in workarounds
 
 
 class UnsupportedPayloadError(Error):
@@ -68,6 +72,15 @@ class TAMRequiredError(IntegrityError):
     traceback = False
 
 
+class ArchiveTAMRequiredError(TAMRequiredError):
+    __doc__ = textwrap.dedent(
+        """
+    Archive '{}' is unauthenticated, but it is required for this repository.
+    """
+    ).strip()
+    traceback = False
+
+
 class TAMInvalid(IntegrityError):
     __doc__ = IntegrityError.__doc__
     traceback = False
@@ -75,6 +88,15 @@ class TAMInvalid(IntegrityError):
     def __init__(self):
         # Error message becomes: "Data integrity error: Manifest authentication did not verify"
         super().__init__("Manifest authentication did not verify")
+
+
+class ArchiveTAMInvalid(IntegrityError):
+    __doc__ = IntegrityError.__doc__
+    traceback = False
+
+    def __init__(self):
+        # Error message becomes: "Data integrity error: Archive authentication did not verify"
+        super().__init__("Archive authentication did not verify")
 
 
 class TAMUnsupportedSuiteError(IntegrityError):
@@ -112,16 +134,6 @@ def key_factory(repository, manifest_chunk, *, ro_cls=RepoObj):
     manifest_data = ro_cls.extract_crypted_data(manifest_chunk)
     assert manifest_data, "manifest data must not be zero bytes long"
     return identify_key(manifest_data).detect(repository, manifest_data)
-
-
-def tam_required_file(repository):
-    security_dir = get_security_dir(bin_to_hex(repository.id))
-    return os.path.join(security_dir, "tam_required")
-
-
-def tam_required(repository):
-    file = tam_required_file(repository)
-    return os.path.isfile(file)
 
 
 def uses_same_chunker_secret(other_key, key):
@@ -170,7 +182,7 @@ class KeyBase:
     ARG_NAME = "UNDEFINED"
 
     # Storage type (no key blob storage / keyfile / repo)
-    STORAGE = KeyBlobStorage.NO_STORAGE
+    STORAGE: ClassVar[str] = KeyBlobStorage.NO_STORAGE
 
     # Seed for the buzhash chunker (bork.algorithms.chunker.Chunker)
     # type is int
@@ -189,7 +201,6 @@ class KeyBase:
         self.TYPE_STR = bytes([self.TYPE])
         self.repository = repository
         self.target = None  # key location file path / repo obj
-        self.tam_required = True
         self.copy_crypt_key = False
 
     def id_hash(self, data):
@@ -221,43 +232,35 @@ class KeyBase:
             output_length=64,
         )
 
-    def pack_and_authenticate_metadata(self, metadata_dict, context=b"manifest"):
+    def pack_and_authenticate_metadata(self, metadata_dict, context=b"manifest", salt=None):
+        if salt is None:
+            salt = os.urandom(64)
         metadata_dict = StableDict(metadata_dict)
-        tam = metadata_dict["tam"] = StableDict({"type": "HKDF_HMAC_SHA512", "hmac": bytes(64), "salt": os.urandom(64)})
+        tam = metadata_dict["tam"] = StableDict({"type": "HKDF_HMAC_SHA512", "hmac": bytes(64), "salt": salt})
         packed = msgpack.packb(metadata_dict)
-        tam_key = self._tam_key(tam["salt"], context)
+        tam_key = self._tam_key(salt, context)
         tam["hmac"] = hmac.digest(tam_key, packed, "sha512")
         return msgpack.packb(metadata_dict)
 
-    def unpack_and_verify_manifest(self, data, force_tam_not_required=False):
-        """Unpack msgpacked *data* and return (object, did_verify)."""
+    def unpack_and_verify_manifest(self, data):
+        """Unpack msgpacked *data* and return manifest."""
         if data.startswith(b"\xc1" * 4):
             # This is a manifest from the future, we can't read it.
             raise UnsupportedManifestError()
-        tam_required = self.tam_required
-        if force_tam_not_required and tam_required:
-            logger.warning("Manifest authentication DISABLED.")
-            tam_required = False
         data = bytearray(data)
         unpacker = get_limited_unpacker("manifest")
         unpacker.feed(data)
         unpacked = unpacker.unpack()
+        if AUTHENTICATED_NO_KEY:
+            return unpacked
         if "tam" not in unpacked:
-            if tam_required:
-                raise TAMRequiredError(self.repository._location.canonical_path())
-            else:
-                logger.debug("TAM not found and not required")
-                return unpacked, False
+            raise TAMRequiredError(self.repository._location.canonical_path())
         tam = unpacked.pop("tam", None)
         if not isinstance(tam, dict):
             raise TAMInvalid()
         tam_type = tam.get("type", "<none>")
         if tam_type != "HKDF_HMAC_SHA512":
-            if tam_required:
-                raise TAMUnsupportedSuiteError(repr(tam_type))
-            else:
-                logger.debug("Ignoring TAM made with unsupported suite, since TAM is not required: %r", tam_type)
-                return unpacked, False
+            raise TAMUnsupportedSuiteError(repr(tam_type))
         tam_hmac = tam.get("hmac")
         tam_salt = tam.get("salt")
         if not isinstance(tam_salt, (bytes, str)) or not isinstance(tam_hmac, (bytes, str)):
@@ -271,7 +274,37 @@ class KeyBase:
         if not hmac.compare_digest(calculated_hmac, tam_hmac):
             raise TAMInvalid()
         logger.debug("TAM-verified manifest")
-        return unpacked, True
+        return unpacked
+
+    def unpack_and_verify_archive(self, data):
+        """Unpack msgpacked *data* and return (object, salt)."""
+        data = bytearray(data)
+        unpacker = get_limited_unpacker("archive")
+        unpacker.feed(data)
+        unpacked = unpacker.unpack()
+        if "tam" not in unpacked:
+            archive_name = unpacked.get("name", "<unknown>")
+            raise ArchiveTAMRequiredError(archive_name)
+        tam = unpacked.pop("tam", None)
+        if not isinstance(tam, dict):
+            raise ArchiveTAMInvalid()
+        tam_type = tam.get("type", "<none>")
+        if tam_type != "HKDF_HMAC_SHA512":
+            raise TAMUnsupportedSuiteError(repr(tam_type))
+        tam_hmac = tam.get("hmac")
+        tam_salt = tam.get("salt")
+        if not isinstance(tam_salt, (bytes, str)) or not isinstance(tam_hmac, (bytes, str)):
+            raise ArchiveTAMInvalid()
+        tam_hmac = want_bytes(tam_hmac)  # legacy
+        tam_salt = want_bytes(tam_salt)  # legacy
+        offset = data.index(tam_hmac)
+        data[offset : offset + 64] = bytes(64)
+        tam_key = self._tam_key(tam_salt, context=b"archive")
+        calculated_hmac = hmac.digest(tam_key, data, "sha512")
+        if not hmac.compare_digest(calculated_hmac, tam_hmac):
+            raise ArchiveTAMInvalid()
+        logger.debug("TAM-verified archive")
+        return unpacked, tam_salt
 
 
 class PlaintextKey(KeyBase):
@@ -279,14 +312,9 @@ class PlaintextKey(KeyBase):
     TYPES_ACCEPTABLE = {TYPE}
     NAME = "plaintext"
     ARG_NAME = "none"
-    STORAGE = KeyBlobStorage.NO_STORAGE
 
     chunk_seed = 0
     logically_encrypted = False
-
-    def __init__(self, repository):
-        super().__init__(repository)
-        self.tam_required = False
 
     @classmethod
     def create(cls, repository, args, **kw):
@@ -373,7 +401,8 @@ class AESKeyBase(KeyBase):
     logically_encrypted = True
 
     def encrypt(self, id, data):
-        next_iv = self.nonce_manager.ensure_reservation(self.cipher.next_iv(), self.cipher.block_count(len(data)))
+        # legacy, this is only used by the tests.
+        next_iv = self.cipher.next_iv()
         return self.cipher.encrypt(data, header=self.TYPE_STR, iv=next_iv)
 
     def decrypt(self, id, data):
@@ -412,11 +441,11 @@ class AESKeyBase(KeyBase):
             manifest_blocks = num_cipher_blocks(len(manifest_data))
             nonce = self.cipher.extract_iv(manifest_data) + manifest_blocks
         self.cipher.set_iv(nonce)
-        self.nonce_manager = NonceManager(self.repository, nonce)
 
 
 class FlexiKey:
     FILE_ID = "BORG_KEY"
+    STORAGE: ClassVar[str] = KeyBlobStorage.NO_STORAGE  # override in subclass
 
     @classmethod
     def detect(cls, repository, manifest_data):
@@ -452,7 +481,6 @@ class FlexiKey:
             self.crypt_key = key.crypt_key
             self.id_key = key.id_key
             self.chunk_seed = key.chunk_seed
-            self.tam_required = key.get("tam_required", tam_required(self.repository))
             return True
         return False
 
@@ -565,7 +593,6 @@ class FlexiKey:
             crypt_key=self.crypt_key,
             id_key=self.id_key,
             chunk_seed=self.chunk_seed,
-            tam_required=self.tam_required,
         )
         data = self.encrypt_key_file(msgpack.packb(key.as_dict()), passphrase, algorithm)
         key_data = "\n".join(textwrap.wrap(b2a_base64(data).decode("ascii")))
@@ -616,7 +643,31 @@ class FlexiKey:
                 raise KeyfileInvalidError(self.repository._location.canonical_path(), filename)
             if fd.read(len(repo_id)) != repo_id:
                 raise KeyfileMismatchError(self.repository._location.canonical_path(), filename)
-            return filename
+        # we get here if it really looks like a borg key for this repo,
+        # do some more checks that are close to how borg reads/parses the key.
+        with open(filename, "r") as fd:
+            lines = fd.readlines()
+            if len(lines) < 2:
+                logger.warning(f"borg key sanity check: expected 2+ lines total. [{filename}]")
+                raise KeyfileInvalidError(self.repository._location.canonical_path(), filename)
+            if len(lines[0].rstrip()) > len(file_id) + len(repo_id):
+                logger.warning(f"borg key sanity check: key line 1 seems too long. [{filename}]")
+                raise KeyfileInvalidError(self.repository._location.canonical_path(), filename)
+            key_b64 = "".join(lines[1:])
+            try:
+                key = a2b_base64(key_b64)
+            except binascii.Error:
+                logger.warning(f"borg key sanity check: key line 2+ does not look like base64. [{filename}]")
+                raise KeyfileInvalidError(self.repository._location.canonical_path(), filename)
+            if len(key) < 20:
+                # this is in no way a precise check, usually we have about 400b key data.
+                logger.warning(
+                    f"borg key sanity check: binary encrypted key data from key line 2+ suspiciously short."
+                    f" [{filename}]"
+                )
+                raise KeyfileInvalidError(self.repository._location.canonical_path(), filename)
+        # looks good!
+        return filename
 
     def find_key(self):
         if self.STORAGE == KeyBlobStorage.KEYFILE:
@@ -776,6 +827,19 @@ class AuthenticatedKeyBase(AESKeyBase, FlexiKey):
     # It's only authenticated, not encrypted.
     logically_encrypted = False
 
+    def _load(self, key_data, passphrase):
+        if AUTHENTICATED_NO_KEY:
+            # fake _load if we have no key or passphrase
+            NOPE = bytes(32)  # 256 bit all-zero
+            self.repository_id = NOPE
+            self.enc_key = NOPE
+            self.enc_hmac_key = NOPE
+            self.id_key = NOPE
+            self.chunk_seed = 0
+            self.tam_required = False
+            return True
+        return super()._load(key_data, passphrase)
+
     def load(self, target, passphrase):
         success = super().load(target, passphrase)
         self.logically_encrypted = False
@@ -840,11 +904,23 @@ class AEADKeyBase(KeyBase):
     MAX_IV = 2**48 - 1
 
     def assert_id(self, id, data):
-        # note: assert_id(id, data) is not needed any more for the new AEAD crypto.
-        # we put the id into AAD when storing the chunk, so it gets into the authentication tag computation.
+        # Comparing the id hash here would not be needed any more for the new AEAD crypto **IF** we
+        # could be sure that chunks were created by normal (not tampered, not evil) borg code:
+        # We put the id into AAD when storing the chunk, so it gets into the authentication tag computation.
         # when decrypting, we provide the id we **want** as AAD for the auth tag verification, so
         # decrypting only succeeds if we got the ciphertext we wrote **for that chunk id**.
-        pass
+        # So, basically the **repository** can not cheat on us by giving us a different chunk.
+        #
+        # **BUT**, if chunks are created by tampered, evil borg code, the borg client code could put
+        # a wrong chunkid into AAD and then AEAD-encrypt-and-auth this and store it into the
+        # repository using this bad chunkid as key (violating the usual chunkid == id_hash(data)).
+        # Later, when reading such a bad chunk, AEAD-auth-and-decrypt would not notice any
+        # issue and decrypt successfully.
+        # Thus, to notice such evil borg activity, we must check for such violations here:
+        if id and id != Manifest.MANIFEST_ID:
+            id_computed = self.id_hash(data)
+            if not hmac.compare_digest(id_computed, id):
+                raise IntegrityError("Chunk %s: id verification failed" % bin_to_hex(id))
 
     def encrypt(self, id, data):
         # to encrypt new data in this session we use always self.cipher and self.sessionid

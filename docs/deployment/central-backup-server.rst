@@ -1,10 +1,11 @@
 .. include:: ../global.rst.inc
 .. highlight:: none
+.. _central-backup-server:
 
 Central repository server with Ansible or Salt
 ==============================================
 
-This section will give an example how to setup a bork repository server for multiple
+This section will give an example how to set up a borg repository server for multiple
 clients.
 
 Machines
@@ -103,7 +104,7 @@ The server should automatically change the current working directory to the `<cl
   bork init backup@backup01.srv.local:/home/backup/repos/johndoe.clnt.local/pictures
 
 When `johndoe.clnt.local` tries to access a not restricted path the following error is raised.
-John Doe tries to backup into the Web 01 path:
+John Doe tries to back up into the Web 01 path:
 
 ::
 
@@ -202,7 +203,7 @@ Salt running on a Debian system.
 Enhancements
 ------------
 
-As this section only describes a simple and effective setup it could be further
+As this section only describes a simple and effective setup, it could be further
 enhanced when supporting (a limited set) of client supplied commands. A wrapper
 for starting `bork serve` could be written. Or bork itself could be enhanced to
 autodetect it runs under SSH by checking the `SSH_ORIGINAL_COMMAND` environment

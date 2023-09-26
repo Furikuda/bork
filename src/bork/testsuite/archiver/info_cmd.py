@@ -1,57 +1,47 @@
 import json
-import unittest
+import os
 
 from ...constants import *  # NOQA
-from . import (
-    ArchiverTestCaseBase,
-    RemoteArchiverTestCaseBase,
-    ArchiverTestCaseBinaryBase,
-    RK_ENCRYPTION,
-    checkts,
-    BORG_EXES,
-)
+from . import cmd, checkts, create_regular_file, generate_archiver_tests, RK_ENCRYPTION
+
+pytest_generate_tests = lambda metafunc: generate_archiver_tests(metafunc, kinds="local,remote,binary")  # NOQA
 
 
-class ArchiverTestCase(ArchiverTestCaseBase):
-    def test_info(self):
-        self.create_regular_file("file1", size=1024 * 80)
-        self.cmd(f"--repo={self.repository_location}", "rcreate", RK_ENCRYPTION)
-        self.cmd(f"--repo={self.repository_location}", "create", "test", "input")
-        info_archive = self.cmd(f"--repo={self.repository_location}", "info", "-a", "test")
-        assert "Archive name: test\n" in info_archive
-        info_archive = self.cmd(f"--repo={self.repository_location}", "info", "--first", "1")
-        assert "Archive name: test\n" in info_archive
-
-    def test_info_json(self):
-        self.create_regular_file("file1", size=1024 * 80)
-        self.cmd(f"--repo={self.repository_location}", "rcreate", RK_ENCRYPTION)
-        self.cmd(f"--repo={self.repository_location}", "create", "test", "input")
-
-        info_archive = json.loads(self.cmd(f"--repo={self.repository_location}", "info", "-a", "test", "--json"))
-        archives = info_archive["archives"]
-        assert len(archives) == 1
-        archive = archives[0]
-        assert archive["name"] == "test"
-        assert isinstance(archive["command_line"], list)
-        assert isinstance(archive["duration"], float)
-        assert len(archive["id"]) == 64
-        assert "stats" in archive
-        checkts(archive["start"])
-        checkts(archive["end"])
-
-    def test_info_json_of_empty_archive(self):
-        """See https://github.com/furikuda/bork/issues/6120"""
-        self.cmd(f"--repo={self.repository_location}", "rcreate", RK_ENCRYPTION)
-        info_repo = json.loads(self.cmd(f"--repo={self.repository_location}", "info", "--json", "--first=1"))
-        assert info_repo["archives"] == []
-        info_repo = json.loads(self.cmd(f"--repo={self.repository_location}", "info", "--json", "--last=1"))
-        assert info_repo["archives"] == []
+def test_info(archivers, request):
+    archiver = request.getfixturevalue(archivers)
+    create_regular_file(archiver.input_path, "file1", size=1024 * 80)
+    cmd(archiver, "rcreate", RK_ENCRYPTION)
+    cmd(archiver, "create", "test", "input")
+    info_archive = cmd(archiver, "info", "-a", "test")
+    assert "Archive name: test" + os.linesep in info_archive
+    info_archive = cmd(archiver, "info", "--first", "1")
+    assert "Archive name: test" + os.linesep in info_archive
 
 
-class RemoteArchiverTestCase(RemoteArchiverTestCaseBase, ArchiverTestCase):
-    """run the same tests, but with a remote repository"""
+def test_info_json(archivers, request):
+    archiver = request.getfixturevalue(archivers)
+    create_regular_file(archiver.input_path, "file1", size=1024 * 80)
+    cmd(archiver, "rcreate", RK_ENCRYPTION)
+    cmd(archiver, "create", "test", "input")
+
+    info_archive = json.loads(cmd(archiver, "info", "-a", "test", "--json"))
+    archives = info_archive["archives"]
+    assert len(archives) == 1
+    archive = archives[0]
+    assert archive["name"] == "test"
+    assert isinstance(archive["command_line"], str)
+    assert isinstance(archive["duration"], float)
+    assert len(archive["id"]) == 64
+    assert "stats" in archive
+    checkts(archive["start"])
+    checkts(archive["end"])
 
 
-@unittest.skipUnless("binary" in BORG_EXES, "no bork.exe available")
-class ArchiverTestCaseBinary(ArchiverTestCaseBinaryBase, ArchiverTestCase):
-    """runs the same tests, but via the bork binary"""
+def test_info_json_of_empty_archive(archivers, request):
+    """See https://github.com/borgbackup/borg/issues/6120"""
+    archiver = request.getfixturevalue(archivers)
+    cmd(archiver, "rcreate", RK_ENCRYPTION)
+    info_repo = json.loads(cmd(archiver, "info", "--json", "--first=1"))
+    assert info_repo["archives"] == []
+    info_repo = json.loads(cmd(archiver, "info", "--json", "--last=1"))
+    assert info_repo["archives"] == []

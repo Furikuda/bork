@@ -5,6 +5,79 @@ Important notes 1.x
 
 This section provides information about security and corruption issues.
 
+.. _archives_tam_vuln:
+
+Pre-1.2.5 archives spoofing vulnerability (CVE-2023-36811)
+----------------------------------------------------------
+
+A flaw in the cryptographic authentication scheme in Borg allowed an attacker to
+fake archives and potentially indirectly cause backup data loss in the repository.
+
+The attack requires an attacker to be able to
+
+1. insert files (with no additional headers) into backups
+2. gain write access to the repository
+
+This vulnerability does not disclose plaintext to the attacker, nor does it
+affect the authenticity of existing archives.
+
+Creating plausible fake archives may be feasible for empty or small archives,
+but is unlikely for large archives.
+
+The fix enforces checking the TAM authentication tag of archives at critical
+places. Borg now considers archives without TAM as garbage or an attack.
+
+We are not aware of others having discovered, disclosed or exploited this vulnerability.
+
+Below, if we speak of borg 1.2.6, we mean a borg version >= 1.2.6 **or** a
+borg version that has the relevant security patches for this vulnerability applied
+(could be also an older version in that case).
+
+Steps you must take to upgrade a repository:
+
+1. Upgrade all clients using this repository to borg 1.2.6.
+   Note: it is not required to upgrade a server, except if the server-side borg
+   is also used as a client (and not just for "borg serve").
+
+   Do **not** run ``borg check`` with borg > 1.2.4 before completing the upgrade steps.
+
+2. Run ``BORG_WORKAROUNDS=ignore_invalid_archive_tam borg info --debug <repo> 2>&1 | grep TAM | grep -i manifest``.
+
+   a) If you get "TAM-verified manifest", continue with 3.
+   b) If you get "Manifest TAM not found and not required", run
+      ``borg upgrade --tam --force <repository>`` *on every client*.
+
+3. Run ``BORG_WORKAROUNDS=ignore_invalid_archive_tam borg list --format='{name} {time} tam:{tam}{NL}' <repo>``.
+   "tam:verified" means that the archive has a valid TAM authentication.
+   "tam:none" is expected as output for archives created by borg <1.0.9.
+   "tam:none" is also expected for archives resulting from a borg rename
+   or borg recreate operation (see #7791).
+   "tam:none" could also come from archives created by an attacker.
+   You should verify that "tam:none" archives are authentic and not malicious
+   (== have good content, have correct timestamp, can be extracted successfully).
+   In case you find crappy/malicious archives, you must delete them before proceeding.
+   In low-risk, trusted environments, you may decide on your own risk to skip step 3
+   and just trust in everything being OK.
+
+4. If there are no tam:none archives left at this point, you can skip this step.
+   Run ``BORG_WORKAROUNDS=ignore_invalid_archive_tam borg upgrade --archives-tam <repo>``.
+   This will unconditionally add a correct archive TAM to all archives not having one.
+   ``borg check`` would consider TAM-less or invalid-TAM archives as garbage or a potential attack.
+   To see that all archives now are "tam:verified" run: ``borg list --format='{name} {time} tam:{tam}{NL}' <repo>``
+
+5. Please note that you should never use BORG_WORKAROUNDS=ignore_invalid_archive_tam
+   for normal production operations - it is only needed once to get the archives in a
+   repository into a good state. All archives have a valid TAM now.
+
+Vulnerability time line:
+
+* 2023-06-13: Vulnerability discovered during code review by Thomas Waldmann
+* 2023-06-13...: Work on fixing the issue, upgrade procedure, docs.
+* 2023-06-30: CVE was assigned via Github CNA
+* 2023-06-30 .. 2023-08-29: Fixed issue, code review, docs, testing.
+* 2023-08-30: Released fixed version 1.2.5 (broken upgrade procedure for some repos)
+* 2023-08-31: Released fixed version 1.2.6 (fixes upgrade procedure)
+
 .. _hashindex_set_bug:
 
 Pre-1.1.11 potential index corruption / data loss issue
@@ -776,8 +849,8 @@ Other changes:
 - docs:
 
   - improve description of path variables
-  - document how to completely delete data, #2929
-  - add FAQ about Bork config dir, #4941
+  - document how to delete data completely, #2929
+  - add FAQ about Borg config dir, #4941
   - add docs about errors not printed as JSON, #4073
   - update usage_general.rst.inc
   - added "Will move with BORG_CONFIG_DIR variable unless specified." to BORG_SECURITY_DIR info.
@@ -864,7 +937,7 @@ New features:
 - ability to use a system-provided version of "xxhash"
 - create:
 
-  - changed the default behaviour to not store the atime of fs items. atime is
+  - changed the default behaviour not to store the atime of fs items. atime is
     often rather not interesting and fragile - it easily changes even if nothing
     else has changed and, if stored into the archive, spoils deduplication of
     the archive metadata stream.
@@ -1781,7 +1854,7 @@ Fixes:
 - security fix: configure FUSE with "default_permissions", #3903
   "default_permissions" is now enforced by bork by default to let the
   kernel check uid/gid/mode based permissions.
-  "ignore_permissions" can be given to not enforce "default_permissions".
+  "ignore_permissions" can be given not to enforce "default_permissions".
 - make "hostname" short, even on misconfigured systems, #4262
 - fix free space calculation on macOS (and others?), #4289
 - config: quit with error message when no key is provided, #4223
@@ -2148,8 +2221,8 @@ New features:
 
 - mount: added exclusion group options and paths, #2138
 
-  Reused some code to support similar options/paths as bork extract offers -
-  making good use of these to only mount a smaller subset of dirs/files can
+  Reused some code to support similar options/paths as borg extract offers -
+  making good use of these to mount only a smaller subset of dirs/files can
   speed up mounting a lot and also will consume way less memory.
 
   bork mount [options] repo_or_archive mountpoint path [paths...]
@@ -2235,11 +2308,11 @@ Compatibility notes:
 - The deprecated --no-files-cache is not a global/common option any more,
   but only available for bork create (it is not needed for anything else).
   Use --files-cache=disabled instead of --no-files-cache.
-- The nodump flag ("do not backup this file") is not honoured any more by
+- The nodump flag ("do not back up this file") is not honoured any more by
   default because this functionality (esp. if it happened by error or
   unexpected) was rather confusing and unexplainable at first to users.
-  If you want that "do not backup NODUMP-flagged files" behaviour, use:
-  bork create --exclude-nodump ...
+  If you want that "do not back up NODUMP-flagged files" behaviour, use:
+  borg create --exclude-nodump ...
 - If you are on Linux and do not need bsdflags archived, consider using
   ``--nobsdflags`` with ``bork create`` to avoid additional syscalls and
   speed up backup creation.
@@ -3078,7 +3151,7 @@ New features:
     which includes the SHA1 and SHA2 family as well as MD5
 - bork prune:
 
-  - to better visualize the "thinning out", we now list all archives in
+  - to visualize the "thinning out" better, we now list all archives in
     reverse time order. rephrase and reorder help text.
   - implement --keep-last N via --keep-secondly N, also --keep-minutely.
     assuming that there is not more than 1 backup archive made in 1s,
@@ -3175,8 +3248,8 @@ Bug fixes:
 - security fix: configure FUSE with "default_permissions", #3903.
   "default_permissions" is now enforced by bork by default to let the
   kernel check uid/gid/mode based permissions.
-  "ignore_permissions" can be given to not enforce "default_permissions".
-- xattrs: fix bork exception handling on ENOSPC error, #3808.
+  "ignore_permissions" can be given not to enforce "default_permissions".
+- xattrs: fix borg exception handling on ENOSPC error, #3808.
 
 New features:
 
@@ -3371,7 +3444,7 @@ Other changes:
   - kill api page
   - added FAQ section about backing up root partition
   - add bountysource badge, #2558
-  - create empty docs.txt reequirements, #2694
+  - create empty docs.txt requirements, #2694
   - README: how to help the project
   - note -v/--verbose requirement on affected options, #2542
   - document bork init behaviour via append-only bork serve, #2440
@@ -3478,8 +3551,8 @@ Other changes:
 - docs:
 
   - language clarification - VM backup FAQ
-  - bork create: document how to backup stdin, #2013
-  - bork upgrade: fix incorrect title levels
+  - borg create: document how to back up stdin, #2013
+  - borg upgrade: fix incorrect title levels
   - add CVE numbers for issues fixed in 1.0.9, #2106
 - fix typos (taken from Debian package patch)
 - remote: include data hexdump in "unexpected RPC data" error message
@@ -3504,9 +3577,19 @@ Security fixes:
   take.
 
   CVE-2016-10099 was assigned to this vulnerability.
-- bork check: When rebuilding the manifest (which should only be needed very rarely)
-  duplicate archive names would be handled on a "first come first serve" basis, allowing
-  an attacker to apparently replace archives.
+- borg check: When rebuilding the manifest (which should only be needed very rarely)
+  duplicate archive names would be handled on a "first come first serve" basis,
+  potentially opening an attack vector to replace archives.
+
+  Example: were there 2 archives named "foo" in a repo (which can not happen
+  under normal circumstances, because borg checks if the name is already used)
+  and a "borg check" recreated a (previously lost) manifest, the first of the
+  archives it encountered would be in the manifest. The second archive is also
+  still in the repo, but not referenced in the manifest, in this case. If the
+  second archive is the "correct" one (and was previously referenced from the
+  manifest), it looks like it got replaced by the first one. In the manifest,
+  it actually got replaced. Both remain in the repo but the "correct" one is no
+  longer accessible via normal means - the manifest.
 
   CVE-2016-10100 was assigned to this vulnerability.
 
@@ -3673,8 +3756,8 @@ Bug fixes:
 
 New features:
 
-- add "bork key export" / "bork key import" commands, #1555, so users are able
-  to backup / restore their encryption keys more easily.
+- add "borg key export" / "borg key import" commands, #1555, so users are able
+  to back up / restore their encryption keys more easily.
 
   Supported formats are the keyfile format used by bork internally and a
   special "paper" format with by line checksums for printed backups. For the
@@ -4161,7 +4244,7 @@ Bug fixes:
 - do not sleep for >60s while waiting for lock, #773
 - unpack file stats before passing to FUSE
 - fix build on illumos
-- don't try to backup doors or event ports (Solaris and derivatives)
+- don't try to back up doors or event ports (Solaris and derivatives)
 - remove useless/misleading libc version display, #738
 - test suite: reset exit code of persistent archiver, #844
 - RemoteRepository: clean up pipe if remote open() fails
@@ -4234,20 +4317,20 @@ Compatibility notes:
   changed file and in the worst case (e.g. if your files cache was lost / is
   not used) by the size of every file (minus any compression you might use).
 
-  in case you want to immediately see a much lower resource usage (RAM / disk)
+  in case you want to see a much lower resource usage immediately (RAM / disk)
   for chunks management, it might be better to start with a new repo than
-  continuing in the existing repo (with an existing repo, you'ld have to wait
-  until all archives with small chunks got pruned to see a lower resource
+  to continue in the existing repo (with an existing repo, you have to wait
+  until all archives with small chunks get pruned to see a lower resource
   usage).
 
   if you used the old --chunker-params default value (or if you did not use
-  --chunker-params option at all) and you'ld like to continue using small
+  --chunker-params option at all) and you'd like to continue using small
   chunks (and you accept the huge resource usage that comes with that), just
-  explicitly use bork create --chunker-params=10,23,16,4095.
+  use explicitly borg create --chunker-params=10,23,16,4095.
 - archive timestamps: the 'time' timestamp now refers to archive creation
   start time (was: end time), the new 'time_end' timestamp refers to archive
-  creation end time. This might affect prune if your backups take rather long.
-  if you give a timestamp via cli this is stored into 'time', therefore it now
+  creation end time. This might affect prune if your backups take a long time.
+  if you give a timestamp via cli, this is stored into 'time'. therefore it now
   needs to mean archive creation start time.
 
 New features:
@@ -4289,8 +4372,8 @@ Bug fixes:
 
 Other changes:
 
-- it is now possible to use "pip install borkbackup[fuse]" to automatically
-  install the llfuse dependency using the correct version requirement
+- it is now possible to use "pip install borgbackup[fuse]" to
+  install the llfuse dependency automatically, using the correct version requirement
   for it. you still need to care about having installed the FUSE / build
   related OS package first, though, so that building llfuse can succeed.
 - Vagrant: drop Ubuntu Precise (12.04) - does not have Python >= 3.4

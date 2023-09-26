@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-RDELETE" 1 "2022-10-02" "" "bork backup tool"
+.TH "BORG-RDELETE" 1 "2023-09-14" "" "borg backup tool"
 .SH NAME
 bork-rdelete \- Delete a repository
 .SH SYNOPSIS
@@ -45,8 +45,8 @@ with the \fB\-\-cache\-only\fP option, or keep the security info with the
 Always first use \fB\-\-dry\-run \-\-list\fP to see what would be deleted.
 .SH OPTIONS
 .sp
-See \fIbork\-common(1)\fP for common options of Bork commands.
-.SS optional arguments
+See \fIborg\-common(1)\fP for common options of Borg commands.
+.SS options
 .INDENT 0.0
 .TP
 .B  \-n\fP,\fB  \-\-dry\-run
@@ -71,8 +71,8 @@ keep the local security info when deleting a repository
 .nf
 .ft C
 # delete the whole repository and the related local cache:
-$ bork rdelete
-You requested to completely DELETE the repository *including* all archives it contains:
+$ borg rdelete
+You requested to DELETE the repository completely *including* all archives it contains:
 repo                                 Mon, 2016\-02\-15 19:26:54
 root\-2016\-02\-15                      Mon, 2016\-02\-15 19:36:29
 newname                              Mon, 2016\-02\-15 19:50:19

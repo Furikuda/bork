@@ -17,7 +17,7 @@ bork key export
     +-------------------------------------------------------+---------------+------------------------------------------------------------------------+
     |                                                       | ``PATH``      | where to store the backup                                              |
     +-------------------------------------------------------+---------------+------------------------------------------------------------------------+
-    | **optional arguments**                                                                                                                         |
+    | **options**                                                                                                                                    |
     +-------------------------------------------------------+---------------+------------------------------------------------------------------------+
     |                                                       | ``--paper``   | Create an export suitable for printing and later type-in               |
     +-------------------------------------------------------+---------------+------------------------------------------------------------------------+
@@ -42,7 +42,7 @@ bork key export
         where to store the backup
 
 
-    optional arguments
+    options
         --paper       Create an export suitable for printing and later type-in
         --qr-html     Create an html file suitable for printing and later type-in or qr scan
 
@@ -54,7 +54,7 @@ Description
 ~~~~~~~~~~~
 
 If repository encryption is used, the repository is inaccessible
-without the key. This command allows one to backup this essential key.
+without the key. This command allows one to back up this essential key.
 Note that the backup produced does not include the passphrase itself
 (i.e. the exported key stays encrypted). In order to regain access to a
 repository, one needs both the exported key and the original passphrase.

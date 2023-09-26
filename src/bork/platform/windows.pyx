@@ -16,22 +16,28 @@ cdef extern from 'windows.h':
 
 @lru_cache(maxsize=None)
 def uid2user(uid, default=None):
-    return default
+    return "root"
 
 
 @lru_cache(maxsize=None)
 def user2uid(user, default=None):
-    return default
+    if not user:
+        # user is either None or the empty string
+        return default
+    return 0
 
 
 @lru_cache(maxsize=None)
 def gid2group(gid, default=None):
-    return default
+    return "root"
 
 
 @lru_cache(maxsize=None)
 def group2gid(group, default=None):
-    return default
+    if not group:
+        # group is either None or the empty string
+        return default
+    return 0
 
 
 def getosusername():
@@ -41,7 +47,7 @@ def getosusername():
 
 def process_alive(host, pid, thread):
     """
-    Check if the (host, pid, thread_id) combination corresponds to a potentially alive process.
+    Check whether the (host, pid, thread_id) combination corresponds to a process potentially alive.
     """
     if host.split('@')[0].lower() != platform.node().lower():
         # Not running on the same node, assume running.

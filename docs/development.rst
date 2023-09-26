@@ -146,13 +146,10 @@ follow their `guide about avoiding ruining git blame`_:
 Continuous Integration
 ----------------------
 
-All pull requests go through `GitHub Actions`_, which runs the tests on Linux
-and Mac OS X as well as the flake8 style checker. Windows builds run on AppVeyor_,
-while additional Unix-like platforms are tested on Golem_.
+All pull requests go through `GitHub Actions`_, which runs the tests on misc.
+Python versions and on misc. platforms as well as some additional checks.
 
-.. _AppVeyor: https://ci.appveyor.com/project/furikuda/bork/
-.. _Golem: https://golem.enkore.de/view/Bork/
-.. _GitHub Actions: https://github.com/furikuda/bork/actions
+.. _GitHub Actions: https://github.com/borgbackup/borg/actions
 
 Output and Logging
 ------------------
@@ -177,6 +174,13 @@ To install some additional packages needed for running the tests, activate your
 virtual env and run::
 
   pip install -r requirements.d/development.txt
+
+
+This project utilizes pre-commit to format and lint code before it is committed.
+Although pre-commit is installed when running the command above, the pre-commit hooks
+will have to be installed separately. Run this command to install the pre-commit hooks::
+
+  pre-commit install
 
 
 Running the tests
@@ -208,26 +212,6 @@ Some more advanced examples::
 Important notes:
 
 - When using ``--`` to give options to py.test, you MUST also give ``bork.testsuite[.module]``.
-
-
-Running more checks using coala
--------------------------------
-
-First install coala and some checkers ("bears"):
-
-::
-
-  pip install -r requirements.d/coala.txt
-
-You can now run coala from the toplevel directory; it will read its settings
-from ``.coafile`` there:
-
-::
-
-  coala
-
-Some bears have additional requirements and they usually tell you about
-them in case they are missing.
 
 
 Adding a compression algorithm
@@ -365,7 +349,9 @@ Checklist:
     scripts/upload-pypi X.Y.Z test
     scripts/upload-pypi X.Y.Z
 
-- Put binaries into dist/bork-OSNAME and sign them:
+  Note: the signature is not uploaded to PyPi any more, but we upload it to
+  github releases.
+- Put binaries into dist/borg-OSNAME and sign them:
 
   ::
 
@@ -383,9 +369,10 @@ Checklist:
 
 - Create a GitHub release, include:
 
+  * pypi dist package and signature
   * Standalone binaries (see above for how to create them).
 
-    + For OS X, document the OS X Fuse version in the README of the binaries.
-      OS X FUSE uses a kernel extension that needs to be compatible with the
+    + For macOS, document the macFUSE version in the README of the binaries.
+      macFUSE uses a kernel extension that needs to be compatible with the
       code contained in the binary.
   * A link to ``CHANGES.rst``.

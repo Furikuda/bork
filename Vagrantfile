@@ -3,8 +3,8 @@
 
 # Automated creation of testing environments / binaries on misc. platforms
 
-$cpus = Integer(ENV.fetch('VMCPUS', '16'))  # create VMs with that many cpus
-$xdistn = Integer(ENV.fetch('XDISTN', '16'))  # dispatch tests to that many pytest workers
+$cpus = Integer(ENV.fetch('VMCPUS', '8'))  # create VMs with that many cpus
+$xdistn = Integer(ENV.fetch('XDISTN', '8'))  # dispatch tests to that many pytest workers
 $wmem = $xdistn * 256  # give the VM additional memory for workers [MB]
 
 def packages_debianoid(user)
@@ -14,8 +14,9 @@ def packages_debianoid(user)
     echo "set grub-pc/install_devices /dev/sda" | debconf-communicate
     apt-get -y -qq update
     apt-get -y -qq dist-upgrade
-    # for building borkbackup and dependencies:
-    apt install -y libssl-dev libacl1-dev libxxhash-dev liblz4-dev libzstd-dev pkg-config
+    # for building borgbackup and dependencies:
+    apt install -y pkg-config
+    apt install -y libssl-dev libacl1-dev libxxhash-dev liblz4-dev libzstd-dev || true
     apt install -y libfuse-dev fuse || true
     apt install -y libfuse3-dev fuse3 || true
     apt install -y locales || true
@@ -65,6 +66,8 @@ def packages_freebsd
     pkg update
     yes | pkg upgrade
     echo 'export BORG_OPENSSL_PREFIX=/usr' >> ~vagrant/.bash_profile
+    # (re)mount / with acls
+    mount -o acls /
   EOF
 end
 
@@ -76,7 +79,7 @@ def packages_openbsd
     pkg_add lz4
     pkg_add zstd
     pkg_add git  # no fakeroot
-    pkg_add openssl%1.1
+    pkg_add openssl%3.0
     pkg_add py3-pip
     pkg_add py3-virtualenv
   EOF
@@ -84,26 +87,19 @@ end
 
 def packages_netbsd
   return <<-EOF
-    # use the latest stuff, some packages in "9.2" are quite broken
-    echo 'http://ftp.NetBSD.org/pub/pkgsrc/packages/NetBSD/$arch/9.0_current/All' > /usr/pkg/etc/pkgin/repositories.conf
+    echo 'http://ftp.NetBSD.org/pub/pkgsrc/packages/NetBSD/$arch/9.3/All' > /usr/pkg/etc/pkgin/repositories.conf
     pkgin update
     pkgin -y upgrade
     pkg_add zstd lz4 xxhash git
     pkg_add bash
     chsh -s bash vagrant
-    echo "export PROMPT_COMMAND=" >> ~vagrant/.bash_profile  # bug in netbsd 9.2, .bash_profile broken for screen
-    echo "export PROMPT_COMMAND=" >> ~root/.bash_profile  # bug in netbsd 9.2, .bash_profile broken for screen
+    echo "export PROMPT_COMMAND=" >> ~vagrant/.bash_profile  # bug in netbsd 9.3, .bash_profile broken for screen
+    echo "export PROMPT_COMMAND=" >> ~root/.bash_profile  # bug in netbsd 9.3, .bash_profile broken for screen
     pkg_add pkg-config
     # pkg_add fuse  # llfuse supports netbsd, but is still buggy.
     # https://bitbucket.org/nikratio/python-llfuse/issues/70/perfuse_open-setsockopt-no-buffer-space
-    pkg_add python39 py39-sqlite3 py39-pip py39-virtualenv py39-expat
-    pkg_add py310-sqlite3 py310-pip py310-virtualenv py310-expat
-    ln -s /usr/pkg/bin/python3.9 /usr/pkg/bin/python
-    ln -s /usr/pkg/bin/python3.9 /usr/pkg/bin/python3
-    ln -s /usr/pkg/bin/pip3.9 /usr/pkg/bin/pip
-    ln -s /usr/pkg/bin/pip3.9 /usr/pkg/bin/pip3
-    ln -s /usr/pkg/bin/virtualenv-3.9 /usr/pkg/bin/virtualenv
-    ln -s /usr/pkg/bin/virtualenv-3.9 /usr/pkg/bin/virtualenv3
+    pkg_add python39  py39-sqlite3  py39-pip  py39-virtualenv  py39-expat
+    pkg_add python310 py310-sqlite3 py310-pip py310-virtualenv py310-expat
   EOF
 end
 
@@ -117,7 +113,7 @@ def packages_darwin
     sudo softwareupdate --install --all
     which brew || CI=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
     brew update > /dev/null
-    brew install pkg-config readline openssl@1.1 xxhash zstd lz4 xz
+    brew install pkg-config readline xxhash zstd lz4 xz openssl@1.1
     brew install --cask macfuse
     # brew upgrade  # upgrade everything (takes rather long)
     echo 'export PKG_CONFIG_PATH=/usr/local/opt/openssl@1.1/lib/pkgconfig' >> ~vagrant/.bash_profile
@@ -136,9 +132,95 @@ def packages_openindiana
   EOF
 end
 
+
+# Build and install borg dependencies from source
+def install_source_dependencies(user)
+  return <<-EOF
+    set -e -o pipefail
+
+    # Install in /usr/local
+    export PREFIX=/usr/local
+
+    # Make PKG_CONFIG_PATH explicit, even if /usr/local/lib/pkgconfig is enabled per default
+    export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
+    echo 'export PKG_CONFIG_PATH="'${PKG_CONFIG_PATH}'"' >> ~#{user}/.bash_profile
+
+    # All source packages integrate with pkg-config, remove any previous overrides
+    sed -i '/BORG_.*_PREFIX/d' ~#{user}/.bash_profile
+
+    # Setup pyenv to pick up the custom openssl version (python >= 3.9 requires openssl >= 1.1.1)
+    echo 'export PYTHON_CONFIGURE_OPTS="--with-openssl='"${PREFIX}"' --with-openssl-rpath=auto"' >> ~#{user}/.bash_profile
+    echo 'export LDFLAGS=-Wl,-rpath,'"${PREFIX}"'/lib' >> ~#{user}/.bash_profile
+
+    # Silence git warning about shallow clones
+    git config --global advice.detachedHead false
+
+    # libattr
+    VERSION_LIBATTR=2.5.1
+    curl -s -L https://download.savannah.nongnu.org/releases/attr/attr-${VERSION_LIBATTR}.tar.gz | tar xvz --strip-components=1 --one-top-level=attr -f - -C ${PREFIX}/src
+    cd ${PREFIX}/src/attr
+    ./configure --prefix=${PREFIX}
+    make -j$(nproc) install
+
+    # libacl
+    VERSION_LIBACL=2.3.1
+    curl -s -L https://download.savannah.nongnu.org/releases/acl/acl-${VERSION_LIBACL}.tar.gz | tar xvz --strip-components=1 --one-top-level=acl -f - -C ${PREFIX}/src
+    cd ${PREFIX}/src/acl
+    ./configure --prefix=${PREFIX}
+    make -j$(nproc) install
+
+    # liblz4
+    VERSION_LIBLZ4=1.9.4
+    git -C ${PREFIX}/src clone --depth 1 --branch v${VERSION_LIBLZ4} https://github.com/lz4/lz4.git
+    cd ${PREFIX}/src/lz4
+    make -j$(nproc) install PREFIX=${PREFIX}
+
+    # libzstd
+    VERSION_LIBZSTD=1.5.5
+    git -C ${PREFIX}/src clone --depth 1 --branch v${VERSION_LIBZSTD} https://github.com/facebook/zstd.git
+    cd ${PREFIX}/src/zstd
+    make -j$(nproc) install PREFIX=${PREFIX}
+
+    # xxHash
+    VERSION_LIBXXHASH=0.8.2
+    git -C ${PREFIX}/src clone --depth 1 --branch v${VERSION_LIBXXHASH} https://github.com/Cyan4973/xxHash.git
+    cd ${PREFIX}/src/xxHash
+    make -j$(nproc) install PREFIX=${PREFIX}
+
+    # openssl
+    VERSION_OPENSSL=1_1_1w
+    git -C ${PREFIX}/src clone --depth 1 --branch OpenSSL_${VERSION_OPENSSL} https://github.com/openssl/openssl.git
+    cd ${PREFIX}/src/openssl
+    ./config --prefix=${PREFIX} --openssldir=${PREFIX}/lib/ssl
+    make -j$(nproc)
+    make -j$(nproc) install
+
+    # libfuse3 requires ninja
+    VERSION_NINJA=1.11.1
+    git -C ${PREFIX}/src clone --depth 1 --branch v${VERSION_NINJA} https://github.com/ninja-build/ninja.git
+    cd ${PREFIX}/src/ninja
+    python3 configure.py --bootstrap
+    install --mode=755 --target-directory=${PREFIX}/bin ninja
+
+    # libfuse3 requires meson >= 0.50; python3.5 support is dropped in meson >= 0.57
+    VERSION_MESON=0.56.2
+    git -C ${PREFIX}/src clone --depth 1 --branch ${VERSION_MESON} https://github.com/mesonbuild/meson.git
+    ln -s ${PREFIX}/src/meson/meson.py ${PREFIX}/bin/meson
+
+    # libfuse3
+    VERSION_LIBFUSE=3.16.1
+    git -C ${PREFIX}/src clone --depth 1 --branch fuse-${VERSION_LIBFUSE} https://github.com/libfuse/libfuse.git
+    cd ${PREFIX}/src/libfuse
+    mkdir build; cd build
+    meson setup --prefix ${PREFIX} --libdir ${PREFIX}/lib ..
+    ninja
+    ninja install
+  EOF
+end
+
 def install_pyenv(boxname)
   return <<-EOF
-    echo 'export PYTHON_CONFIGURE_OPTS="--enable-shared"' >> ~/.bash_profile
+    echo 'export PYTHON_CONFIGURE_OPTS="${PYTHON_CONFIGURE_OPTS} --enable-shared"' >> ~/.bash_profile
     echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bash_profile
     echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bash_profile
     . ~/.bash_profile
@@ -160,9 +242,10 @@ end
 def install_pythons(boxname)
   return <<-EOF
     . ~/.bash_profile
-    pyenv install 3.11.0  # tests
-    pyenv install 3.10.8  # tests, binary build
-    pyenv install 3.9.1   # tests
+    echo "PYTHON_CONFIGURE_OPTS: ${PYTHON_CONFIGURE_OPTS}"
+    pyenv install 3.11.5  # tests, binary build
+    pyenv install 3.10.2  # tests
+    pyenv install 3.9.10  # tests
     pyenv rehash
   EOF
 end
@@ -178,11 +261,11 @@ end
 def build_pyenv_venv(boxname)
   return <<-EOF
     . ~/.bash_profile
-    cd /vagrant/bork
-    # use the latest 3.10 release
-    pyenv global 3.10.8
-    pyenv virtualenv 3.10.8 bork-env
-    ln -s ~/.pyenv/versions/bork-env .
+    cd /vagrant/borg
+    # use the latest 3.11 release
+    pyenv global 3.11.5
+    pyenv virtualenv 3.11.5 borg-env
+    ln -s ~/.pyenv/versions/borg-env .
   EOF
 end
 
@@ -203,9 +286,9 @@ end
 def install_pyinstaller()
   return <<-EOF
     . ~/.bash_profile
-    cd /vagrant/bork
-    . bork-env/bin/activate
-    pip install 'pyinstaller==5.4.1'
+    cd /vagrant/borg
+    . borg-env/bin/activate
+    pip install 'pyinstaller==5.13.2'
   EOF
 end
 
@@ -228,8 +311,8 @@ def run_tests(boxname, skip_env)
     . ../bork-env/bin/activate
     if which pyenv 2> /dev/null; then
       # for testing, use the earliest point releases of the supported python versions:
-      pyenv global 3.9.1 3.10.8 3.11.0
-      pyenv local 3.9.1 3.10.8 3.11.0
+      pyenv global 3.9.10 3.10.2 3.11.5
+      pyenv local 3.9.10 3.10.2 3.11.5
     fi
     # otherwise: just use the system python
     # some OSes can only run specific test envs, e.g. because they miss FUSE support:
@@ -270,6 +353,18 @@ Vagrant.configure(2) do |config|
     v.cpus = $cpus
   end
 
+  config.vm.define "lunar64" do |b|
+    b.vm.box = "ubuntu/lunar64"
+    b.vm.provider :virtualbox do |v|
+      v.memory = 1024 + $wmem
+    end
+    b.vm.provision "fs init", :type => :shell, :inline => fs_init("vagrant")
+    b.vm.provision "packages debianoid", :type => :shell, :inline => packages_debianoid("vagrant")
+    b.vm.provision "build env", :type => :shell, :privileged => false, :inline => build_sys_venv("lunar64")
+    b.vm.provision "install borg", :type => :shell, :privileged => false, :inline => install_borg("llfuse")
+    b.vm.provision "run tests", :type => :shell, :privileged => false, :inline => run_tests("lunar64", ".*none.*")
+  end
+
   config.vm.define "jammy64" do |b|
     b.vm.box = "ubuntu/jammy64"
     b.vm.provider :virtualbox do |v|
@@ -280,6 +375,22 @@ Vagrant.configure(2) do |config|
     b.vm.provision "build env", :type => :shell, :privileged => false, :inline => build_sys_venv("jammy64")
     b.vm.provision "install bork", :type => :shell, :privileged => false, :inline => install_bork("llfuse")
     b.vm.provision "run tests", :type => :shell, :privileged => false, :inline => run_tests("jammy64", ".*none.*")
+  end
+
+  config.vm.define "bookworm64" do |b|
+    b.vm.box = "debian/bookworm64"
+    b.vm.provider :virtualbox do |v|
+      v.memory = 1024 + $wmem
+    end
+    b.vm.provision "fs init", :type => :shell, :inline => fs_init("vagrant")
+    b.vm.provision "packages debianoid", :type => :shell, :inline => packages_debianoid("vagrant")
+    b.vm.provision "install pyenv", :type => :shell, :privileged => false, :inline => install_pyenv("bookworm64")
+    b.vm.provision "install pythons", :type => :shell, :privileged => false, :inline => install_pythons("bookworm64")
+    b.vm.provision "build env", :type => :shell, :privileged => false, :inline => build_pyenv_venv("bookworm64")
+    b.vm.provision "install borg", :type => :shell, :privileged => false, :inline => install_borg("llfuse")
+    b.vm.provision "install pyinstaller", :type => :shell, :privileged => false, :inline => install_pyinstaller()
+    b.vm.provision "build binary with pyinstaller", :type => :shell, :privileged => false, :inline => build_binary_with_pyinstaller("bookworm64")
+    b.vm.provision "run tests", :type => :shell, :privileged => false, :inline => run_tests("bookworm64", ".*none.*")
   end
 
   config.vm.define "bullseye64" do |b|
@@ -312,6 +423,23 @@ Vagrant.configure(2) do |config|
     b.vm.provision "install pyinstaller", :type => :shell, :privileged => false, :inline => install_pyinstaller()
     b.vm.provision "build binary with pyinstaller", :type => :shell, :privileged => false, :inline => build_binary_with_pyinstaller("buster64")
     b.vm.provision "run tests", :type => :shell, :privileged => false, :inline => run_tests("buster64", ".*none.*")
+  end
+
+  config.vm.define "stretch64" do |b|
+    b.vm.box = "debian/stretch64"
+    b.vm.provider :virtualbox do |v|
+      v.memory = 1024 + $wmem
+    end
+    b.vm.provision "fs init", :type => :shell, :inline => fs_init("vagrant")
+    b.vm.provision "packages debianoid", :type => :shell, :inline => packages_debianoid("vagrant")
+    b.vm.provision "install source dependencies", :type => :shell, :privileged => true, :inline => install_source_dependencies("vagrant")
+    b.vm.provision "install pyenv", :type => :shell, :privileged => false, :inline => install_pyenv("stretch64")
+    b.vm.provision "install pythons", :type => :shell, :privileged => false, :inline => install_pythons("stretch64")
+    b.vm.provision "build env", :type => :shell, :privileged => false, :inline => build_pyenv_venv("stretch64")
+    b.vm.provision "install borg", :type => :shell, :privileged => false, :inline => install_borg("llfuse")
+    b.vm.provision "install pyinstaller", :type => :shell, :privileged => false, :inline => install_pyinstaller()
+    b.vm.provision "build binary with pyinstaller", :type => :shell, :privileged => false, :inline => build_binary_with_pyinstaller("stretch64")
+    b.vm.provision "run tests", :type => :shell, :privileged => false, :inline => run_tests("stretch64", ".*none.*")
   end
 
   config.vm.define "freebsd64" do |b|

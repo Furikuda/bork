@@ -19,7 +19,7 @@ bork import-tar
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``TARFILE``                                       | input tar file. "-" to read from stdin instead.                                                                                                                                                   |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    | **optional arguments**                                                                                                                                                                                                                                                                                        |
+    | **options**                                                                                                                                                                                                                                                                                                   |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--tar-filter``                                  | filter program to pipe data through                                                                                                                                                               |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -31,7 +31,9 @@ bork import-tar
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--json``                                        | output stats as JSON (implies --stats)                                                                                                                                                            |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    | .. class:: bork-common-opt-ref                                                                                                                                                                                                                                                                                |
+    |                                                       | ``--ignore-zeros``                                | ignore zero-filled blocks in the input tarball                                                                                                                                                    |
+    +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+    | .. class:: borg-common-opt-ref                                                                                                                                                                                                                                                                                |
     |                                                                                                                                                                                                                                                                                                               |
     | :ref:`common_options`                                                                                                                                                                                                                                                                                         |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -42,6 +44,8 @@ bork import-tar
     |                                                       | ``--timestamp TIMESTAMP``                         | manually specify the archive creation date/time (yyyy-mm-ddThh:mm:ss[(+|-)HH:MM] format, (+|-)HH:MM is the UTC offset, default: local time zone). Alternatively, give a reference file/directory. |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``-c SECONDS``, ``--checkpoint-interval SECONDS`` | write checkpoint every SECONDS seconds (Default: 1800)                                                                                                                                            |
+    +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+    |                                                       | ``--checkpoint-volume BYTES``                     | write checkpoint every BYTES bytes (Default: 0, meaning no volume based checkpointing)                                                                                                            |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--chunker-params PARAMS``                       | specify the chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, HASH_MASK_BITS, HASH_WINDOW_SIZE). default: buzhash,19,23,21,4095                                                             |
     +-------------------------------------------------------+---------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -64,12 +68,13 @@ bork import-tar
         input tar file. "-" to read from stdin instead.
 
 
-    optional arguments
+    options
         --tar-filter    filter program to pipe data through
         -s, --stats     print statistics for the created archive
         --list          output verbose list of items (files, dirs, ...)
         --filter STATUSCHARS    only display items with the given status characters
         --json          output stats as JSON (implies --stats)
+        --ignore-zeros    ignore zero-filled blocks in the input tarball
 
 
     :ref:`common_options`
@@ -79,6 +84,7 @@ bork import-tar
         --comment COMMENT                             add a comment text to the archive
         --timestamp TIMESTAMP                         manually specify the archive creation date/time (yyyy-mm-ddThh:mm:ss[(+|-)HH:MM] format, (+|-)HH:MM is the UTC offset, default: local time zone). Alternatively, give a reference file/directory.
         -c SECONDS, --checkpoint-interval SECONDS     write checkpoint every SECONDS seconds (Default: 1800)
+        --checkpoint-volume BYTES                     write checkpoint every BYTES bytes (Default: 0, meaning no volume based checkpointing)
         --chunker-params PARAMS                       specify the chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, HASH_MASK_BITS, HASH_WINDOW_SIZE). default: buzhash,19,23,21,4095
         -C COMPRESSION, --compression COMPRESSION     select compression algorithm, see the output of the "bork help compression" command for details.
 
@@ -96,7 +102,7 @@ based on its file extension and pipe the file through an appropriate filter:
 - .tar.gz or .tgz: gzip -d
 - .tar.bz2 or .tbz: bzip2 -d
 - .tar.xz or .txz: xz -d
-- .tar.zstd: zstd -d
+- .tar.zstd or .tar.zst: zstd -d
 - .tar.lz4: lz4 -d
 
 Alternatively, a --tar-filter program may be explicitly specified. It should
@@ -118,3 +124,7 @@ import-tar reads these tar formats:
 - POSIX.1-1988 (ustar)
 - UNIX V7 tar
 - SunOS tar with extended attributes
+
+To import multiple tarballs into a single archive, they can be simply
+concatenated (e.g. using "cat") into a single file, and imported with an
+``--ignore-zeros`` option to skip through the stop markers between them.

@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG" 1 "2022-10-02" "" "bork backup tool"
+.TH "BORG" 1 "2023-09-14" "" "borg backup tool"
 .SH NAME
 bork \- deduplicating and encrypting backup tool
 .SH SYNOPSIS
@@ -40,11 +40,11 @@ bork [common options] <command> [options] [arguments]
 BorkBackup (short: Bork) is a deduplicating backup program.
 Optionally, it supports compression and authenticated encryption.
 .sp
-The main goal of Bork is to provide an efficient and secure way to backup data.
-The data deduplication technique used makes Bork suitable for daily backups
+The main goal of Borg is to provide an efficient and secure way to back data up.
+The data deduplication technique used makes Borg suitable for daily backups
 since only changes are stored.
-The authenticated encryption technique makes it suitable for backups to not
-fully trusted targets.
+The authenticated encryption technique makes it suitable for backups to targets not
+fully trusted.
 .sp
 Bork stores a set of files in an \fIarchive\fP\&. A \fIrepository\fP is a collection
 of \fIarchives\fP\&. The format of repositories is Bork\-specific. Bork does not
@@ -54,7 +54,7 @@ it does not matter when or where archives were created (e.g. different hosts).
 .SS A step\-by\-step example
 .INDENT 0.0
 .IP 1. 3
-Before a backup can be made a repository has to be initialized:
+Before a backup can be made, a repository has to be initialized:
 .INDENT 3.0
 .INDENT 3.5
 .sp
@@ -66,7 +66,7 @@ $ bork \-r /path/to/repo rcreate \-\-encryption=repokey\-aes\-ocb
 .UNINDENT
 .UNINDENT
 .IP 2. 3
-Backup the \fB~/src\fP and \fB~/Documents\fP directories into an archive called
+Back up the \fB~/src\fP and \fB~/Documents\fP directories into an archive called
 \fIMonday\fP:
 .INDENT 3.0
 .INDENT 3.5
@@ -91,8 +91,8 @@ $ bork \-r /path/to/repo create \-\-stats Tuesday ~/src ~/Documents
 .UNINDENT
 .UNINDENT
 .sp
-This backup will be a lot quicker and a lot smaller since only new never
-before seen data is stored. The \fB\-\-stats\fP option causes Bork to
+This backup will be a lot quicker and a lot smaller since only new, never
+before seen data is stored. The \fB\-\-stats\fP option causes Borg to
 output statistics about the newly created archive such as the deduplicated
 size (the amount of unique data not shared with other archives):
 .INDENT 3.0
@@ -168,8 +168,8 @@ $ bork \-r /path/to/repo delete \-a Monday
 .UNINDENT
 .UNINDENT
 .sp
-Please note the \fB\-a\fP option here (short for \fB\-\-glob\-archives\fP) which enables you
-to give a globbing pattern to delete multiple archives, like \fB\-a \(aqoldcrap\-*\(aq\fP\&.
+Please note the \fB\-a\fP option here (short for \fB\-\-match\-archives\fP) which enables you
+to give a pattern to delete multiple archives, like \fB\-a \(aqsh:oldcrap\-*\(aq\fP\&.
 You can also combine this with \fB\-\-first\fP, \fB\-\-last\fP and \fB\-\-sort\-by\fP\&.
 Be careful, always first use with \fB\-\-dry\-run\fP and \fB\-\-list\fP!
 .IP 8. 3
@@ -189,7 +189,7 @@ $ bork \-r /path/to/repo compact
 \fBNOTE:\fP
 .INDENT 0.0
 .INDENT 3.5
-Bork is quiet by default (it works on WARNING log level).
+Borg is quiet by default (it defaults to WARNING log level).
 You can use options like \fB\-\-progress\fP or \fB\-\-list\fP to get specific
 reports during command execution.  You can also add the \fB\-v\fP (or
 \fB\-\-verbose\fP or \fB\-\-info\fP) option to adjust the log level to INFO to
@@ -404,7 +404,7 @@ If BORG_PASSPHRASE or BORG_PASSCOMMAND are also set, they take precedence.
 When set, use the value to answer the passphrase question when a \fBnew\fP passphrase is asked for.
 This variable is checked first. If it is not set, BORG_PASSPHRASE and BORG_PASSCOMMAND will also
 be checked.
-Main usecase for this is to fully automate \fBbork change\-passphrase\fP\&.
+Main usecase for this is to automate fully \fBborg change\-passphrase\fP\&.
 .TP
 .B BORG_DISPLAY_PASSPHRASE
 When set, use the value to answer the \(dqdisplay the passphrase for verification\(dq question when defining a new passphrase for encrypted repositories.
@@ -413,7 +413,7 @@ When set, use the value to answer the \(dqdisplay the passphrase for verificatio
 Bork usually computes a host id from the FQDN plus the results of \fBuuid.getnode()\fP (which usually returns
 a unique id based on the MAC address of the network interface. Except if that MAC happens to be all\-zero \- in
 that case it returns a random value, which is not what we want (because it kills automatic stale lock removal).
-So, if you have a all\-zero MAC address or other reasons to better externally control the host id, just set this
+So, if you have a all\-zero MAC address or other reasons to control better externally the host id, just set this
 environment variable to a unique value. If all your FQDNs are unique, you can just use the FQDN. If not,
 use \fI\%fqdn@uniqueid\fP\&.
 .TP
@@ -441,7 +441,7 @@ cache entries for backup sources other than the current sources.
 .TP
 .B BORG_FILES_CACHE_TTL
 When set to a numeric value, this determines the maximum \(dqtime to live\(dq for the files cache
-entries (default: 20). The files cache is used to quickly determine whether a file is unchanged.
+entries (default: 20). The files cache is used to determine quickly whether a file is unchanged.
 The FAQ explains this more detailed in: \fIalways_chunking\fP
 .TP
 .B BORG_SHOW_SYSINFO
@@ -493,7 +493,52 @@ write to disk behaviour (not continuously streaming to disk).
 Retry opening a file without O_NOATIME if opening a file with O_NOATIME
 caused EROFS. You will need this to make archives from volume shadow copies
 in WSL1 (Windows Subsystem for Linux 1).
+.TP
+.B authenticated_no_key
+Work around a lost passphrase or key for an \fBauthenticated\fP mode repository
+(these are only authenticated, but not encrypted).
+If the key is missing in the repository config, add \fBkey = anything\fP there.
+.sp
+This workaround is \fBonly\fP for emergencies and \fBonly\fP to extract data
+from an affected repository (read\-only access):
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+BORG_WORKAROUNDS=authenticated_no_key borg extract repo::archive
+.ft P
+.fi
 .UNINDENT
+.UNINDENT
+.sp
+After you have extracted all data you need, you MUST delete the repository:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+BORG_WORKAROUNDS=authenticated_no_key borg delete repo
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Now you can init a fresh repo. Make sure you do not use the workaround any more.
+.UNINDENT
+.UNINDENT
+.TP
+.B Output formatting:
+.INDENT 7.0
+.TP
+.B BORG_LIST_FORMAT
+Giving the default value for \fBborg list \-\-format=X\fP\&.
+.TP
+.B BORG_RLIST_FORMAT
+Giving the default value for \fBborg rlist \-\-format=X\fP\&.
+.TP
+.B BORG_PRUNE_FORMAT
+Giving the default value for \fBborg prune \-\-format=X\fP\&.
 .UNINDENT
 .TP
 .B Some automatic \(dqanswerers\(dq (if set, they automatically answer confirmation questions):
@@ -509,7 +554,7 @@ For \(dqWarning: The repository at location ... was previously located at ...\(d
 For \(dqThis is a potentially dangerous function...\(dq (check \-\-repair)
 .TP
 .B BORG_DELETE_I_KNOW_WHAT_I_AM_DOING=NO (or =YES)
-For \(dqYou requested to completely DELETE the repository \fIincluding\fP all archives it contains:\(dq
+For \(dqYou requested to DELETE the repository completely \fIincluding\fP all archives it contains:\(dq
 .UNINDENT
 .sp
 Note: answers are case sensitive. setting an invalid answer value might either give the default
@@ -540,17 +585,44 @@ Defaults to \fB$BORG_BASE_DIR/.config/bork\fP\&. If \fBBORG_BASE_DIR\fP is not e
 This directory contains all bork configuration directories, see the FAQ
 for a security advisory about the data in this directory: \fIhome_config_bork\fP
 .TP
+.B BORG_DATA_DIR
+Defaults to \fB$BORG_BASE_DIR/.local/share/borg\fP\&. If \fBBORG_BASE_DIR\fP is not explicitly set while
+\fI\%XDG env var\fP \fBXDG_DATA_HOME\fP is set, then \fB$XDG_DATA_HOME/borg\fP is being used instead.
+This directory contains all borg data directories, see the FAQ
+for a security advisory about the data in this directory: \fIhome_data_borg\fP
+.TP
+.B BORG_RUNTIME_DIR
+Defaults to \fB$BORG_BASE_DIR/.cache/borg\fP\&. If \fBBORG_BASE_DIR\fP is not explicitly set while
+\fI\%XDG env var\fP \fBXDG_RUNTIME_DIR\fP is set, then \fB$XDG_RUNTIME_DIR/borg\fP is being used instead.
+This directory contains borg runtime files, like e.g. the socket file.
+.TP
 .B BORG_SECURITY_DIR
-Defaults to \fB$BORG_CONFIG_DIR/security\fP\&.
-This directory contains information bork uses to track its usage of NONCES (\(dqnumbers used
-once\(dq \- usually in encryption context) and other security relevant data.
+Defaults to \fB$BORG_DATA_DIR/security\fP\&.
+This directory contains security relevant data.
 .TP
 .B BORG_KEYS_DIR
 Defaults to \fB$BORG_CONFIG_DIR/keys\fP\&.
 This directory contains keys for encrypted repositories.
 .TP
 .B BORG_KEY_FILE
-When set, use the given filename as repository key file.
+When set, use the given path as repository key file. Please note that this is only
+for rather special applications that externally fully manage the key files:
+.INDENT 7.0
+.IP \(bu 2
+this setting only applies to the keyfile modes (not to the repokey modes).
+.IP \(bu 2
+using a full, absolute path to the key file is recommended.
+.IP \(bu 2
+all directories in the given path must exist.
+.IP \(bu 2
+this setting forces borg to use the key file at the given location.
+.IP \(bu 2
+the key file must either exist (for most commands) or will be created (\fBborg rcreate\fP).
+.IP \(bu 2
+you need to give a different path for different repositories.
+.IP \(bu 2
+you need to point to the correct key file matching the repository the command will operate on.
+.UNINDENT
 .TP
 .B TMPDIR
 This is where temporary files are stored (might need a lot of temporary space for some
@@ -566,10 +638,6 @@ Adds given OpenSSL header file directory to the default locations (setup.py).
 .B BORG_LIBLZ4_PREFIX
 Adds given prefix directory to the default locations. If a \(aqinclude/lz4.h\(aq is found Bork
 will be linked against the system liblz4 instead of a bundled implementation. (setup.py)
-.TP
-.B BORG_LIBB2_PREFIX
-Adds given prefix directory to the default locations. If a \(aqinclude/blake2.h\(aq is found Bork
-will be linked against the system libb2 instead of a bundled implementation. (setup.py)
 .TP
 .B BORG_LIBZSTD_PREFIX
 Adds given prefix directory to the default locations. If a \(aqinclude/zstd.h\(aq is found Bork
@@ -610,7 +678,7 @@ At least three directory levels with short names
 Typically, file sizes up to a few hundred MB.
 Large repositories may require large files (>2 GB).
 .IP \(bu 2
-Up to 1000 files per directory (10000 for repositories initialized with Bork 1.0)
+Up to 1000 files per directory.
 .IP \(bu 2
 rename(2) / MoveFile(Ex) should work as specified, i.e. on the same file system
 it should be a move (not a copy) operation, and in case of a directory
@@ -737,7 +805,7 @@ If your repository is remote, all deduplicated (and optionally compressed/
 encrypted) data of course has to go over the connection (\fBssh://\fP repo url).
 If you use a locally mounted network filesystem, additionally some copy
 operations used for transaction support also go over the connection. If
-you backup multiple sources to one target repository, additional traffic
+you back up multiple sources to one target repository, additional traffic
 happens for cache resynchronization.
 .UNINDENT
 .SS Support for file metadata
@@ -806,7 +874,7 @@ Yes [1]
 T}
 _
 T{
-Mac OS X
+macOS
 T}	T{
 Yes
 T}	T{

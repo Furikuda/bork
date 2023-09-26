@@ -40,7 +40,7 @@ cpu_threads = multiprocessing.cpu_count() if multiprocessing and multiprocessing
 # Are we building on ReadTheDocs?
 on_rtd = os.environ.get("READTHEDOCS")
 
-# Extra cflags for all extensions, usually just warnings we want to explicitly enable
+# Extra cflags for all extensions, usually just warnings we want to enable explicitly
 cflags = ["-Wall", "-Wextra", "-Wpointer-arith"]
 
 compress_source = "src/bork/compress.pyx"
@@ -161,8 +161,8 @@ if not on_rtd:
         # Use openssl (not libressl) because we need AES-OCB via EVP api. Link
         # it statically to avoid conflicting with shared libcrypto from the base
         # OS pulled in via dependencies.
-        crypto_ext_lib = {"include_dirs": ["/usr/local/include/eopenssl11"]}
-        crypto_extra_objects += ["/usr/local/lib/eopenssl11/libcrypto.a"]
+        crypto_ext_lib = {"include_dirs": ["/usr/local/include/eopenssl30"]}
+        crypto_extra_objects += ["/usr/local/lib/eopenssl30/libcrypto.a"]
     else:
         crypto_ext_lib = lib_ext_kwargs(pc, "BORG_OPENSSL_PREFIX", "crypto", "libcrypto", ">=1.1.1")
 
@@ -186,13 +186,15 @@ if not on_rtd:
         dict(extra_compile_args=cflags),
     )
 
+    # note: _chunker.c and _hashindex.c are relatively complex/large pieces of handwritten C code,
+    # thus we undef NDEBUG for them, so the compiled code will contain and execute assert().
     ext_modules += [
-        Extension("bork.crypto.low_level", **crypto_ext_kwargs),
-        Extension("bork.compress", **compress_ext_kwargs),
-        Extension("bork.hashindex", [hashindex_source], extra_compile_args=cflags),
-        Extension("bork.item", [item_source], extra_compile_args=cflags),
-        Extension("bork.chunker", [chunker_source], extra_compile_args=cflags),
-        Extension("bork.checksums", **checksums_ext_kwargs),
+        Extension("borg.crypto.low_level", **crypto_ext_kwargs),
+        Extension("borg.compress", **compress_ext_kwargs),
+        Extension("borg.hashindex", [hashindex_source], extra_compile_args=cflags, undef_macros=["NDEBUG"]),
+        Extension("borg.item", [item_source], extra_compile_args=cflags),
+        Extension("borg.chunker", [chunker_source], extra_compile_args=cflags, undef_macros=["NDEBUG"]),
+        Extension("borg.checksums", **checksums_ext_kwargs),
     ]
 
     posix_ext = Extension("bork.platform.posix", [platform_posix_source], extra_compile_args=cflags)

@@ -63,7 +63,7 @@ class KeysMixIn:
                 print("Change not needed or not supported.")
                 return EXIT_WARNING
 
-        for name in ("repository_id", "crypt_key", "id_key", "chunk_seed", "tam_required", "sessionid", "cipher"):
+        for name in ("repository_id", "crypt_key", "id_key", "chunk_seed", "sessionid", "cipher"):
             value = getattr(key, name)
             setattr(key_new, name, value)
 
@@ -101,6 +101,8 @@ class KeysMixIn:
             manager.export_paperkey(args.path)
         else:
             try:
+                if os.path.isdir(args.path):
+                    raise IsADirectoryError
                 if args.qr:
                     manager.export_qr(args.path)
                 else:
@@ -130,7 +132,6 @@ class KeysMixIn:
         return EXIT_SUCCESS
 
     def build_parser_keys(self, subparsers, common_parser, mid_common_parser):
-
         from ._common import process_epilog
 
         subparser = subparsers.add_parser(
@@ -149,7 +150,7 @@ class KeysMixIn:
         key_export_epilog = process_epilog(
             """
         If repository encryption is used, the repository is inaccessible
-        without the key. This command allows one to backup this essential key.
+        without the key. This command allows one to back up this essential key.
         Note that the backup produced does not include the passphrase itself
         (i.e. the exported key stays encrypted). In order to regain access to a
         repository, one needs both the exported key and the original passphrase.

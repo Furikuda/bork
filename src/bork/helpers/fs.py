@@ -1,12 +1,14 @@
 import errno
 import hashlib
 import os
-import os.path
+import posixpath
 import re
 import stat
 import subprocess
 import sys
 import textwrap
+
+import platformdirs
 
 from .errors import Error
 
@@ -18,9 +20,6 @@ from ..constants import *  # NOQA
 from ..logger import create_logger
 
 logger = create_logger()
-
-
-py_37_plus = sys.version_info >= (3, 7)
 
 
 def ensure_dir(path, mode=stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO, pretty_deadly=True):
@@ -43,87 +42,139 @@ def ensure_dir(path, mode=stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO, pretty_dea
             raise
 
 
-def get_base_dir():
-    """Get home directory / base directory for bork:
+def get_base_dir(*, legacy=False):
+    """Get home directory / base directory for borg:
 
     - BORG_BASE_DIR, if set
     - HOME, if set
     - ~$USER, if USER is set
     - ~
     """
-    base_dir = os.environ.get("BORG_BASE_DIR") or os.environ.get("HOME")
-    # os.path.expanduser() behaves differently for '~' and '~someuser' as
-    # parameters: when called with an explicit username, the possibly set
-    # environment variable HOME is no longer respected. So we have to check if
-    # it is set and only expand the user's home directory if HOME is unset.
-    if not base_dir:
-        base_dir = os.path.expanduser("~%s" % os.environ.get("USER", ""))
+    if legacy:
+        base_dir = os.environ.get("BORG_BASE_DIR") or os.environ.get("HOME")
+        # os.path.expanduser() behaves differently for '~' and '~someuser' as
+        # parameters: when called with an explicit username, the possibly set
+        # environment variable HOME is no longer respected. So we have to check if
+        # it is set and only expand the user's home directory if HOME is unset.
+        if not base_dir:
+            base_dir = os.path.expanduser("~%s" % os.environ.get("USER", ""))
+    else:
+        # we only care for BORG_BASE_DIR here, as it can be used to override the base dir
+        # and not use any more or less platform specific way to determine the base dir.
+        base_dir = os.environ.get("BORG_BASE_DIR")
     return base_dir
 
 
-def get_keys_dir():
+def join_base_dir(*paths, **kw):
+    legacy = kw.get("legacy", True)
+    base_dir = get_base_dir(legacy=legacy)
+    return None if base_dir is None else os.path.join(base_dir, *paths)
+
+
+def get_keys_dir(*, legacy=False, create=True):
     """Determine where to repository keys and cache"""
     keys_dir = os.environ.get("BORG_KEYS_DIR")
     if keys_dir is None:
         # note: do not just give this as default to the environment.get(), see issue #5979.
-        keys_dir = os.path.join(get_config_dir(), "keys")
-    ensure_dir(keys_dir)
+        keys_dir = os.path.join(get_config_dir(legacy=legacy), "keys")
+    if create:
+        ensure_dir(keys_dir)
     return keys_dir
 
 
-def get_security_dir(repository_id=None):
+def get_security_dir(repository_id=None, *, legacy=False, create=True):
     """Determine where to store local security information."""
     security_dir = os.environ.get("BORG_SECURITY_DIR")
     if security_dir is None:
+        get_dir = get_config_dir if legacy else get_data_dir
         # note: do not just give this as default to the environment.get(), see issue #5979.
-        security_dir = os.path.join(get_config_dir(), "security")
+        security_dir = os.path.join(get_dir(legacy=legacy), "security")
     if repository_id:
         security_dir = os.path.join(security_dir, repository_id)
-    ensure_dir(security_dir)
+    if create:
+        ensure_dir(security_dir)
     return security_dir
 
 
-def get_cache_dir():
-    """Determine where to repository keys and cache"""
-    # Get cache home path
-    cache_home = os.path.join(get_base_dir(), ".cache")
-    # Try to use XDG_CACHE_HOME instead if BORG_BASE_DIR isn't explicitly set
-    if not os.environ.get("BORG_BASE_DIR"):
-        cache_home = os.environ.get("XDG_CACHE_HOME", cache_home)
-    # Use BORG_CACHE_DIR if set, otherwise assemble final path from cache home path
-    cache_dir = os.environ.get("BORG_CACHE_DIR", os.path.join(cache_home, "bork"))
-    # Create path if it doesn't exist yet
-    ensure_dir(cache_dir)
-    cache_tag_fn = os.path.join(cache_dir, CACHE_TAG_NAME)
-    if not os.path.exists(cache_tag_fn):
-        cache_tag_contents = (
-            CACHE_TAG_CONTENTS
-            + textwrap.dedent(
-                """
-        # This file is a cache directory tag created by Bork.
-        # For information about cache directory tags, see:
-        #       http://www.bford.info/cachedir/spec.html
-        """
-            ).encode("ascii")
-        )
-        from ..platform import SaveFile
+def get_data_dir(*, legacy=False, create=True):
+    """Determine where to store borg changing data on the client"""
+    assert legacy is False, "there is no legacy variant of the borg data dir"
+    data_dir = os.environ.get(
+        "BORG_DATA_DIR", join_base_dir(".local", "share", "borg", legacy=legacy) or platformdirs.user_data_dir("borg")
+    )
+    if create:
+        ensure_dir(data_dir)
+    return data_dir
 
-        with SaveFile(cache_tag_fn, binary=True) as fd:
-            fd.write(cache_tag_contents)
+
+def get_runtime_dir(*, legacy=False, create=True):
+    """Determine where to store runtime files, like sockets, PID files, ..."""
+    assert legacy is False, "there is no legacy variant of the borg runtime dir"
+    runtime_dir = os.environ.get(
+        "BORG_RUNTIME_DIR", join_base_dir(".cache", "borg", legacy=legacy) or platformdirs.user_runtime_dir("borg")
+    )
+    if create:
+        ensure_dir(runtime_dir)
+    return runtime_dir
+
+
+def get_socket_filename():
+    return os.path.join(get_runtime_dir(), "borg.sock")
+
+
+def get_cache_dir(*, legacy=False, create=True):
+    """Determine where to repository keys and cache"""
+
+    if legacy:
+        # Get cache home path
+        cache_home = join_base_dir(".cache", legacy=legacy)
+        # Try to use XDG_CACHE_HOME instead if BORG_BASE_DIR isn't explicitly set
+        if not os.environ.get("BORG_BASE_DIR"):
+            cache_home = os.environ.get("XDG_CACHE_HOME", cache_home)
+        # Use BORG_CACHE_DIR if set, otherwise assemble final path from cache home path
+        cache_dir = os.environ.get("BORG_CACHE_DIR", os.path.join(cache_home, "borg"))
+    else:
+        cache_dir = os.environ.get(
+            "BORG_CACHE_DIR", join_base_dir(".cache", "borg", legacy=legacy) or platformdirs.user_cache_dir("borg")
+        )
+    if create:
+        ensure_dir(cache_dir)
+        cache_tag_fn = os.path.join(cache_dir, CACHE_TAG_NAME)
+        if not os.path.exists(cache_tag_fn):
+            cache_tag_contents = (
+                CACHE_TAG_CONTENTS
+                + textwrap.dedent(
+                    """
+            # This file is a cache directory tag created by Borg.
+            # For information about cache directory tags, see:
+            #       http://www.bford.info/cachedir/spec.html
+            """
+                ).encode("ascii")
+            )
+            from ..platform import SaveFile
+
+            with SaveFile(cache_tag_fn, binary=True) as fd:
+                fd.write(cache_tag_contents)
     return cache_dir
 
 
-def get_config_dir():
+def get_config_dir(*, legacy=False, create=True):
     """Determine where to store whole config"""
+
     # Get config home path
-    config_home = os.path.join(get_base_dir(), ".config")
-    # Try to use XDG_CONFIG_HOME instead if BORG_BASE_DIR isn't explicitly set
-    if not os.environ.get("BORG_BASE_DIR"):
-        config_home = os.environ.get("XDG_CONFIG_HOME", config_home)
-    # Use BORG_CONFIG_DIR if set, otherwise assemble final path from config home path
-    config_dir = os.environ.get("BORG_CONFIG_DIR", os.path.join(config_home, "bork"))
-    # Create path if it doesn't exist yet
-    ensure_dir(config_dir)
+    if legacy:
+        config_home = join_base_dir(".config", legacy=legacy)
+        # Try to use XDG_CONFIG_HOME instead if BORG_BASE_DIR isn't explicitly set
+        if not os.environ.get("BORG_BASE_DIR"):
+            config_home = os.environ.get("XDG_CONFIG_HOME", config_home)
+        # Use BORG_CONFIG_DIR if set, otherwise assemble final path from config home path
+        config_dir = os.environ.get("BORG_CONFIG_DIR", os.path.join(config_home, "borg"))
+    else:
+        config_dir = os.environ.get(
+            "BORG_CONFIG_DIR", join_base_dir(".config", "borg", legacy=legacy) or platformdirs.user_config_dir("borg")
+        )
+    if create:
+        ensure_dir(config_dir)
     return config_dir
 
 
@@ -164,12 +215,69 @@ def dir_is_tagged(path, exclude_caches, exclude_if_present):
     return tag_names
 
 
-_safe_re = re.compile(r"^((\.\.)?/+)+")
-
-
 def make_path_safe(path):
-    """Make path safe by making it relative and local"""
-    return _safe_re.sub("", path) or "."
+    """
+    Make path safe by making it relative and normalized.
+
+    `path` is sanitized by making it relative, removing
+    consecutive slashes (e.g. '//'), removing '.' elements,
+    and removing trailing slashes.
+
+    For reasons of security, a ValueError is raised should
+    `path` contain any '..' elements.
+    """
+    path = path.lstrip("/")
+    if path.startswith("../") or "/../" in path or path.endswith("/..") or path == "..":
+        raise ValueError(f"unexpected '..' element in path {path!r}")
+    path = posixpath.normpath(path)
+    return path
+
+
+_dotdot_re = re.compile(r"^(\.\./)+")
+
+
+def remove_dotdot_prefixes(path):
+    """
+    Remove '../'s at the beginning of `path`. Additionally,
+    the path is made relative.
+
+    `path` is expected to be normalized already (e.g. via `os.path.normpath()`).
+    """
+    if is_win32:
+        if len(path) > 1 and path[1] == ":":
+            path = path.replace(":", "", 1)
+        path = path.replace("\\", "/")
+
+    path = path.lstrip("/")
+    path = _dotdot_re.sub("", path)
+    if path in ["", ".."]:
+        return "."
+    return path
+
+
+def assert_sanitized_path(path):
+    assert isinstance(path, str)
+    # `path` should have been sanitized earlier. Some features,
+    # like pattern matching rely on a sanitized path. As a
+    # precaution we check here again.
+    if make_path_safe(path) != path:
+        raise ValueError(f"path {path!r} is not sanitized")
+    return path
+
+
+def to_sanitized_path(path):
+    assert isinstance(path, str)
+    # Legacy versions of Borg still allowed non-sanitized paths
+    # to be stored. So, we sanitize them when reading.
+    #
+    # Borg 2 ensures paths are safe before storing them. Thus, when
+    # support for reading Borg 1 archives is dropped, this should be
+    # changed to a simple check to verify paths aren't malicious.
+    # Namely, absolute paths and paths containing '..' elements must
+    # be rejected.
+    #
+    # Also checks for '..' elements in `path` for reasons of security.
+    return make_path_safe(path)
 
 
 class HardLinkManager:
@@ -204,8 +312,8 @@ class HardLinkManager:
     def bork1_hardlinkable(self, mode):  # legacy
         return stat.S_ISREG(mode) or stat.S_ISBLK(mode) or stat.S_ISCHR(mode) or stat.S_ISFIFO(mode)
 
-    def bork1_hardlink_master(self, item):  # legacy
-        return item.get("hardlink_master", True) and "source" not in item and self.bork1_hardlinkable(item.mode)
+    def borg1_hardlink_master(self, item):  # legacy
+        return item.get("hardlink_master", False) and "source" not in item and self.borg1_hardlinkable(item.mode)
 
     def bork1_hardlink_slave(self, item):  # legacy
         return "source" in item and self.bork1_hardlinkable(item.mode)
@@ -233,7 +341,7 @@ class HardLinkManager:
                      chunks / chunks_healthy list
                      hlid
         """
-        assert isinstance(id, self.id_type), f"key is {key!r}, not of type {self.key_type}"
+        assert isinstance(id, self.id_type), f"id is {id!r}, not of type {self.id_type}"
         assert isinstance(info, self.info_type), f"info is {info!r}, not of type {self.info_type}"
         self._map[id] = info
 
@@ -241,7 +349,7 @@ class HardLinkManager:
         """
         retrieve stuff to use it in a (usually contentless) item.
         """
-        assert isinstance(id, self.id_type)
+        assert isinstance(id, self.id_type), f"id is {id!r}, not of type {self.id_type}"
         return self._map.get(id, default)
 
 
@@ -259,13 +367,12 @@ def scandir_keyfunc(dirent):
 
 
 def scandir_inorder(*, path, fd=None):
-    # py37+ supports giving an fd instead of a path (no full entry.path in DirEntry in that case!)
-    arg = fd if fd is not None and py_37_plus else path
+    arg = fd if fd is not None else path
     return sorted(os.scandir(arg), key=scandir_keyfunc)
 
 
 def secure_erase(path, *, avoid_collateral_damage):
-    """Attempt to securely erase a file by writing random data over it before deleting it.
+    """Attempt to erase a file securely by writing random data over it before deleting it.
 
     If avoid_collateral_damage is True, we only secure erase if the total link count is 1,
     otherwise we just do a normal "delete" (unlink) without first overwriting it with random.
@@ -341,7 +448,6 @@ flags_special = flags_base | O_("NOFOLLOW")  # BLOCK == wait when reading device
 flags_special_follow = flags_base  # BLOCK == wait when reading symlinked devices or fifos
 flags_normal = flags_base | O_("NONBLOCK", "NOFOLLOW")
 flags_noatime = flags_normal | O_("NOATIME")
-flags_root = O_("RDONLY")
 flags_dir = O_("DIRECTORY", "RDONLY", "NOFOLLOW")
 
 

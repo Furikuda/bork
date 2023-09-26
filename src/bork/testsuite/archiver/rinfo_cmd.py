@@ -1,46 +1,55 @@
 import json
-import unittest
+from random import randbytes
 
 from ...constants import *  # NOQA
-from . import (
-    ArchiverTestCaseBase,
-    RemoteArchiverTestCaseBase,
-    ArchiverTestCaseBinaryBase,
-    RK_ENCRYPTION,
-    BORG_EXES,
-    checkts,
-)
+from . import checkts, cmd, create_regular_file, generate_archiver_tests, RK_ENCRYPTION
+
+pytest_generate_tests = lambda metafunc: generate_archiver_tests(metafunc, kinds="local,remote,binary")  # NOQA
 
 
-class ArchiverTestCase(ArchiverTestCaseBase):
-    def test_info(self):
-        self.create_regular_file("file1", size=1024 * 80)
-        self.cmd(f"--repo={self.repository_location}", "rcreate", RK_ENCRYPTION)
-        self.cmd(f"--repo={self.repository_location}", "create", "test", "input")
-        info_repo = self.cmd(f"--repo={self.repository_location}", "rinfo")
-        assert "Original size:" in info_repo
-
-    def test_info_json(self):
-        self.create_regular_file("file1", size=1024 * 80)
-        self.cmd(f"--repo={self.repository_location}", "rcreate", RK_ENCRYPTION)
-        self.cmd(f"--repo={self.repository_location}", "create", "test", "input")
-        info_repo = json.loads(self.cmd(f"--repo={self.repository_location}", "rinfo", "--json"))
-        repository = info_repo["repository"]
-        assert len(repository["id"]) == 64
-        assert "last_modified" in repository
-        checkts(repository["last_modified"])
-        assert info_repo["encryption"]["mode"] == RK_ENCRYPTION[13:]
-        assert "keyfile" not in info_repo["encryption"]
-        cache = info_repo["cache"]
-        stats = cache["stats"]
-        assert all(isinstance(o, int) for o in stats.values())
-        assert all(key in stats for key in ("total_chunks", "total_size", "total_unique_chunks", "unique_size"))
+def test_info(archivers, request):
+    archiver = request.getfixturevalue(archivers)
+    create_regular_file(archiver.input_path, "file1", size=1024 * 80)
+    cmd(archiver, "rcreate", RK_ENCRYPTION)
+    cmd(archiver, "create", "test", "input")
+    info_repo = cmd(archiver, "rinfo")
+    assert "Original size:" in info_repo
 
 
-class RemoteArchiverTestCase(RemoteArchiverTestCaseBase, ArchiverTestCase):
-    """run the same tests, but with a remote repository"""
+def test_info_json(archivers, request):
+    archiver = request.getfixturevalue(archivers)
+    create_regular_file(archiver.input_path, "file1", size=1024 * 80)
+    cmd(archiver, "rcreate", RK_ENCRYPTION)
+    cmd(archiver, "create", "test", "input")
+
+    info_repo = json.loads(cmd(archiver, "rinfo", "--json"))
+    repository = info_repo["repository"]
+    assert len(repository["id"]) == 64
+    assert "last_modified" in repository
+
+    checkts(repository["last_modified"])
+    assert info_repo["encryption"]["mode"] == RK_ENCRYPTION[13:]
+    assert "keyfile" not in info_repo["encryption"]
+
+    cache = info_repo["cache"]
+    stats = cache["stats"]
+    assert all(isinstance(o, int) for o in stats.values())
+    assert all(key in stats for key in ("total_chunks", "total_size", "total_unique_chunks", "unique_size"))
 
 
-@unittest.skipUnless("binary" in BORG_EXES, "no bork.exe available")
-class ArchiverTestCaseBinary(ArchiverTestCaseBinaryBase, ArchiverTestCase):
-    """runs the same tests, but via the bork binary"""
+def test_info_on_repository_with_storage_quota(archivers, request):
+    archiver = request.getfixturevalue(archivers)
+    create_regular_file(archiver.input_path, "file1", contents=randbytes(1000 * 1000))
+    cmd(archiver, "rcreate", RK_ENCRYPTION, "--storage-quota=1G")
+    cmd(archiver, "create", "test", "input")
+    info_repo = cmd(archiver, "rinfo")
+    assert "Storage quota: 1.00 MB used out of 1.00 GB" in info_repo
+
+
+def test_info_on_repository_without_storage_quota(archivers, request):
+    archiver = request.getfixturevalue(archivers)
+    create_regular_file(archiver.input_path, "file1", contents=randbytes(1000 * 1000))
+    cmd(archiver, "rcreate", RK_ENCRYPTION)
+    cmd(archiver, "create", "test", "input")
+    info_repo = cmd(archiver, "rinfo")
+    assert "Storage quota: 1.00 MB used" in info_repo

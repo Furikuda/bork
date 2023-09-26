@@ -5,7 +5,7 @@ from ._common import build_matcher
 from ..archive import ArchiveRecreater
 from ..constants import *  # NOQA
 from ..compress import CompressionSpec
-from ..helpers import archivename_validator, ChunkerParams
+from ..helpers import archivename_validator, comment_validator, ChunkerParams
 from ..helpers import timestamp
 from ..manifest import Manifest
 
@@ -21,8 +21,6 @@ class RecreateMixIn:
         matcher = build_matcher(args.patterns, args.paths)
         self.output_list = args.output_list
         self.output_filter = args.output_filter
-        recompress = args.recompress != "never"
-        always_recompress = args.recompress == "always"
 
         recreater = ArchiveRecreater(
             manifest,
@@ -33,12 +31,11 @@ class RecreateMixIn:
             keep_exclude_tags=args.keep_exclude_tags,
             chunker_params=args.chunker_params,
             compression=args.compression,
-            recompress=recompress,
-            always_recompress=always_recompress,
             progress=args.progress,
             stats=args.stats,
             file_status_printer=self.print_file_status,
             checkpoint_interval=args.checkpoint_interval,
+            checkpoint_volume=args.checkpoint_volume,
             dry_run=args.dry_run,
             timestamp=args.timestamp,
         )
@@ -80,17 +77,12 @@ class RecreateMixIn:
         Note that all paths in an archive are relative, therefore absolute patterns/paths
         will *not* match (``--exclude``, ``--exclude-from``, PATHs).
 
-        ``--recompress`` allows one to change the compression of existing data in archives.
-        Due to how Bork stores compressed size information this might display
-        incorrect information for archives that were not recreated at the same time.
-        There is no risk of data loss by this.
-
         ``--chunker-params`` will re-chunk all files in the archive, this can be
         used to have upgraded Bork 0.xx archives deduplicate with Bork 1.x archives.
 
         **USE WITH CAUTION.**
-        Depending on the PATHs and patterns given, recreate can be used to permanently
-        delete files from archives.
+        Depending on the PATHs and patterns given, recreate can be used to
+        delete files from archives permanently.
         When in doubt, use ``--dry-run --verbose --list`` to see how patterns/PATHS are
         interpreted. See :ref:`list_item_flags` in ``bork create`` for details.
 
@@ -100,9 +92,9 @@ class RecreateMixIn:
 
         With ``--target`` the original archive is not replaced, instead a new archive is created.
 
-        When rechunking (or recompressing), space usage can be substantial - expect
+        When rechunking, space usage can be substantial - expect
         at least the entire deduplicated size of the archives using the previous
-        chunker (or compression) params.
+        chunker params.
 
         If you recently ran bork check --repair and it had to fix lost chunks with all-zero
         replacement chunks, please first run another backup for the same data and re-run
@@ -147,7 +139,8 @@ class RecreateMixIn:
             dest="target",
             metavar="TARGET",
             default=None,
-            type=archivename_validator(),
+            type=archivename_validator,
+            action=Highlander,
             help="create a new archive with the name ARCHIVE, do not replace existing archive "
             "(only applies for a single archive)",
         )
@@ -157,11 +150,27 @@ class RecreateMixIn:
             dest="checkpoint_interval",
             type=int,
             default=1800,
+            action=Highlander,
             metavar="SECONDS",
             help="write checkpoint every SECONDS seconds (Default: 1800)",
         )
         archive_group.add_argument(
-            "--comment", dest="comment", metavar="COMMENT", default=None, help="add a comment text to the archive"
+            "--checkpoint-volume",
+            metavar="BYTES",
+            dest="checkpoint_volume",
+            type=int,
+            default=0,
+            action=Highlander,
+            help="write checkpoint every BYTES bytes (Default: 0, meaning no volume based checkpointing)",
+        )
+        archive_group.add_argument(
+            "--comment",
+            metavar="COMMENT",
+            dest="comment",
+            type=comment_validator,
+            default=None,
+            action=Highlander,
+            help="add a comment text to the archive",
         )
         archive_group.add_argument(
             "--timestamp",
@@ -169,6 +178,7 @@ class RecreateMixIn:
             dest="timestamp",
             type=timestamp,
             default=None,
+            action=Highlander,
             help="manually specify the archive creation date/time (yyyy-mm-ddThh:mm:ss[(+|-)HH:MM] format, "
             "(+|-)HH:MM is the UTC offset, default: local time zone). Alternatively, give a reference file/directory.",
         )
@@ -179,36 +189,19 @@ class RecreateMixIn:
             dest="compression",
             type=CompressionSpec,
             default=CompressionSpec("lz4"),
-            help="select compression algorithm, see the output of the " '"bork help compression" command for details.',
-        )
-        archive_group.add_argument(
-            "--recompress",
-            metavar="MODE",
-            dest="recompress",
-            nargs="?",
-            default="never",
-            const="if-different",
-            choices=("never", "if-different", "always"),
-            help="recompress data chunks according to `MODE` and ``--compression``. "
-            "Possible modes are "
-            "`if-different`: recompress if current compression is with a different "
-            "compression algorithm or different level; "
-            "`always`: recompress unconditionally; and "
-            "`never`: do not recompress (use this option to explicitly prevent "
-            "recompression). "
-            "If no MODE is given, `if-different` will be used. "
-            'Not passing --recompress is equivalent to "--recompress never".',
+            action=Highlander,
+            help="select compression algorithm, see the output of the " '"borg help compression" command for details.',
         )
         archive_group.add_argument(
             "--chunker-params",
             metavar="PARAMS",
             dest="chunker_params",
-            action=Highlander,
             type=ChunkerParams,
-            default=CHUNKER_PARAMS,
-            help="specify the chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, "
-            "HASH_MASK_BITS, HASH_WINDOW_SIZE) or `default` to use the current defaults. "
-            "default: %s,%d,%d,%d,%d" % CHUNKER_PARAMS,
+            default=None,
+            action=Highlander,
+            help="rechunk using given chunker parameters (ALGO, CHUNK_MIN_EXP, CHUNK_MAX_EXP, "
+            "HASH_MASK_BITS, HASH_WINDOW_SIZE) or `default` to use the chunker defaults. "
+            "default: do not rechunk",
         )
 
         subparser.add_argument(

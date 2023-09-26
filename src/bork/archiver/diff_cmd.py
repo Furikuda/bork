@@ -1,12 +1,14 @@
 import argparse
+import textwrap
 import json
+import sys
+import os
 
-from ._common import with_repository, with_archive, build_matcher
+from ._common import with_repository, with_archive, build_matcher, Highlander
 from ..archive import Archive
 from ..constants import *  # NOQA
-from ..helpers import archivename_validator
+from ..helpers import BaseFormatter, DiffFormatter, archivename_validator, BorgJsonEncoder
 from ..manifest import Manifest
-
 from ..logger import create_logger
 
 logger = create_logger()
@@ -17,17 +19,15 @@ class DiffMixIn:
     @with_archive
     def do_diff(self, args, repository, manifest, archive):
         """Diff contents of two archives"""
-
-        def print_json_output(diff, path):
-            print(json.dumps({"path": path, "changes": [j for j, str in diff]}))
-
-        def print_text_output(diff, path):
-            print("{:<19} {}".format(" ".join([str for j, str in diff]), path))
-
-        print_output = print_json_output if args.json_lines else print_text_output
+        if args.format is not None:
+            format = args.format
+        elif args.content_only:
+            format = "{content}{link}{directory}{blkdev}{chrdev}{fifo} {path}{NL}"
+        else:
+            format = os.environ.get("BORG_DIFF_FORMAT", "{change} {path}{NL}")
 
         archive1 = archive
-        archive2 = Archive(manifest, args.other_name, consider_part_files=args.consider_part_files)
+        archive2 = Archive(manifest, args.other_name)
 
         can_compare_chunk_ids = (
             archive1.metadata.get("chunker_params", False) == archive2.metadata.get("chunker_params", True)
@@ -42,15 +42,36 @@ class DiffMixIn:
 
         matcher = build_matcher(args.patterns, args.paths)
 
-        diffs = Archive.compare_archives_iter(archive1, archive2, matcher, can_compare_chunk_ids=can_compare_chunk_ids)
+        diffs_iter = Archive.compare_archives_iter(
+            archive1, archive2, matcher, can_compare_chunk_ids=can_compare_chunk_ids
+        )
         # Conversion to string and filtering for diff.equal to save memory if sorting
-        diffs = ((path, diff.changes()) for path, diff in diffs if not diff.equal)
+        diffs = (diff for diff in diffs_iter if not diff.equal(args.content_only))
 
         if args.sort:
-            diffs = sorted(diffs)
+            diffs = sorted(diffs, key=lambda diff: diff.path)
 
-        for path, diff in diffs:
-            print_output(diff, path)
+        formatter = DiffFormatter(format, args.content_only)
+        for diff in diffs:
+            if args.json_lines:
+                print(
+                    json.dumps(
+                        {
+                            "path": diff.path,
+                            "changes": [
+                                change.to_dict()
+                                for name, change in diff.changes().items()
+                                if not args.content_only or (name not in DiffFormatter.METADATA)
+                            ],
+                        },
+                        sort_keys=True,
+                        cls=BorgJsonEncoder,
+                    )
+                )
+            else:
+                res: str = formatter.format_item(diff)
+                if res.strip():
+                    sys.stdout.write(res)
 
         for pattern in matcher.get_unmatched_include_patterns():
             self.print_warning("Include pattern '%s' never matched.", pattern)
@@ -58,29 +79,51 @@ class DiffMixIn:
         return self.exit_code
 
     def build_parser_diff(self, subparsers, common_parser, mid_common_parser):
-
         from ._common import process_epilog
         from ._common import define_exclusion_group
 
-        diff_epilog = process_epilog(
-            """
-            This command finds differences (file contents, user/group/mode) between archives.
+        diff_epilog = (
+            process_epilog(
+                """
+        This command finds differences (file contents, metadata) between ARCHIVE1 and ARCHIVE2.
 
-            A repository location and an archive name must be specified for REPO::ARCHIVE1.
-            ARCHIVE2 is just another archive name in same repository (no repository location
-            allowed).
+        For more help on include/exclude patterns, see the :ref:`borg_patterns` command output.
 
-            For archives created with Bork 1.1 or newer diff automatically detects whether
-            the archives are created with the same chunker params. If so, only chunk IDs
-            are compared, which is very fast.
+        .. man NOTES
 
-            For archives prior to Bork 1.1 chunk contents are compared by default.
-            If you did not create the archives with different chunker params,
-            pass ``--same-chunker-params``.
-            Note that the chunker params changed from Bork 0.xx to 1.0.
+        The FORMAT specifier syntax
+        +++++++++++++++++++++++++++
 
-            For more help on include/exclude patterns, see the :ref:`bork_patterns` command output.
-            """
+        The ``--format`` option uses python's `format string syntax
+        <https://docs.python.org/3.9/library/string.html#formatstrings>`_.
+
+        Examples:
+        ::
+
+            $ borg diff --format '{content:30} {path}{NL}' ArchiveFoo ArchiveBar
+            modified:  +4.1 kB  -1.0 kB    file-diff
+            ...
+
+            # {VAR:<NUMBER} - pad to NUMBER columns left-aligned.
+            # {VAR:>NUMBER} - pad to NUMBER columns right-aligned.
+            $ borg diff --format '{content:>30} {path}{NL}' ArchiveFoo ArchiveBar
+               modified:  +4.1 kB  -1.0 kB file-diff
+            ...
+
+        The following keys are always available:
+
+
+        """
+            )
+            + BaseFormatter.keys_help()
+            + textwrap.dedent(
+                """
+
+        Keys available only when showing differences between archives:
+
+        """
+            )
+            + DiffFormatter.keys_help()
         )
         subparser = subparsers.add_parser(
             "diff",
@@ -105,9 +148,21 @@ class DiffMixIn:
             help="Override check of chunker parameters.",
         )
         subparser.add_argument("--sort", dest="sort", action="store_true", help="Sort the output lines by file path.")
+        subparser.add_argument(
+            "--format",
+            metavar="FORMAT",
+            dest="format",
+            action=Highlander,
+            help='specify format for differences between archives (default: "{change} {path}{NL}")',
+        )
         subparser.add_argument("--json-lines", action="store_true", help="Format output as JSON Lines. ")
-        subparser.add_argument("name", metavar="ARCHIVE1", type=archivename_validator(), help="ARCHIVE1 name")
-        subparser.add_argument("other_name", metavar="ARCHIVE2", type=archivename_validator(), help="ARCHIVE2 name")
+        subparser.add_argument(
+            "--content-only",
+            action="store_true",
+            help="Only compare differences in content (exclude metadata differences)",
+        )
+        subparser.add_argument("name", metavar="ARCHIVE1", type=archivename_validator, help="ARCHIVE1 name")
+        subparser.add_argument("other_name", metavar="ARCHIVE2", type=archivename_validator, help="ARCHIVE2 name")
         subparser.add_argument(
             "paths",
             metavar="PATH",

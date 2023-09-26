@@ -129,7 +129,7 @@ class Repository:
     this is of course way more complex).
 
     LoggedIO gracefully handles truncate/unlink splits as long as the truncate resulted in
-    a zero length file. Zero length segments are considered to not exist, while LoggedIO.cleanup()
+    a zero length file. Zero length segments are considered not to exist, while LoggedIO.cleanup()
     will still get rid of them.
     """
 
@@ -178,10 +178,16 @@ class Repository:
         append_only=False,
         storage_quota=None,
         make_parent_dirs=False,
+        send_log_cb=None,
     ):
         self.path = os.path.abspath(path)
         self._location = Location("file://%s" % self.path)
         self.version = None
+        # long-running repository methods which emit log or progress output are responsible for calling
+        # the ._send_log method periodically to get log and progress output transferred to the borg client
+        # in a timely manner, in case we have a RemoteRepository.
+        # for local repositories ._send_log can be called also (it will just do nothing in that case).
+        self._send_log = send_log_cb or (lambda: None)
         self.io = None  # type: LoggedIO
         self.lock = None
         self.index = None
@@ -328,7 +334,7 @@ class Repository:
 
         if os.path.isfile(config_path):
             link_error_msg = (
-                "Failed to securely erase old repository config file (hardlinks not supported). "
+                "Failed to erase old repository config file securely (hardlinks not supported). "
                 "Old repokey data, if any, might persist on physical storage."
             )
             try:
@@ -369,36 +375,6 @@ class Repository:
         # note: if we return an empty string, it means there is no repo key
         return keydata.encode("utf-8")  # remote repo: msgpack issue #99, returning bytes
 
-    def get_free_nonce(self):
-        if self.do_lock and not self.lock.got_exclusive_lock():
-            raise AssertionError("bug in code, exclusive lock should exist here")
-
-        nonce_path = os.path.join(self.path, "nonce")
-        try:
-            with open(nonce_path) as fd:
-                return int.from_bytes(unhexlify(fd.read()), byteorder="big")
-        except FileNotFoundError:
-            return None
-
-    def commit_nonce_reservation(self, next_unreserved, start_nonce):
-        if self.do_lock and not self.lock.got_exclusive_lock():
-            raise AssertionError("bug in code, exclusive lock should exist here")
-
-        if self.get_free_nonce() != start_nonce:
-            raise Exception("nonce space reservation with mismatched previous state")
-        nonce_path = os.path.join(self.path, "nonce")
-        try:
-            with SaveFile(nonce_path, binary=False) as fd:
-                fd.write(bin_to_hex(next_unreserved.to_bytes(8, byteorder="big")))
-        except PermissionError as e:
-            # error is only a problem if we even had a lock
-            if self.do_lock:
-                raise
-            logger.warning(
-                "%s: Failed writing to '%s'. This is expected when working on "
-                "read-only repositories." % (e.strerror, e.filename)
-            )
-
     def destroy(self):
         """Destroy the repository at `self.path`"""
         if self.append_only:
@@ -429,7 +405,7 @@ class Repository:
             # valid (committed) state of the repo which we could use.
             msg = '%s" - although likely this is "beyond repair' % self.path  # dirty hack
             raise self.CheckNeeded(msg)
-        # Attempt to automatically rebuild index if we crashed between commit
+        # Attempt to rebuild index automatically if we crashed between commit
         # tag write and index save.
         if index_transaction_id != segments_transaction_id:
             if index_transaction_id is not None and index_transaction_id > segments_transaction_id:
@@ -493,9 +469,22 @@ class Repository:
         self.id = unhexlify(self.config.get("repository", "id").strip())
         self.io = LoggedIO(self.path, self.max_segment_size, self.segments_per_dir)
 
+    def _load_hints(self):
+        if (transaction_id := self.get_transaction_id()) is None:
+            # self is a fresh repo, so transaction_id is None and there is no hints file
+            return
+        hints = self._unpack_hints(transaction_id)
+        self.version = hints["version"]
+        self.storage_quota_use = hints["storage_quota_use"]
+        self.shadow_index = hints["shadow_index"]
+
     def info(self):
         """return some infos about the repo (must be opened first)"""
-        return dict(id=self.id, version=self.version, append_only=self.append_only)
+        info = dict(id=self.id, version=self.version, append_only=self.append_only)
+        self._load_hints()
+        info["storage_quota"] = self.storage_quota
+        info["storage_quota_use"] = self.storage_quota_use
+        return info
 
     def close(self):
         if self.lock:
@@ -505,15 +494,13 @@ class Repository:
             self.lock.release()
             self.lock = None
 
-    def commit(self, save_space=False, compact=True, threshold=0.1):
+    def commit(self, compact=True, threshold=0.1):
         """Commit transaction"""
-        # save_space is not used anymore, but stays for RPC/API compatibility.
         if self.transaction_doomed:
             exception = self.transaction_doomed
             self.rollback()
             raise exception
         self.check_free_space()
-        self.log_storage_quota()
         segment = self.io.write_commit()
         self.segments.setdefault(segment, 0)
         self.compact[segment] += LoggedIO.header_fmt.size
@@ -557,6 +544,12 @@ class Repository:
             self.commit(compact=False)
             return self.open_index(self.get_transaction_id())
 
+    def _unpack_hints(self, transaction_id):
+        hints_path = os.path.join(self.path, "hints.%d" % transaction_id)
+        integrity_data = self._read_integrity(transaction_id, "hints")
+        with IntegrityCheckedFile(hints_path, write=False, integrity_data=integrity_data) as fd:
+            return msgpack.unpack(fd)
+
     def prepare_txn(self, transaction_id, do_cleanup=True):
         self._active_txn = True
         if self.do_lock and not self.lock.got_exclusive_lock():
@@ -593,10 +586,8 @@ class Repository:
                 self.io.cleanup(transaction_id)
             hints_path = os.path.join(self.path, "hints.%d" % transaction_id)
             index_path = os.path.join(self.path, "index.%d" % transaction_id)
-            integrity_data = self._read_integrity(transaction_id, "hints")
             try:
-                with IntegrityCheckedFile(hints_path, write=False, integrity_data=integrity_data) as fd:
-                    hints = msgpack.unpack(fd)
+                hints = self._unpack_hints(transaction_id)
             except (msgpack.UnpackException, FileNotFoundError, FileIntegrityError) as e:
                 logger.warning("Repository hints file missing or corrupted, trying to recover: %s", e)
                 if not isinstance(e, FileNotFoundError):
@@ -623,7 +614,6 @@ class Repository:
                 self.compact = FreeSpace(hints["compact"])
                 self.storage_quota_use = hints.get("storage_quota_use", 0)
                 self.shadow_index = hints.get("shadow_index", {})
-            self.log_storage_quota()
             # Drop uncommitted segments in the shadow index
             for key, shadowed_segments in self.shadow_index.items():
                 for segment in list(shadowed_segments):
@@ -636,7 +626,7 @@ class Repository:
             os.fsync(fd.fileno())
 
         def rename_tmp(file):
-            os.rename(file + ".tmp", file)
+            os.replace(file + ".tmp", file)
 
         hints = {
             "version": 2,
@@ -705,7 +695,7 @@ class Repository:
         self.index = None
 
     def check_free_space(self):
-        """Pre-commit check for sufficient free space to actually perform the commit."""
+        """Pre-commit check for sufficient free space necessary to perform the commit."""
         # As a baseline we take four times the current (on-disk) index size.
         # At this point the index may only be updated by compaction, which won't resize it.
         # We still apply a factor of four so that a later, separate invocation can free space
@@ -720,7 +710,7 @@ class Repository:
         # 10 bytes for each segment-refcount pair, 10 bytes for each segment-space pair
         # Assume maximum of 5 bytes per integer. Segment numbers will usually be packed more densely (1-3 bytes),
         # as will refcounts and free space integers. For 5 MiB segments this estimate is good to ~20 PB repo size.
-        # Add 4K to generously account for constant format overhead.
+        # Add a generous 4K to account for constant format overhead.
         hints_size = len(self.segments) * 10 + len(self.compact) * 10 + 4096
         required_free_space += hints_size
 
@@ -735,7 +725,7 @@ class Repository:
                     try:
                         compact_working_space += self.io.segment_size(segment) - free
                     except FileNotFoundError:
-                        # looks like self.compact is referring to a non-existent segment file, ignore it.
+                        # looks like self.compact is referring to a nonexistent segment file, ignore it.
                         pass
                 logger.debug("check_free_space: Few segments, not requiring a full free segment")
                 compact_working_space = min(compact_working_space, full_segment_size)
@@ -762,14 +752,6 @@ class Repository:
             formatted_required = format_file_size(required_free_space)
             formatted_free = format_file_size(free_space)
             raise self.InsufficientFreeSpaceError(formatted_required, formatted_free)
-
-    def log_storage_quota(self):
-        if self.storage_quota:
-            logger.info(
-                "Storage quota: %s out of %s used.",
-                format_file_size(self.storage_quota_use),
-                format_file_size(self.storage_quota),
-            )
 
     def compact_segments(self, threshold):
         """Compact sparse segments by copying data into new segments"""
@@ -809,6 +791,7 @@ class Repository:
                 logger.warning("Segment %d not found, but listed in compaction data", segment)
                 del self.compact[segment]
                 pi.show()
+                self._send_log()
                 continue
             segment_size = self.io.segment_size(segment)
             freeable_ratio = 1.0 * freeable_space / segment_size
@@ -822,6 +805,7 @@ class Repository:
                     freeable_space,
                 )
                 pi.show()
+                self._send_log()
                 continue
             segments.setdefault(segment, 0)
             logger.debug(
@@ -897,13 +881,15 @@ class Repository:
                         #
                         # Now we crash. But only segment 2 gets deleted, while segment 1 is still around. Now key 1
                         # is suddenly undeleted (because the delete in segment 2 is now missing).
-                        # Again, note the requirement here. We delete these in the correct order that this doesn't happen,
-                        # and only if the FS materialization of these deletes is reordered or parts dropped this can happen.
-                        # In this case it doesn't cause outright corruption, 'just' an index count mismatch, which will be
-                        # fixed by bork-check --repair.
+                        # Again, note the requirement here. We delete these in the correct order that this doesn't
+                        # happen, and only if the FS materialization of these deletes is reordered or parts dropped
+                        # this can happen.
+                        # In this case it doesn't cause outright corruption, 'just' an index count mismatch, which
+                        # will be fixed by borg-check --repair.
                         #
-                        # Note that in this check the index state is the proxy for a "most definitely settled" repository state,
-                        # i.e. the assumption is that *all* operations on segments <= index state are completed and stable.
+                        # Note that in this check the index state is the proxy for a "most definitely settled"
+                        # repository state, i.e. the assumption is that *all* operations on segments <= index state
+                        # are completed and stable.
                         try:
                             new_segment, size = self.io.write_delete(key, raise_full=True)
                         except LoggedIO.SegmentFull:
@@ -929,8 +915,11 @@ class Repository:
             assert segments[segment] == 0, "Corrupted segment reference count - corrupted index or hints"
             unused.append(segment)
             pi.show()
+            self._send_log()
         pi.finish()
+        self._send_log()
         complete_xfer(intermediate=False)
+        self.io.clear_empty_dirs()
         quota_use_after = self.storage_quota_use
         logger.info("Compaction freed about %s repository space.", format_file_size(quota_use_before - quota_use_after))
         logger.debug("Compaction completed.")
@@ -947,6 +936,7 @@ class Repository:
             )
             for i, (segment, filename) in enumerate(self.io.segment_iterator()):
                 pi.show(i)
+                self._send_log()
                 if index_transaction_id is not None and segment <= index_transaction_id:
                     continue
                 if segment > segments_transaction_id:
@@ -954,6 +944,7 @@ class Repository:
                 objects = self.io.iter_objects(segment)
                 self._update_index(segment, objects)
             pi.finish()
+            self._send_log()
             self.write_index()
         finally:
             self.exclusive = remember_exclusive
@@ -1022,7 +1013,7 @@ class Repository:
                 # The outcome of the DELETE has been recorded in the PUT branch already.
                 self.compact[segment] += header_size(tag) + size
 
-    def check(self, repair=False, save_space=False, max_duration=0):
+    def check(self, repair=False, max_duration=0):
         """Check repository consistency
 
         This method verifies all segment checksums and makes sure
@@ -1084,6 +1075,7 @@ class Repository:
         segment = -1  # avoid uninitialized variable if there are no segment files at all
         for i, (segment, filename) in enumerate(self.io.segment_iterator()):
             pi.show(i)
+            self._send_log()
             if segment <= last_segment_checked:
                 continue
             if segment > transaction_id:
@@ -1110,6 +1102,7 @@ class Repository:
             self.save_config(self.path, self.config)
 
         pi.finish()
+        self._send_log()
         # self.index, self.segments, self.compact now reflect the state of the segment files up to <transaction_id>.
         # We might need to add a commit tag if no committed segment is found.
         if repair and segments_transaction_id is None:
@@ -1133,12 +1126,14 @@ class Repository:
                     current_value = current_index.get(key, not_found)
                     if current_value != value:
                         logger.warning(line_format, bin_to_hex(key), value, current_value)
+                self._send_log()
                 for key, current_value in current_index.iteritems():
                     if key in self.index:
                         continue
                     value = self.index.get(key, not_found)
                     if current_value != value:
                         logger.warning(line_format, bin_to_hex(key), value, current_value)
+                self._send_log()
             if repair:
                 self.write_index()
         self.rollback()
@@ -1232,7 +1227,7 @@ class Repository:
         # smallest valid seg is <uint32> 0, smallest valid offs is <uint32> 8
         start_segment, start_offset, end_segment = state if state is not None else (0, 0, transaction_id)
         ids, segment, offset = [], 0, 0
-        # we only scan up to end_segment == transaction_id to only scan **committed** chunks,
+        # we only scan up to end_segment == transaction_id to scan only **committed** chunks,
         # avoiding scanning into newly written chunks.
         for segment, filename in self.io.segment_iterator(start_segment, end_segment):
             # the start_offset we potentially got from state is only valid for the start_segment we also got
@@ -1400,39 +1395,51 @@ class LoggedIO:
         safe_fadvise(fd.fileno(), 0, 0, "DONTNEED")
         fd.close()
 
+    def get_segment_dirs(self, data_dir, start_index=MIN_SEGMENT_DIR_INDEX, end_index=MAX_SEGMENT_DIR_INDEX):
+        """Returns generator yielding required segment dirs in data_dir as `os.DirEntry` objects.
+        Start and end are inclusive.
+        """
+        segment_dirs = (
+            f
+            for f in os.scandir(data_dir)
+            if f.is_dir() and f.name.isdigit() and start_index <= int(f.name) <= end_index
+        )
+        return segment_dirs
+
+    def get_segment_files(self, segment_dir, start_index=MIN_SEGMENT_INDEX, end_index=MAX_SEGMENT_INDEX):
+        """Returns generator yielding required segment files in segment_dir as `os.DirEntry` objects.
+        Start and end are inclusive.
+        """
+        segment_files = (
+            f
+            for f in os.scandir(segment_dir)
+            if f.is_file() and f.name.isdigit() and start_index <= int(f.name) <= end_index
+        )
+        return segment_files
+
     def segment_iterator(self, start_segment=None, end_segment=None, reverse=False):
         if start_segment is None:
-            start_segment = 0 if not reverse else 2**32 - 1
+            start_segment = MIN_SEGMENT_INDEX if not reverse else MAX_SEGMENT_INDEX
         if end_segment is None:
-            end_segment = 2**32 - 1 if not reverse else 0
+            end_segment = MAX_SEGMENT_INDEX if not reverse else MIN_SEGMENT_INDEX
         data_path = os.path.join(self.path, "data")
         start_segment_dir = start_segment // self.segments_per_dir
         end_segment_dir = end_segment // self.segments_per_dir
-        dirs = os.listdir(data_path)
         if not reverse:
-            dirs = [dir for dir in dirs if dir.isdigit() and start_segment_dir <= int(dir) <= end_segment_dir]
+            dirs = self.get_segment_dirs(data_path, start_index=start_segment_dir, end_index=end_segment_dir)
         else:
-            dirs = [dir for dir in dirs if dir.isdigit() and start_segment_dir >= int(dir) >= end_segment_dir]
-        dirs = sorted(dirs, key=int, reverse=reverse)
+            dirs = self.get_segment_dirs(data_path, start_index=end_segment_dir, end_index=start_segment_dir)
+        dirs = sorted(dirs, key=lambda dir: int(dir.name), reverse=reverse)
         for dir in dirs:
-            filenames = os.listdir(os.path.join(data_path, dir))
             if not reverse:
-                filenames = [
-                    filename
-                    for filename in filenames
-                    if filename.isdigit() and start_segment <= int(filename) <= end_segment
-                ]
+                files = self.get_segment_files(dir, start_index=start_segment, end_index=end_segment)
             else:
-                filenames = [
-                    filename
-                    for filename in filenames
-                    if filename.isdigit() and start_segment >= int(filename) >= end_segment
-                ]
-            filenames = sorted(filenames, key=int, reverse=reverse)
-            for filename in filenames:
+                files = self.get_segment_files(dir, start_index=end_segment, end_index=start_segment)
+            files = sorted(files, key=lambda file: int(file.name), reverse=reverse)
+            for file in files:
                 # Note: Do not filter out logically deleted segments  (see "File system interaction" above),
                 # since this is used by cleanup and txn state detection as well.
-                yield int(filename), os.path.join(data_path, dir, filename)
+                yield int(file.name), file.path
 
     def get_latest_segment(self):
         for segment, filename in self.segment_iterator(reverse=True):
@@ -1448,13 +1455,12 @@ class LoggedIO:
 
     def cleanup(self, transaction_id):
         """Delete segment files left by aborted transactions"""
+        self.close_segment()
         self.segment = transaction_id + 1
         count = 0
         for segment, filename in self.segment_iterator(reverse=True):
             if segment > transaction_id:
-                if segment in self.fds:
-                    del self.fds[segment]
-                safe_unlink(filename)
+                self.delete_segment(segment)
                 count += 1
             else:
                 break
@@ -1548,7 +1554,7 @@ class LoggedIO:
         else:
             # we only have fresh enough stuff here.
             # update the timestamp of the lru cache entry.
-            self.fds.upd(segment, (now, fd))
+            self.fds.replace(segment, (now, fd))
         return fd
 
     def close_segment(self):
@@ -1566,6 +1572,21 @@ class LoggedIO:
             safe_unlink(self.segment_filename(segment))
         except FileNotFoundError:
             pass
+
+    def clear_empty_dirs(self):
+        """Delete empty segment dirs, i.e those with no segment files."""
+        data_dir = os.path.join(self.path, "data")
+        segment_dirs = self.get_segment_dirs(data_dir)
+        for segment_dir in segment_dirs:
+            try:
+                # os.rmdir will only delete the directory if it is empty
+                # so we don't need to explicitly check for emptiness first.
+                os.rmdir(segment_dir)
+            except OSError:
+                # OSError is raised by os.rmdir if directory is not empty. This is expected.
+                # Its subclass FileNotFoundError may be raised if the directory already does not exist. Ignorable.
+                pass
+        sync_dir(data_dir)
 
     def segment_exists(self, segment):
         filename = self.segment_filename(segment)
@@ -1688,7 +1709,7 @@ class LoggedIO:
         size, tag, key, data = self._read(fd, header, segment, offset, (TAG_PUT2, TAG_PUT), read_data=read_data)
         if id != key:
             raise IntegrityError(
-                "Invalid segment entry header, is not for wanted id [segment {}, offset {}]".format(segment, offset)
+                f"Invalid segment entry header, is not for wanted id [segment {segment}, offset {offset}]"
             )
         data_size_from_header = size - header_size(tag)
         if expected_size is not None and expected_size != data_size_from_header:

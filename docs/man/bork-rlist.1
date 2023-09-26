@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-RLIST" 1 "2022-10-02" "" "bork backup tool"
+.TH "BORG-RLIST" 1 "2023-09-14" "" "borg backup tool"
 .SH NAME
 bork-rlist \- List the archives contained in a repository
 .SH SYNOPSIS
@@ -38,8 +38,8 @@ bork [common options] rlist [options]
 This command lists the archives contained in a repository.
 .SH OPTIONS
 .sp
-See \fIbork\-common(1)\fP for common options of Bork commands.
-.SS optional arguments
+See \fIborg\-common(1)\fP for common options of Borg commands.
+.SS options
 .INDENT 0.0
 .TP
 .B  \-\-consider\-checkpoints
@@ -52,7 +52,7 @@ only print the archive names, nothing else
 specify format for archive listing (default: \(dq{archive:<36} {time} [{id}]{NL}\(dq)
 .TP
 .B  \-\-json
-Format output as JSON. The form of \fB\-\-format\fP is ignored, but keys used in it are added to the JSON output. Some keys are always present. Note: JSON can only represent text. A \(dqbarchive\(dq key is therefore not available.
+Format output as JSON. The form of \fB\-\-format\fP is ignored, but keys used in it are added to the JSON output. Some keys are always present. Note: JSON can only represent text.
 .UNINDENT
 .SS Archive filters
 .INDENT 0.0
@@ -68,6 +68,18 @@ consider first N archives after other filters were applied
 .TP
 .BI \-\-last \ N
 consider last N archives after other filters were applied
+.TP
+.BI \-\-oldest \ TIMESPAN
+consider archives between the oldest archive\(aqs timestamp and (oldest + TIMESPAN), e.g. 7d or 12m.
+.TP
+.BI \-\-newest \ TIMESPAN
+consider archives between the newest archive\(aqs timestamp and (newest \- TIMESPAN), e.g. 7d or 12m.
+.TP
+.BI \-\-older \ TIMESPAN
+consider archives older than (now \- TIMESPAN), e.g. 7d oder 12m.
+.TP
+.BI \-\-newer \ TIMESPAN
+consider archives newer than (now \- TIMESPAN), e.g. 7d or 12m.
 .UNINDENT
 .SH EXAMPLES
 .INDENT 0.0
@@ -104,8 +116,8 @@ ArchiveBar
 # {VAR:NUMBER} \- pad to NUMBER columns.
 # Strings are left\-aligned, numbers are right\-aligned.
 # Note: time columns except \(ga\(gaisomtime\(ga\(ga, \(ga\(gaisoctime\(ga\(ga and \(ga\(gaisoatime\(ga\(ga cannot be padded.
-$ bork rlist \-\-format \(aq{archive:36} {time} [{id}]{NL}\(aq /path/to/repo
-ArchiveFoo                           Thu, 2021\-12\-09 10:22:28 [0b8e9a312bef3f2f6e2d0fc110c196827786c15eba0188738e81697a7fa3b274]
+$ borg rlist \-\-format \(aq{archive:36} {time} [{id}]{NL}\(aq /path/to/repo
+ArchiveFoo                           Thu, 2021\-12\-09 10:22:28 [0b8e9...3b274]
 \&...
 .ft P
 .fi
@@ -119,31 +131,29 @@ NEWLINE: OS dependent line separator
 .IP \(bu 2
 NL: alias of NEWLINE
 .IP \(bu 2
-NUL: NUL character for creating print0 / xargs \-0 like output, see barchive and bpath keys below
+NUL: NUL character for creating print0 / xargs \-0 like output
 .IP \(bu 2
-SPACE
+SPACE: space character
 .IP \(bu 2
-TAB
+TAB: tab character
 .IP \(bu 2
-CR
+CR: carriage return character
 .IP \(bu 2
-LF
+LF: line feed character
 .UNINDENT
 .sp
 Keys available only when listing archives in a repository:
 .INDENT 0.0
 .IP \(bu 2
-archive: archive name interpreted as text (might be missing non\-text characters, see barchive)
+archive: archive name
 .IP \(bu 2
 name: alias of \(dqarchive\(dq
 .IP \(bu 2
-barchive: verbatim archive name, can contain any character except NUL
-.IP \(bu 2
-comment: archive comment interpreted as text (might be missing non\-text characters, see bcomment)
-.IP \(bu 2
-bcomment: verbatim archive comment, can contain any character except NUL
+comment: archive comment
 .IP \(bu 2
 id: internal ID of the archive
+.IP \(bu 2
+tam: TAM authentication state of this archive
 .IP \(bu 2
 start: time (start) of creation of the archive
 .IP \(bu 2
@@ -156,6 +166,10 @@ command_line: command line which was used to create the archive
 hostname: hostname of host on which this archive was created
 .IP \(bu 2
 username: username of user who created this archive
+.IP \(bu 2
+size: size of this archive (data plus metadata, not considering compression and deduplication)
+.IP \(bu 2
+nfiles: count of files in this archive
 .UNINDENT
 .SH SEE ALSO
 .sp

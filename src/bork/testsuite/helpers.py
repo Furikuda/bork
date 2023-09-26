@@ -1,3 +1,4 @@
+import base64
 import errno
 import getpass
 import hashlib
@@ -24,15 +25,16 @@ from ..helpers import (
     PlaceholderError,
     replace_placeholders,
 )
-from ..helpers import make_path_safe, clean_lines
+from ..helpers import remove_dotdot_prefixes, make_path_safe, clean_lines
 from ..helpers import interval
-from ..helpers import get_base_dir, get_cache_dir, get_keys_dir, get_security_dir, get_config_dir
+from ..helpers import get_base_dir, get_cache_dir, get_keys_dir, get_security_dir, get_config_dir, get_runtime_dir
 from ..helpers import is_slow_msgpack
 from ..helpers import msgpack
 from ..helpers import yes, TRUISH, FALSISH, DEFAULTISH
 from ..helpers import StableDict, bin_to_hex
 from ..helpers import parse_timestamp, ChunkIteratorFileWrapper, ChunkerParams
-from ..helpers import ProgressIndicatorPercent, ProgressIndicatorEndless
+from ..helpers import archivename_validator, text_validator
+from ..helpers import ProgressIndicatorPercent
 from ..helpers import swidth_slice
 from ..helpers import chunkit
 from ..helpers import safe_ns, safe_s, SUPPORT_32BIT_PLATFORMS
@@ -41,14 +43,56 @@ from ..helpers import dash_open
 from ..helpers import iter_separated
 from ..helpers import eval_escapes
 from ..helpers import safe_unlink
+from ..helpers import text_to_json, binary_to_json
 from ..helpers.passphrase import Passphrase, PasswordRetriesExceeded
-
-from . import BaseTestCase, FakeInputs
+from ..platform import is_cygwin, is_win32, is_darwin
+from . import FakeInputs, are_hardlinks_supported
+from . import rejected_dotdot_paths
 
 
 def test_bin_to_hex():
     assert bin_to_hex(b"") == ""
     assert bin_to_hex(b"\x00\x01\xff") == "0001ff"
+
+
+@pytest.mark.parametrize(
+    "key,value",
+    [("key", b"\x00\x01\x02\x03"), ("key", b"\x00\x01\x02"), ("key", b"\x00\x01"), ("key", b"\x00"), ("key", b"")],
+)
+def test_binary_to_json(key, value):
+    key_b64 = key + "_b64"
+    d = binary_to_json(key, value)
+    assert key_b64 in d
+    assert base64.b64decode(d[key_b64]) == value
+
+
+@pytest.mark.parametrize(
+    "key,value,strict",
+    [
+        ("key", "abc", True),
+        ("key", "äöü", True),
+        ("key", "", True),
+        ("key", b"\x00\xff".decode("utf-8", errors="surrogateescape"), False),
+        ("key", "äöü".encode("latin1").decode("utf-8", errors="surrogateescape"), False),
+    ],
+)
+def test_text_to_json(key, value, strict):
+    key_b64 = key + "_b64"
+    d = text_to_json(key, value)
+    value_b = value.encode("utf-8", errors="surrogateescape")
+    if strict:
+        # no surrogate-escapes, just unicode text
+        assert key in d
+        assert d[key] == value_b.decode("utf-8", errors="strict")
+        assert d[key].encode("utf-8", errors="strict") == value_b
+        assert key_b64 not in d  # not needed. pure valid unicode.
+    else:
+        # requiring surrogate-escapes. text has replacement chars, base64 representation is present.
+        assert key in d
+        assert d[key] == value.encode("utf-8", errors="replace").decode("utf-8", errors="strict")
+        assert d[key].encode("utf-8", errors="strict") == value.encode("utf-8", errors="replace")
+        assert key_b64 in d
+        assert base64.b64decode(d[key_b64]) == value_b
 
 
 class TestLocationWithoutEnv:
@@ -133,12 +177,22 @@ class TestLocationWithoutEnv:
         )
         assert (
             repr(Location("ssh://user@[2a02:0001:0002:0003:0004:0005:0006:0007]/some/path"))
-            == "Location(proto='ssh', user='user', host='2a02:0001:0002:0003:0004:0005:0006:0007', port=None, path='/some/path')"
+            == "Location(proto='ssh', user='user', "
+            "host='2a02:0001:0002:0003:0004:0005:0006:0007', port=None, path='/some/path')"
         )
         assert (
             repr(Location("ssh://user@[2a02:0001:0002:0003:0004:0005:0006:0007]:1234/some/path"))
-            == "Location(proto='ssh', user='user', host='2a02:0001:0002:0003:0004:0005:0006:0007', port=1234, path='/some/path')"
+            == "Location(proto='ssh', user='user', "
+            "host='2a02:0001:0002:0003:0004:0005:0006:0007', port=1234, path='/some/path')"
         )
+
+    def test_socket(self, monkeypatch, keys_dir):
+        monkeypatch.delenv("BORG_REPO", raising=False)
+        assert (
+            repr(Location("socket:///repo/path"))
+            == "Location(proto='socket', user=None, host=None, port=None, path='/repo/path')"
+        )
+        assert Location("socket:///some/path").to_key_filename() == keys_dir + "some_path"
 
     def test_file(self, monkeypatch, keys_dir):
         monkeypatch.delenv("BORG_REPO", raising=False)
@@ -231,6 +285,7 @@ class TestLocationWithoutEnv:
             "file://some/path",
             "host:some/path",
             "host:~user/some/path",
+            "socket:///some/path",
             "ssh://host/some/path",
             "ssh://user@host:1234/some/path",
         ]
@@ -245,47 +300,151 @@ class TestLocationWithoutEnv:
             Location("ssh://user@host:/path")
 
 
-class FormatTimedeltaTestCase(BaseTestCase):
-    def test(self):
-        t0 = datetime(2001, 1, 1, 10, 20, 3, 0)
-        t1 = datetime(2001, 1, 1, 12, 20, 4, 100000)
-        self.assert_equal(format_timedelta(t1 - t0), "2 hours 1.10 seconds")
+@pytest.mark.parametrize(
+    "name",
+    [
+        "foobar",
+        # placeholders
+        "foobar-{now}",
+    ],
+)
+def test_archivename_ok(name):
+    archivename_validator(name)  # must not raise an exception
 
 
-def test_chunkerparams():
-    assert ChunkerParams("default") == ("buzhash", 19, 23, 21, 4095)
-    assert ChunkerParams("19,23,21,4095") == ("buzhash", 19, 23, 21, 4095)
-    assert ChunkerParams("buzhash,19,23,21,4095") == ("buzhash", 19, 23, 21, 4095)
-    assert ChunkerParams("10,23,16,4095") == ("buzhash", 10, 23, 16, 4095)
-    assert ChunkerParams("fixed,4096") == ("fixed", 4096, 0)
-    assert ChunkerParams("fixed,4096,200") == ("fixed", 4096, 200)
-    # invalid values checking
-    with pytest.raises(ValueError):
-        ChunkerParams("crap,1,2,3,4")  # invalid algo
-    with pytest.raises(ValueError):
-        ChunkerParams("buzhash,5,7,6,4095")  # too small min. size
-    with pytest.raises(ValueError):
-        ChunkerParams("buzhash,19,24,21,4095")  # too big max. size
-    with pytest.raises(ValueError):
-        ChunkerParams("buzhash,23,19,21,4095")  # violates min <= mask <= max
-    with pytest.raises(ValueError):
-        ChunkerParams("fixed,63")  # too small block size
-    with pytest.raises(ValueError):
-        ChunkerParams("fixed,%d,%d" % (MAX_DATA_SIZE + 1, 4096))  # too big block size
-    with pytest.raises(ValueError):
-        ChunkerParams("fixed,%d,%d" % (4096, MAX_DATA_SIZE + 1))  # too big header size
+@pytest.mark.parametrize(
+    "name",
+    [
+        "",  # too short
+        "x" * 201,  # too long
+        # invalid chars:
+        "foo/bar",
+        "foo\\bar",
+        ">foo",
+        "<foo",
+        "|foo",
+        'foo"bar',
+        "foo?",
+        "*bar",
+        "foo\nbar",
+        "foo\0bar",
+        # leading/trailing blanks
+        " foo",
+        "bar  ",
+        # contains surrogate-escapes
+        "foo\udc80bar",
+        "foo\udcffbar",
+    ],
+)
+def test_archivename_invalid(name):
+    with pytest.raises(ArgumentTypeError):
+        archivename_validator(name)
 
 
-class MakePathSafeTestCase(BaseTestCase):
-    def test(self):
-        self.assert_equal(make_path_safe("/foo/bar"), "foo/bar")
-        self.assert_equal(make_path_safe("/foo/bar"), "foo/bar")
-        self.assert_equal(make_path_safe("/f/bar"), "f/bar")
-        self.assert_equal(make_path_safe("fo/bar"), "fo/bar")
-        self.assert_equal(make_path_safe("../foo/bar"), "foo/bar")
-        self.assert_equal(make_path_safe("../../foo/bar"), "foo/bar")
-        self.assert_equal(make_path_safe("/"), ".")
-        self.assert_equal(make_path_safe("/"), ".")
+@pytest.mark.parametrize("text", ["", "single line", "multi\nline\ncomment"])
+def test_text_ok(text):
+    tv = text_validator(max_length=100, name="name")
+    tv(text)  # must not raise an exception
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "x" * 101,  # too long
+        # invalid chars:
+        "foo\0bar",
+        # contains surrogate-escapes
+        "foo\udc80bar",
+        "foo\udcffbar",
+    ],
+)
+def test_text_invalid(text):
+    tv = text_validator(max_length=100, name="name")
+    with pytest.raises(ArgumentTypeError):
+        tv(text)
+
+
+def test_format_timedelta():
+    t0 = datetime(2001, 1, 1, 10, 20, 3, 0)
+    t1 = datetime(2001, 1, 1, 12, 20, 4, 100000)
+    assert format_timedelta(t1 - t0) == "2 hours 1.10 seconds"
+
+
+@pytest.mark.parametrize(
+    "chunker_params, expected_return",
+    [
+        ("default", ("buzhash", 19, 23, 21, 4095)),
+        ("19,23,21,4095", ("buzhash", 19, 23, 21, 4095)),
+        ("buzhash,19,23,21,4095", ("buzhash", 19, 23, 21, 4095)),
+        ("10,23,16,4095", ("buzhash", 10, 23, 16, 4095)),
+        ("fixed,4096", ("fixed", 4096, 0)),
+        ("fixed,4096,200", ("fixed", 4096, 200)),
+    ],
+)
+def test_valid_chunkerparams(chunker_params, expected_return):
+    assert ChunkerParams(chunker_params) == expected_return
+
+
+@pytest.mark.parametrize(
+    "invalid_chunker_params",
+    [
+        "crap,1,2,3,4",  # invalid algo
+        "buzhash,5,7,6,4095",  # too small min. size
+        "buzhash,19,24,21,4095",  # too big max. size
+        "buzhash,23,19,21,4095",  # violates min <= mask <= max
+        "fixed,63",  # too small block size
+        "fixed,%d,%d" % (MAX_DATA_SIZE + 1, 4096),  # too big block size
+        "fixed,%d,%d" % (4096, MAX_DATA_SIZE + 1),  # too big header size
+    ],
+)
+def test_invalid_chunkerparams(invalid_chunker_params):
+    with pytest.raises(ArgumentTypeError):
+        ChunkerParams(invalid_chunker_params)
+
+
+@pytest.mark.parametrize(
+    "original_path, expected_path",
+    [
+        (".", "."),
+        ("..", "."),
+        ("/", "."),
+        ("//", "."),
+        ("foo", "foo"),
+        ("foo/bar", "foo/bar"),
+        ("/foo/bar", "foo/bar"),
+        ("../foo/bar", "foo/bar"),
+    ],
+)
+def test_remove_dotdot_prefixes(original_path, expected_path):
+    assert remove_dotdot_prefixes(original_path) == expected_path
+
+
+@pytest.mark.parametrize(
+    "original_path, expected_path",
+    [
+        (".", "."),
+        ("./", "."),
+        ("/foo", "foo"),
+        ("//foo", "foo"),
+        (".//foo//bar//", "foo/bar"),
+        ("/foo/bar", "foo/bar"),
+        ("//foo/bar", "foo/bar"),
+        ("//foo/./bar", "foo/bar"),
+        (".test", ".test"),
+        (".test.", ".test."),
+        ("..test..", "..test.."),
+        ("/te..st/foo/bar", "te..st/foo/bar"),
+        ("/..test../abc//", "..test../abc"),
+    ],
+)
+def test_valid_make_path_safe(original_path, expected_path):
+    assert make_path_safe(original_path) == expected_path
+
+
+@pytest.mark.parametrize("path", rejected_dotdot_paths)
+def test_invalid_make_path_safe(path):
+    with pytest.raises(ValueError, match="unexpected '..' element in path"):
+        make_path_safe(path)
 
 
 class MockArchive:
@@ -295,6 +454,17 @@ class MockArchive:
 
     def __repr__(self):
         return f"{self.id}: {self.ts.isoformat()}"
+
+
+# This is the local timezone of the system running the tests.
+# We need this e.g. to construct archive timestamps for the prune tests,
+# because borg prune operates in the local timezone (it first converts the
+# archive timestamp to the local timezone). So, if we want the y/m/d/h/m/s
+# values which prune uses to be exactly the ones we give [and NOT shift them
+# by tzoffset], we need to give the timestamps in the same local timezone.
+# Please note that the timestamps in a real borg archive or manifest are
+# stored in UTC timezone.
+local_tz = datetime.now(tz=timezone.utc).astimezone(tz=None).tzinfo
 
 
 @pytest.mark.parametrize(
@@ -316,23 +486,23 @@ def test_prune_split(rule, num_to_keep, expected_ids):
 
     archives = [
         # years apart
-        MockArchive(datetime(2015, 1, 1, 10, 0, 0, tzinfo=timezone.utc), 1),
-        MockArchive(datetime(2016, 1, 1, 10, 0, 0, tzinfo=timezone.utc), 2),
-        MockArchive(datetime(2017, 1, 1, 10, 0, 0, tzinfo=timezone.utc), 3),
+        MockArchive(datetime(2015, 1, 1, 10, 0, 0, tzinfo=local_tz), 1),
+        MockArchive(datetime(2016, 1, 1, 10, 0, 0, tzinfo=local_tz), 2),
+        MockArchive(datetime(2017, 1, 1, 10, 0, 0, tzinfo=local_tz), 3),
         # months apart
-        MockArchive(datetime(2017, 2, 1, 10, 0, 0, tzinfo=timezone.utc), 4),
-        MockArchive(datetime(2017, 3, 1, 10, 0, 0, tzinfo=timezone.utc), 5),
+        MockArchive(datetime(2017, 2, 1, 10, 0, 0, tzinfo=local_tz), 4),
+        MockArchive(datetime(2017, 3, 1, 10, 0, 0, tzinfo=local_tz), 5),
         # days apart
-        MockArchive(datetime(2017, 3, 2, 10, 0, 0, tzinfo=timezone.utc), 6),
-        MockArchive(datetime(2017, 3, 3, 10, 0, 0, tzinfo=timezone.utc), 7),
-        MockArchive(datetime(2017, 3, 4, 10, 0, 0, tzinfo=timezone.utc), 8),
+        MockArchive(datetime(2017, 3, 2, 10, 0, 0, tzinfo=local_tz), 6),
+        MockArchive(datetime(2017, 3, 3, 10, 0, 0, tzinfo=local_tz), 7),
+        MockArchive(datetime(2017, 3, 4, 10, 0, 0, tzinfo=local_tz), 8),
         # minutes apart
-        MockArchive(datetime(2017, 10, 1, 9, 45, 0, tzinfo=timezone.utc), 9),
-        MockArchive(datetime(2017, 10, 1, 9, 55, 0, tzinfo=timezone.utc), 10),
+        MockArchive(datetime(2017, 10, 1, 9, 45, 0, tzinfo=local_tz), 9),
+        MockArchive(datetime(2017, 10, 1, 9, 55, 0, tzinfo=local_tz), 10),
         # seconds apart
-        MockArchive(datetime(2017, 10, 1, 10, 0, 1, tzinfo=timezone.utc), 11),
-        MockArchive(datetime(2017, 10, 1, 10, 0, 3, tzinfo=timezone.utc), 12),
-        MockArchive(datetime(2017, 10, 1, 10, 0, 5, tzinfo=timezone.utc), 13),
+        MockArchive(datetime(2017, 10, 1, 10, 0, 1, tzinfo=local_tz), 11),
+        MockArchive(datetime(2017, 10, 1, 10, 0, 3, tzinfo=local_tz), 12),
+        MockArchive(datetime(2017, 10, 1, 10, 0, 5, tzinfo=local_tz), 13),
     ]
     kept_because = {}
     keep = prune_split(archives, rule, num_to_keep, kept_because)
@@ -348,12 +518,12 @@ def test_prune_split_keep_oldest():
 
     archives = [
         # oldest backup, but not last in its year
-        MockArchive(datetime(2018, 1, 1, 10, 0, 0, tzinfo=timezone.utc), 1),
+        MockArchive(datetime(2018, 1, 1, 10, 0, 0, tzinfo=local_tz), 1),
         # an interim backup
-        MockArchive(datetime(2018, 12, 30, 10, 0, 0, tzinfo=timezone.utc), 2),
-        # year end backups
-        MockArchive(datetime(2018, 12, 31, 10, 0, 0, tzinfo=timezone.utc), 3),
-        MockArchive(datetime(2019, 12, 31, 10, 0, 0, tzinfo=timezone.utc), 4),
+        MockArchive(datetime(2018, 12, 30, 10, 0, 0, tzinfo=local_tz), 2),
+        # year-end backups
+        MockArchive(datetime(2018, 12, 31, 10, 0, 0, tzinfo=local_tz), 3),
+        MockArchive(datetime(2019, 12, 31, 10, 0, 0, tzinfo=local_tz), 4),
     ]
 
     # Keep oldest when retention target can't otherwise be met
@@ -375,9 +545,6 @@ def test_prune_split_keep_oldest():
 
 
 def test_prune_split_no_archives():
-    def subset(lst, ids):
-        return {i for i in lst if i.id in ids}
-
     archives = []
 
     kept_because = {}
@@ -387,77 +554,70 @@ def test_prune_split_no_archives():
     assert kept_because == {}
 
 
-class IntervalTestCase(BaseTestCase):
-    def test_interval(self):
-        self.assert_equal(interval("1H"), 1)
-        self.assert_equal(interval("1d"), 24)
-        self.assert_equal(interval("1w"), 168)
-        self.assert_equal(interval("1m"), 744)
-        self.assert_equal(interval("1y"), 8760)
-
-    def test_interval_time_unit(self):
-        with pytest.raises(ArgumentTypeError) as exc:
-            interval("H")
-        self.assert_equal(exc.value.args, ('Unexpected interval number "": expected an integer greater than 0',))
-        with pytest.raises(ArgumentTypeError) as exc:
-            interval("-1d")
-        self.assert_equal(exc.value.args, ('Unexpected interval number "-1": expected an integer greater than 0',))
-        with pytest.raises(ArgumentTypeError) as exc:
-            interval("food")
-        self.assert_equal(exc.value.args, ('Unexpected interval number "foo": expected an integer greater than 0',))
-
-    def test_interval_number(self):
-        with pytest.raises(ArgumentTypeError) as exc:
-            interval("5")
-        self.assert_equal(
-            exc.value.args, ("Unexpected interval time unit \"5\": expected one of ['H', 'd', 'w', 'm', 'y']",)
-        )
+@pytest.mark.parametrize("timeframe, num_hours", [("1H", 1), ("1d", 24), ("1w", 168), ("1m", 744), ("1y", 8760)])
+def test_interval(timeframe, num_hours):
+    assert interval(timeframe) == num_hours
 
 
-class PruneWithinTestCase(BaseTestCase):
-    def test_prune_within(self):
-        def subset(lst, indices):
-            return {lst[i] for i in indices}
-
-        def dotest(test_archives, within, indices):
-            for ta in test_archives, reversed(test_archives):
-                kept_because = {}
-                keep = prune_within(ta, interval(within), kept_because)
-                self.assert_equal(set(keep), subset(test_archives, indices))
-                assert all("within" == kept_because[a.id][0] for a in keep)
-
-        # 1 minute, 1.5 hours, 2.5 hours, 3.5 hours, 25 hours, 49 hours
-        test_offsets = [60, 90 * 60, 150 * 60, 210 * 60, 25 * 60 * 60, 49 * 60 * 60]
-        now = datetime.now(timezone.utc)
-        test_dates = [now - timedelta(seconds=s) for s in test_offsets]
-        test_archives = [MockArchive(date, i) for i, date in enumerate(test_dates)]
-
-        dotest(test_archives, "1H", [0])
-        dotest(test_archives, "2H", [0, 1])
-        dotest(test_archives, "3H", [0, 1, 2])
-        dotest(test_archives, "24H", [0, 1, 2, 3])
-        dotest(test_archives, "26H", [0, 1, 2, 3, 4])
-        dotest(test_archives, "2d", [0, 1, 2, 3, 4])
-        dotest(test_archives, "50H", [0, 1, 2, 3, 4, 5])
-        dotest(test_archives, "3d", [0, 1, 2, 3, 4, 5])
-        dotest(test_archives, "1w", [0, 1, 2, 3, 4, 5])
-        dotest(test_archives, "1m", [0, 1, 2, 3, 4, 5])
-        dotest(test_archives, "1y", [0, 1, 2, 3, 4, 5])
+@pytest.mark.parametrize(
+    "invalid_interval, error_tuple",
+    [
+        ("H", ('Unexpected interval number "": expected an integer greater than 0',)),
+        ("-1d", ('Unexpected interval number "-1": expected an integer greater than 0',)),
+        ("food", ('Unexpected interval number "foo": expected an integer greater than 0',)),
+    ],
+)
+def test_interval_time_unit(invalid_interval, error_tuple):
+    with pytest.raises(ArgumentTypeError) as exc:
+        interval(invalid_interval)
+    assert exc.value.args == error_tuple
 
 
-class StableDictTestCase(BaseTestCase):
-    def test(self):
-        d = StableDict(foo=1, bar=2, boo=3, baz=4)
-        self.assert_equal(list(d.items()), [("bar", 2), ("baz", 4), ("boo", 3), ("foo", 1)])
-        self.assert_equal(hashlib.md5(msgpack.packb(d)).hexdigest(), "fc78df42cd60691b3ac3dd2a2b39903f")
+def test_interval_number():
+    with pytest.raises(ArgumentTypeError) as exc:
+        interval("5")
+    assert exc.value.args == ("Unexpected interval time unit \"5\": expected one of ['H', 'd', 'w', 'm', 'y']",)
 
 
-class TestParseTimestamp(BaseTestCase):
-    def test(self):
-        self.assert_equal(
-            parse_timestamp("2015-04-19T20:25:00.226410"), datetime(2015, 4, 19, 20, 25, 0, 226410, timezone.utc)
-        )
-        self.assert_equal(parse_timestamp("2015-04-19T20:25:00"), datetime(2015, 4, 19, 20, 25, 0, 0, timezone.utc))
+def test_prune_within():
+    def subset(lst, indices):
+        return {lst[i] for i in indices}
+
+    def dotest(test_archives, within, indices):
+        for ta in test_archives, reversed(test_archives):
+            kept_because = {}
+            keep = prune_within(ta, interval(within), kept_because)
+            assert set(keep) == subset(test_archives, indices)
+            assert all("within" == kept_because[a.id][0] for a in keep)
+
+    # 1 minute, 1.5 hours, 2.5 hours, 3.5 hours, 25 hours, 49 hours
+    test_offsets = [60, 90 * 60, 150 * 60, 210 * 60, 25 * 60 * 60, 49 * 60 * 60]
+    now = datetime.now(timezone.utc)
+    test_dates = [now - timedelta(seconds=s) for s in test_offsets]
+    test_archives = [MockArchive(date, i) for i, date in enumerate(test_dates)]
+
+    dotest(test_archives, "1H", [0])
+    dotest(test_archives, "2H", [0, 1])
+    dotest(test_archives, "3H", [0, 1, 2])
+    dotest(test_archives, "24H", [0, 1, 2, 3])
+    dotest(test_archives, "26H", [0, 1, 2, 3, 4])
+    dotest(test_archives, "2d", [0, 1, 2, 3, 4])
+    dotest(test_archives, "50H", [0, 1, 2, 3, 4, 5])
+    dotest(test_archives, "3d", [0, 1, 2, 3, 4, 5])
+    dotest(test_archives, "1w", [0, 1, 2, 3, 4, 5])
+    dotest(test_archives, "1m", [0, 1, 2, 3, 4, 5])
+    dotest(test_archives, "1y", [0, 1, 2, 3, 4, 5])
+
+
+def test_stable_dict():
+    d = StableDict(foo=1, bar=2, boo=3, baz=4)
+    assert list(d.items()) == [("bar", 2), ("baz", 4), ("boo", 3), ("foo", 1)]
+    assert hashlib.md5(msgpack.packb(d)).hexdigest() == "fc78df42cd60691b3ac3dd2a2b39903f"
+
+
+def test_parse_timestamp():
+    assert parse_timestamp("2015-04-19T20:25:00.226410") == datetime(2015, 4, 19, 20, 25, 0, 226410, timezone.utc)
+    assert parse_timestamp("2015-04-19T20:25:00") == datetime(2015, 4, 19, 20, 25, 0, 0, timezone.utc)
 
 
 def test_get_base_dir(monkeypatch):
@@ -465,126 +625,278 @@ def test_get_base_dir(monkeypatch):
     monkeypatch.delenv("BORG_BASE_DIR", raising=False)
     monkeypatch.delenv("HOME", raising=False)
     monkeypatch.delenv("USER", raising=False)
-    assert get_base_dir() == os.path.expanduser("~")
+    assert get_base_dir(legacy=True) == os.path.expanduser("~")
     monkeypatch.setenv("USER", "root")
-    assert get_base_dir() == os.path.expanduser("~root")
+    assert get_base_dir(legacy=True) == os.path.expanduser("~root")
     monkeypatch.setenv("HOME", "/var/tmp/home")
-    assert get_base_dir() == "/var/tmp/home"
+    assert get_base_dir(legacy=True) == "/var/tmp/home"
     monkeypatch.setenv("BORG_BASE_DIR", "/var/tmp/base")
-    assert get_base_dir() == "/var/tmp/base"
+    assert get_base_dir(legacy=True) == "/var/tmp/base"
+    # non-legacy is much easier:
+    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    assert get_base_dir(legacy=False) is None
+    monkeypatch.setenv("BORG_BASE_DIR", "/var/tmp/base")
+    assert get_base_dir(legacy=False) == "/var/tmp/base"
+
+
+def test_get_base_dir_compat(monkeypatch):
+    """test that it works the same for legacy and for non-legacy implementation"""
+    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    # old way: if BORG_BASE_DIR is not set, make something up with HOME/USER/~
+    # new way: if BORG_BASE_DIR is not set, return None and let caller deal with it.
+    assert get_base_dir(legacy=False) is None
+    # new and old way: BORG_BASE_DIR overrides all other "base path determination".
+    monkeypatch.setenv("BORG_BASE_DIR", "/var/tmp/base")
+    assert get_base_dir(legacy=False) == get_base_dir(legacy=True)
 
 
 def test_get_config_dir(monkeypatch):
     """test that get_config_dir respects environment"""
+    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    home_dir = os.path.expanduser("~")
+    if is_win32:
+        monkeypatch.delenv("BORG_CONFIG_DIR", raising=False)
+        assert get_config_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "borg", "borg")
+        monkeypatch.setenv("BORG_CONFIG_DIR", home_dir)
+        assert get_config_dir(create=False) == home_dir
+    elif is_darwin:
+        monkeypatch.delenv("BORG_CONFIG_DIR", raising=False)
+        assert get_config_dir(create=False) == os.path.join(home_dir, "Library", "Application Support", "borg")
+        monkeypatch.setenv("BORG_CONFIG_DIR", "/var/tmp")
+        assert get_config_dir(create=False) == "/var/tmp"
+    else:
+        monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
+        monkeypatch.delenv("BORG_CONFIG_DIR", raising=False)
+        assert get_config_dir(create=False) == os.path.join(home_dir, ".config", "borg")
+        monkeypatch.setenv("XDG_CONFIG_HOME", "/var/tmp/.config")
+        assert get_config_dir(create=False) == os.path.join("/var/tmp/.config", "borg")
+        monkeypatch.setenv("BORG_CONFIG_DIR", "/var/tmp")
+        assert get_config_dir(create=False) == "/var/tmp"
+
+
+def test_get_config_dir_compat(monkeypatch):
+    """test that it works the same for legacy and for non-legacy implementation"""
     monkeypatch.delenv("BORG_CONFIG_DIR", raising=False)
+    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
     monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
-    assert get_config_dir() == os.path.join(os.path.expanduser("~"), ".config", "bork")
-    monkeypatch.setenv("XDG_CONFIG_HOME", "/var/tmp/.config")
-    assert get_config_dir() == os.path.join("/var/tmp/.config", "bork")
-    monkeypatch.setenv("BORG_CONFIG_DIR", "/var/tmp")
-    assert get_config_dir() == "/var/tmp"
+    if not is_darwin and not is_win32:
+        # fails on macOS: assert '/Users/tw/Library/Application Support/borg' == '/Users/tw/.config/borg'
+        # fails on win32 MSYS2 (but we do not need legacy compat there).
+        assert get_config_dir(legacy=False, create=False) == get_config_dir(legacy=True, create=False)
+        monkeypatch.setenv("XDG_CONFIG_HOME", "/var/tmp/xdg.config.d")
+        # fails on macOS: assert '/Users/tw/Library/Application Support/borg' == '/var/tmp/xdg.config.d'
+        # fails on win32 MSYS2 (but we do not need legacy compat there).
+        assert get_config_dir(legacy=False, create=False) == get_config_dir(legacy=True, create=False)
+    monkeypatch.setenv("BORG_BASE_DIR", "/var/tmp/base")
+    assert get_config_dir(legacy=False, create=False) == get_config_dir(legacy=True, create=False)
+    monkeypatch.setenv("BORG_CONFIG_DIR", "/var/tmp/borg.config.d")
+    assert get_config_dir(legacy=False, create=False) == get_config_dir(legacy=True, create=False)
 
 
 def test_get_cache_dir(monkeypatch):
     """test that get_cache_dir respects environment"""
+    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    home_dir = os.path.expanduser("~")
+    if is_win32:
+        monkeypatch.delenv("BORG_CACHE_DIR", raising=False)
+        assert get_cache_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "borg", "borg", "Cache")
+        monkeypatch.setenv("BORG_CACHE_DIR", home_dir)
+        assert get_cache_dir(create=False) == home_dir
+    elif is_darwin:
+        monkeypatch.delenv("BORG_CACHE_DIR", raising=False)
+        assert get_cache_dir(create=False) == os.path.join(home_dir, "Library", "Caches", "borg")
+        monkeypatch.setenv("BORG_CACHE_DIR", "/var/tmp")
+        assert get_cache_dir(create=False) == "/var/tmp"
+    else:
+        monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
+        monkeypatch.delenv("BORG_CACHE_DIR", raising=False)
+        assert get_cache_dir(create=False) == os.path.join(home_dir, ".cache", "borg")
+        monkeypatch.setenv("XDG_CACHE_HOME", "/var/tmp/.cache")
+        assert get_cache_dir(create=False) == os.path.join("/var/tmp/.cache", "borg")
+        monkeypatch.setenv("BORG_CACHE_DIR", "/var/tmp")
+        assert get_cache_dir(create=False) == "/var/tmp"
+
+
+def test_get_cache_dir_compat(monkeypatch):
+    """test that it works the same for legacy and for non-legacy implementation"""
     monkeypatch.delenv("BORG_CACHE_DIR", raising=False)
+    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
     monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
-    assert get_cache_dir() == os.path.join(os.path.expanduser("~"), ".cache", "bork")
-    monkeypatch.setenv("XDG_CACHE_HOME", "/var/tmp/.cache")
-    assert get_cache_dir() == os.path.join("/var/tmp/.cache", "bork")
-    monkeypatch.setenv("BORG_CACHE_DIR", "/var/tmp")
-    assert get_cache_dir() == "/var/tmp"
+    if not is_darwin and not is_win32:
+        # fails on macOS: assert '/Users/tw/Library/Caches/borg' == '/Users/tw/.cache/borg'
+        # fails on win32 MSYS2 (but we do not need legacy compat there).
+        assert get_cache_dir(legacy=False, create=False) == get_cache_dir(legacy=True, create=False)
+        # fails on macOS: assert '/Users/tw/Library/Caches/borg' == '/var/tmp/xdg.cache.d'
+        # fails on win32 MSYS2 (but we do not need legacy compat there).
+        monkeypatch.setenv("XDG_CACHE_HOME", "/var/tmp/xdg.cache.d")
+        assert get_cache_dir(legacy=False, create=False) == get_cache_dir(legacy=True, create=False)
+    monkeypatch.setenv("BORG_BASE_DIR", "/var/tmp/base")
+    assert get_cache_dir(legacy=False, create=False) == get_cache_dir(legacy=True, create=False)
+    monkeypatch.setenv("BORG_CACHE_DIR", "/var/tmp/borg.cache.d")
+    assert get_cache_dir(legacy=False, create=False) == get_cache_dir(legacy=True, create=False)
 
 
 def test_get_keys_dir(monkeypatch):
     """test that get_keys_dir respects environment"""
-    monkeypatch.delenv("BORG_KEYS_DIR", raising=False)
-    monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
-    assert get_keys_dir() == os.path.join(os.path.expanduser("~"), ".config", "bork", "keys")
-    monkeypatch.setenv("XDG_CONFIG_HOME", "/var/tmp/.config")
-    assert get_keys_dir() == os.path.join("/var/tmp/.config", "bork", "keys")
-    monkeypatch.setenv("BORG_KEYS_DIR", "/var/tmp")
-    assert get_keys_dir() == "/var/tmp"
+    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    home_dir = os.path.expanduser("~")
+    if is_win32:
+        monkeypatch.delenv("BORG_KEYS_DIR", raising=False)
+        assert get_keys_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "borg", "borg", "keys")
+        monkeypatch.setenv("BORG_KEYS_DIR", home_dir)
+        assert get_keys_dir(create=False) == home_dir
+    elif is_darwin:
+        monkeypatch.delenv("BORG_KEYS_DIR", raising=False)
+        assert get_keys_dir(create=False) == os.path.join(home_dir, "Library", "Application Support", "borg", "keys")
+        monkeypatch.setenv("BORG_KEYS_DIR", "/var/tmp")
+        assert get_keys_dir(create=False) == "/var/tmp"
+    else:
+        monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
+        monkeypatch.delenv("BORG_KEYS_DIR", raising=False)
+        assert get_keys_dir(create=False) == os.path.join(home_dir, ".config", "borg", "keys")
+        monkeypatch.setenv("XDG_CONFIG_HOME", "/var/tmp/.config")
+        assert get_keys_dir(create=False) == os.path.join("/var/tmp/.config", "borg", "keys")
+        monkeypatch.setenv("BORG_KEYS_DIR", "/var/tmp")
+        assert get_keys_dir(create=False) == "/var/tmp"
 
 
 def test_get_security_dir(monkeypatch):
     """test that get_security_dir respects environment"""
-    monkeypatch.delenv("BORG_SECURITY_DIR", raising=False)
-    monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
-    assert get_security_dir() == os.path.join(os.path.expanduser("~"), ".config", "bork", "security")
-    assert get_security_dir(repository_id="1234") == os.path.join(
-        os.path.expanduser("~"), ".config", "bork", "security", "1234"
-    )
-    monkeypatch.setenv("XDG_CONFIG_HOME", "/var/tmp/.config")
-    assert get_security_dir() == os.path.join("/var/tmp/.config", "bork", "security")
-    monkeypatch.setenv("BORG_SECURITY_DIR", "/var/tmp")
-    assert get_security_dir() == "/var/tmp"
+    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    home_dir = os.path.expanduser("~")
+    if is_win32:
+        monkeypatch.delenv("BORG_SECURITY_DIR", raising=False)
+        assert get_security_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "borg", "borg", "security")
+        assert get_security_dir(repository_id="1234", create=False) == os.path.join(
+            home_dir, "AppData", "Local", "borg", "borg", "security", "1234"
+        )
+        monkeypatch.setenv("BORG_SECURITY_DIR", home_dir)
+        assert get_security_dir(create=False) == home_dir
+    elif is_darwin:
+        monkeypatch.delenv("BORG_SECURITY_DIR", raising=False)
+        assert get_security_dir(create=False) == os.path.join(
+            home_dir, "Library", "Application Support", "borg", "security"
+        )
+        assert get_security_dir(repository_id="1234", create=False) == os.path.join(
+            home_dir, "Library", "Application Support", "borg", "security", "1234"
+        )
+        monkeypatch.setenv("BORG_SECURITY_DIR", "/var/tmp")
+        assert get_security_dir(create=False) == "/var/tmp"
+    else:
+        monkeypatch.delenv("XDG_DATA_HOME", raising=False)
+        monkeypatch.delenv("BORG_SECURITY_DIR", raising=False)
+        assert get_security_dir(create=False) == os.path.join(home_dir, ".local", "share", "borg", "security")
+        assert get_security_dir(repository_id="1234", create=False) == os.path.join(
+            home_dir, ".local", "share", "borg", "security", "1234"
+        )
+        monkeypatch.setenv("XDG_DATA_HOME", "/var/tmp/.config")
+        assert get_security_dir(create=False) == os.path.join("/var/tmp/.config", "borg", "security")
+        monkeypatch.setenv("BORG_SECURITY_DIR", "/var/tmp")
+        assert get_security_dir(create=False) == "/var/tmp"
 
 
-def test_file_size():
-    """test the size formatting routines"""
-    si_size_map = {
-        0: "0 B",  # no rounding necessary for those
-        1: "1 B",
-        142: "142 B",
-        999: "999 B",
-        1000: "1.00 kB",  # rounding starts here
-        1001: "1.00 kB",  # should be rounded away
-        1234: "1.23 kB",  # should be rounded down
-        1235: "1.24 kB",  # should be rounded up
-        1010: "1.01 kB",  # rounded down as well
-        999990000: "999.99 MB",  # rounded down
-        999990001: "999.99 MB",  # rounded down
-        999995000: "1.00 GB",  # rounded up to next unit
-        10**6: "1.00 MB",  # and all the remaining units, megabytes
-        10**9: "1.00 GB",  # gigabytes
-        10**12: "1.00 TB",  # terabytes
-        10**15: "1.00 PB",  # petabytes
-        10**18: "1.00 EB",  # exabytes
-        10**21: "1.00 ZB",  # zottabytes
-        10**24: "1.00 YB",  # yottabytes
-        -1: "-1 B",  # negative value
-        -1010: "-1.01 kB",  # negative value with rounding
-    }
-    for size, fmt in si_size_map.items():
-        assert format_file_size(size) == fmt
-
-
-def test_file_size_iec():
-    """test the size formatting routines"""
-    iec_size_map = {
-        0: "0 B",
-        2**0: "1 B",
-        2**10: "1.00 KiB",
-        2**20: "1.00 MiB",
-        2**30: "1.00 GiB",
-        2**40: "1.00 TiB",
-        2**50: "1.00 PiB",
-        2**60: "1.00 EiB",
-        2**70: "1.00 ZiB",
-        2**80: "1.00 YiB",
-        -(2**0): "-1 B",
-        -(2**10): "-1.00 KiB",
-        -(2**20): "-1.00 MiB",
-    }
-    for size, fmt in iec_size_map.items():
-        assert format_file_size(size, iec=True) == fmt
-
-
-def test_file_size_precision():
-    assert format_file_size(1234, precision=1) == "1.2 kB"  # rounded down
-    assert format_file_size(1254, precision=1) == "1.3 kB"  # rounded up
-    assert format_file_size(999990000, precision=1) == "1.0 GB"  # and not 999.9 MB or 1000.0 MB
-
-
-def test_file_size_sign():
-    si_size_map = {0: "0 B", 1: "+1 B", 1234: "+1.23 kB", -1: "-1 B", -1234: "-1.23 kB"}
-    for size, fmt in si_size_map.items():
-        assert format_file_size(size, sign=True) == fmt
+def test_get_runtime_dir(monkeypatch):
+    """test that get_runtime_dir respects environment"""
+    monkeypatch.delenv("BORG_BASE_DIR", raising=False)
+    home_dir = os.path.expanduser("~")
+    if is_win32:
+        monkeypatch.delenv("BORG_RUNTIME_DIR", raising=False)
+        assert get_runtime_dir(create=False) == os.path.join(home_dir, "AppData", "Local", "Temp", "borg", "borg")
+        monkeypatch.setenv("BORG_RUNTIME_DIR", home_dir)
+        assert get_runtime_dir(create=False) == home_dir
+    elif is_darwin:
+        monkeypatch.delenv("BORG_RUNTIME_DIR", raising=False)
+        assert get_runtime_dir(create=False) == os.path.join(home_dir, "Library", "Caches", "TemporaryItems", "borg")
+        monkeypatch.setenv("BORG_RUNTIME_DIR", "/var/tmp")
+        assert get_runtime_dir(create=False) == "/var/tmp"
+    else:
+        monkeypatch.delenv("XDG_RUNTIME_DIR", raising=False)
+        monkeypatch.delenv("BORG_RUNTIME_DIR", raising=False)
+        uid = str(os.getuid())
+        assert get_runtime_dir(create=False) in [
+            os.path.join("/run/user", uid, "borg"),
+            os.path.join("/var/run/user", uid, "borg"),
+            os.path.join(f"/tmp/runtime-{uid}", "borg"),
+        ]
+        monkeypatch.setenv("XDG_RUNTIME_DIR", "/var/tmp/.cache")
+        assert get_runtime_dir(create=False) == os.path.join("/var/tmp/.cache", "borg")
+        monkeypatch.setenv("BORG_RUNTIME_DIR", "/var/tmp")
+        assert get_runtime_dir(create=False) == "/var/tmp"
 
 
 @pytest.mark.parametrize(
-    "string,value", (("1", 1), ("20", 20), ("5K", 5000), ("1.75M", 1750000), ("1e+9", 1e9), ("-1T", -1e12))
+    "size, fmt",
+    [
+        (0, "0 B"),  # no rounding necessary for those
+        (1, "1 B"),
+        (142, "142 B"),
+        (999, "999 B"),
+        (1000, "1.00 kB"),  # rounding starts here
+        (1001, "1.00 kB"),  # should be rounded away
+        (1234, "1.23 kB"),  # should be rounded down
+        (1235, "1.24 kB"),  # should be rounded up
+        (1010, "1.01 kB"),  # rounded down as well
+        (999990000, "999.99 MB"),  # rounded down
+        (999990001, "999.99 MB"),  # rounded down
+        (999995000, "1.00 GB"),  # rounded up to next unit
+        (10**6, "1.00 MB"),  # and all the remaining units, megabytes
+        (10**9, "1.00 GB"),  # gigabytes
+        (10**12, "1.00 TB"),  # terabytes
+        (10**15, "1.00 PB"),  # petabytes
+        (10**18, "1.00 EB"),  # exabytes
+        (10**21, "1.00 ZB"),  # zottabytes
+        (10**24, "1.00 YB"),  # yottabytes
+        (-1, "-1 B"),  # negative value
+        (-1010, "-1.01 kB"),  # negative value with rounding
+    ],
+)
+def test_file_size(size, fmt):
+    """test the size formatting routines"""
+    assert format_file_size(size) == fmt
+
+
+@pytest.mark.parametrize(
+    "size, fmt",
+    [
+        (0, "0 B"),
+        (2**0, "1 B"),
+        (2**10, "1.00 KiB"),
+        (2**20, "1.00 MiB"),
+        (2**30, "1.00 GiB"),
+        (2**40, "1.00 TiB"),
+        (2**50, "1.00 PiB"),
+        (2**60, "1.00 EiB"),
+        (2**70, "1.00 ZiB"),
+        (2**80, "1.00 YiB"),
+        (-(2**0), "-1 B"),
+        (-(2**10), "-1.00 KiB"),
+        (-(2**20), "-1.00 MiB"),
+    ],
+)
+def test_file_size_iec(size, fmt):
+    """test the size formatting routines"""
+    assert format_file_size(size, iec=True) == fmt
+
+
+@pytest.mark.parametrize(
+    "original_size, formatted_size",
+    [
+        (1234, "1.2 kB"),  # rounded down
+        (1254, "1.3 kB"),  # rounded up
+        (999990000, "1.0 GB"),  # and not 999.9 MB or 1000.0 MB
+    ],
+)
+def test_file_size_precision(original_size, formatted_size):
+    assert format_file_size(original_size, precision=1) == formatted_size
+
+
+@pytest.mark.parametrize("size, fmt", [(0, "0 B"), (1, "+1 B"), (1234, "+1.23 kB"), (-1, "-1 B"), (-1234, "-1.23 kB")])
+def test_file_size_sign(size, fmt):
+    assert format_file_size(size, sign=True) == fmt
+
+
+@pytest.mark.parametrize(
+    "string, value", [("1", 1), ("20", 20), ("5K", 5000), ("1.75M", 1750000), ("1e+9", 1e9), ("-1T", -1e12)]
 )
 def test_parse_file_size(string, value):
     assert parse_file_size(string) == int(value)
@@ -596,6 +908,22 @@ def test_parse_file_size_invalid(string):
         parse_file_size(string)
 
 
+def expected_py_mp_slow_combination():
+    """do we expect msgpack to be slow in this environment?"""
+    # we need to import upstream msgpack package here, not helpers.msgpack:
+    import msgpack
+
+    # msgpack is slow on cygwin
+    if is_cygwin:
+        return True
+    # msgpack < 1.0.6 did not have py312 wheels
+    if sys.version_info[:2] == (3, 12) and msgpack.version < (1, 0, 6):
+        return True
+    # otherwise we expect msgpack to be fast!
+    return False
+
+
+@pytest.mark.skipif(expected_py_mp_slow_combination(), reason="ignore expected slow msgpack")
 def test_is_slow_msgpack():
     # we need to import upstream msgpack package here, not helpers.msgpack:
     import msgpack
@@ -766,42 +1094,36 @@ def test_yes_env_output(capfd, monkeypatch):
     assert "yes" in err
 
 
-def test_progress_percentage_sameline(capfd, monkeypatch):
-    # run the test as if it was in a 4x1 terminal
-    monkeypatch.setenv("COLUMNS", "4")
-    monkeypatch.setenv("LINES", "1")
+def test_progress_percentage(capfd):
     pi = ProgressIndicatorPercent(1000, step=5, start=0, msg="%3.0f%%")
     pi.logger.setLevel("INFO")
     pi.show(0)
     out, err = capfd.readouterr()
-    assert err == "  0%\r"
+    assert err == "  0%\n"
     pi.show(420)
     pi.show(680)
     out, err = capfd.readouterr()
-    assert err == " 42%\r 68%\r"
+    assert err == " 42%\n 68%\n"
     pi.show(1000)
     out, err = capfd.readouterr()
-    assert err == "100%\r"
+    assert err == "100%\n"
     pi.finish()
     out, err = capfd.readouterr()
-    assert err == " " * 4 + "\r"
+    assert err == "\n"
 
 
-def test_progress_percentage_step(capfd, monkeypatch):
-    # run the test as if it was in a 4x1 terminal
-    monkeypatch.setenv("COLUMNS", "4")
-    monkeypatch.setenv("LINES", "1")
+def test_progress_percentage_step(capfd):
     pi = ProgressIndicatorPercent(100, step=2, start=0, msg="%3.0f%%")
     pi.logger.setLevel("INFO")
     pi.show()
     out, err = capfd.readouterr()
-    assert err == "  0%\r"
+    assert err == "  0%\n"
     pi.show()
     out, err = capfd.readouterr()
     assert err == ""  # no output at 1% as we have step == 2
     pi.show()
     out, err = capfd.readouterr()
-    assert err == "  2%\r"
+    assert err == "  2%\n"
 
 
 def test_progress_percentage_quiet(capfd):
@@ -818,41 +1140,18 @@ def test_progress_percentage_quiet(capfd):
     assert err == ""
 
 
-def test_progress_endless(capfd):
-    pi = ProgressIndicatorEndless(step=1, file=sys.stderr)
-    pi.show()
-    out, err = capfd.readouterr()
-    assert err == "."
-    pi.show()
-    out, err = capfd.readouterr()
-    assert err == "."
-    pi.finish()
-    out, err = capfd.readouterr()
-    assert err == "\n"
-
-
-def test_progress_endless_step(capfd):
-    pi = ProgressIndicatorEndless(step=2, file=sys.stderr)
-    pi.show()
-    out, err = capfd.readouterr()
-    assert err == ""  # no output here as we have step == 2
-    pi.show()
-    out, err = capfd.readouterr()
-    assert err == "."
-    pi.show()
-    out, err = capfd.readouterr()
-    assert err == ""  # no output here as we have step == 2
-    pi.show()
-    out, err = capfd.readouterr()
-    assert err == "."
-
-
-def test_partial_format():
-    assert partial_format("{space:10}", {"space": " "}) == " " * 10
-    assert partial_format("{foobar}", {"bar": "wrong", "foobar": "correct"}) == "correct"
-    assert partial_format("{unknown_key}", {}) == "{unknown_key}"
-    assert partial_format("{key}{{escaped_key}}", {}) == "{key}{{escaped_key}}"
-    assert partial_format("{{escaped_key}}", {"escaped_key": 1234}) == "{{escaped_key}}"
+@pytest.mark.parametrize(
+    "fmt, items_map, expected_result",
+    [
+        ("{space:10}", {"space": " "}, " " * 10),
+        ("{foobar}", {"bar": "wrong", "foobar": "correct"}, "correct"),
+        ("{unknown_key}", {}, "{unknown_key}"),
+        ("{key}{{escaped_key}}", {}, "{key}{{escaped_key}}"),
+        ("{{escaped_key}}", {"escaped_key": 1234}, "{{escaped_key}}"),
+    ],
+)
+def test_partial_format(fmt, items_map, expected_result):
+    assert partial_format(fmt, items_map) == expected_result
 
 
 def test_chunk_file_wrapper():
@@ -950,6 +1249,11 @@ def test_swidth_slice_mixed_characters():
     assert swidth_slice(string, 6) == "나윤a"
 
 
+def utcfromtimestamp(timestamp):
+    """Returns a naive datetime instance representing the timestamp in the UTC timezone"""
+    return datetime.fromtimestamp(timestamp, timezone.utc).replace(tzinfo=None)
+
+
 def test_safe_timestamps():
     if SUPPORT_32BIT_PLATFORMS:
         # ns fit into int64
@@ -961,9 +1265,9 @@ def test_safe_timestamps():
         # datetime won't fall over its y10k problem
         beyond_y10k = 2**100
         with pytest.raises(OverflowError):
-            datetime.utcfromtimestamp(beyond_y10k)
-        assert datetime.utcfromtimestamp(safe_s(beyond_y10k)) > datetime(2038, 1, 1)
-        assert datetime.utcfromtimestamp(safe_ns(beyond_y10k) / 1000000000) > datetime(2038, 1, 1)
+            utcfromtimestamp(beyond_y10k)
+        assert utcfromtimestamp(safe_s(beyond_y10k)) > datetime(2038, 1, 1)
+        assert utcfromtimestamp(safe_ns(beyond_y10k) / 1000000000) > datetime(2038, 1, 1)
     else:
         # ns fit into int64
         assert safe_ns(2**64) <= 2**63 - 1
@@ -974,9 +1278,9 @@ def test_safe_timestamps():
         # datetime won't fall over its y10k problem
         beyond_y10k = 2**100
         with pytest.raises(OverflowError):
-            datetime.utcfromtimestamp(beyond_y10k)
-        assert datetime.utcfromtimestamp(safe_s(beyond_y10k)) > datetime(2262, 1, 1)
-        assert datetime.utcfromtimestamp(safe_ns(beyond_y10k) / 1000000000) > datetime(2262, 1, 1)
+            utcfromtimestamp(beyond_y10k)
+        assert utcfromtimestamp(safe_s(beyond_y10k)) > datetime(2262, 1, 1)
+        assert utcfromtimestamp(safe_ns(beyond_y10k) / 1000000000) > datetime(2262, 1, 1)
 
 
 class TestPopenWithErrorHandling:
@@ -1033,24 +1337,26 @@ def test_eval_escapes():
     assert eval_escapes("äç\\n") == "äç\n"
 
 
+@pytest.mark.skipif(not are_hardlinks_supported(), reason="hardlinks not supported")
 def test_safe_unlink_is_safe(tmpdir):
     contents = b"Hello, world\n"
     victim = tmpdir / "victim"
     victim.write_binary(contents)
     hard_link = tmpdir / "hardlink"
-    hard_link.mklinkto(victim)
+    os.link(str(victim), str(hard_link))  # hard_link.mklinkto is not implemented on win32
 
     safe_unlink(hard_link)
 
     assert victim.read_binary() == contents
 
 
+@pytest.mark.skipif(not are_hardlinks_supported(), reason="hardlinks not supported")
 def test_safe_unlink_is_safe_ENOSPC(tmpdir, monkeypatch):
     contents = b"Hello, world\n"
     victim = tmpdir / "victim"
     victim.write_binary(contents)
     hard_link = tmpdir / "hardlink"
-    hard_link.mklinkto(victim)
+    os.link(str(victim), str(hard_link))  # hard_link.mklinkto is not implemented on win32
 
     def os_unlink(_):
         raise OSError(errno.ENOSPC, "Pretend that we ran out of space")
@@ -1065,19 +1371,19 @@ def test_safe_unlink_is_safe_ENOSPC(tmpdir, monkeypatch):
 
 class TestPassphrase:
     def test_passphrase_new_verification(self, capsys, monkeypatch):
-        monkeypatch.setattr(getpass, "getpass", lambda prompt: "12aöäü")
+        monkeypatch.setattr(getpass, "getpass", lambda prompt: "1234aöäü")
         monkeypatch.setenv("BORG_DISPLAY_PASSPHRASE", "no")
         Passphrase.new()
         out, err = capsys.readouterr()
-        assert "12" not in out
-        assert "12" not in err
+        assert "1234" not in out
+        assert "1234" not in err
 
         monkeypatch.setenv("BORG_DISPLAY_PASSPHRASE", "yes")
         passphrase = Passphrase.new()
         out, err = capsys.readouterr()
-        assert "313261c3b6c3a4c3bc" not in out
-        assert "313261c3b6c3a4c3bc" in err
-        assert passphrase == "12aöäü"
+        assert "3132333461c3b6c3a4c3bc" not in out
+        assert "3132333461c3b6c3a4c3bc" in err
+        assert passphrase == "1234aöäü"
 
         monkeypatch.setattr(getpass, "getpass", lambda prompt: "1234/@=")
         Passphrase.new()

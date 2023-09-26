@@ -1,8 +1,9 @@
 import argparse
+import os
 import textwrap
 import sys
 
-from ._common import with_repository
+from ._common import with_repository, Highlander
 from ..constants import *  # NOQA
 from ..helpers import BaseFormatter, ArchiveFormatter, json_print, basic_json_data
 from ..manifest import Manifest
@@ -21,16 +22,16 @@ class RListMixIn:
         elif args.short:
             format = "{archive}{NL}"
         else:
-            format = "{archive:<36} {time} [{id}]{NL}"
-        formatter = ArchiveFormatter(format, repository, manifest, manifest.key, json=args.json, iec=args.iec)
+            format = os.environ.get("BORG_RLIST_FORMAT", "{archive:<36} {time} [{id}]{NL}")
+        formatter = ArchiveFormatter(format, repository, manifest, manifest.key, iec=args.iec)
 
         output_data = []
 
         for archive_info in manifest.archives.list_considering(args):
             if args.json:
-                output_data.append(formatter.get_item_data(archive_info))
+                output_data.append(formatter.get_item_data(archive_info, args.json))
             else:
-                sys.stdout.write(formatter.format_item(archive_info))
+                sys.stdout.write(formatter.format_item(archive_info, args.json))
 
         if args.json:
             json_print(basic_json_data(manifest, extra={"archives": output_data}))
@@ -64,8 +65,8 @@ class RListMixIn:
             # {VAR:NUMBER} - pad to NUMBER columns.
             # Strings are left-aligned, numbers are right-aligned.
             # Note: time columns except ``isomtime``, ``isoctime`` and ``isoatime`` cannot be padded.
-            $ bork rlist --format '{archive:36} {time} [{id}]{NL}' /path/to/repo
-            ArchiveFoo                           Thu, 2021-12-09 10:22:28 [0b8e9a312bef3f2f6e2d0fc110c196827786c15eba0188738e81697a7fa3b274]
+            $ borg rlist --format '{archive:36} {time} [{id}]{NL}' /path/to/repo
+            ArchiveFoo                           Thu, 2021-12-09 10:22:28 [0b8e9...3b274]
             ...
 
         The following keys are always available:
@@ -106,6 +107,7 @@ class RListMixIn:
             "--format",
             metavar="FORMAT",
             dest="format",
+            action=Highlander,
             help="specify format for archive listing " '(default: "{archive:<36} {time} [{id}]{NL}")',
         )
         subparser.add_argument(
@@ -114,7 +116,6 @@ class RListMixIn:
             help="Format output as JSON. "
             "The form of ``--format`` is ignored, "
             "but keys used in it are added to the JSON output. "
-            "Some keys are always present. Note: JSON can only represent text. "
-            'A "barchive" key is therefore not available.',
+            "Some keys are always present. Note: JSON can only represent text.",
         )
         define_archive_filters_group(subparser)

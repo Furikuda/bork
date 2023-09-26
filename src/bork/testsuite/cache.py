@@ -74,6 +74,7 @@ class TestCacheSynchronizer:
             (False, "Unexpected object: false"),
             (None, "Unexpected object: nil"),
         ),
+        ids=["map", "bytes", "int", "double", "true", "false", "none"],
     )
     @pytest.mark.parametrize(
         "structure",
@@ -190,10 +191,6 @@ class TestAdHocCache:
         assert cache.seen_chunk(H(1)) == ChunkIndex.MAX_VALUE
         cache.chunk_decref(H(1), Statistics())
         assert repository.get(H(1)) == b"1234"
-
-    def test_does_not_overwrite(self, cache):
-        with pytest.raises(AssertionError):
-            cache.add_chunk(H(1), {}, b"5678", stats=Statistics(), overwrite=True)
 
     def test_seen_chunk_add_chunk_size(self, cache):
         assert cache.add_chunk(H(1), {}, b"5678", stats=Statistics()) == (H(1), 4)

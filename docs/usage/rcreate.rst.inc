@@ -13,7 +13,7 @@ bork rcreate
     .. class:: bork-options-table
 
     +-------------------------------------------------------+------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    | **optional arguments**                                                                                                                                                                                                                                                                                                              |
+    | **options**                                                                                                                                                                                                                                                                                                                         |
     +-------------------------------------------------------+------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     |                                                       | ``--other-repo SRC_REPOSITORY``    | reuse the key material from the other repository                                                                                                                                                                                       |
     +-------------------------------------------------------+------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -44,7 +44,7 @@ bork rcreate
 
 
 
-    optional arguments
+    options
         --other-repo SRC_REPOSITORY    reuse the key material from the other repository
         -e MODE, --encryption MODE     select encryption key mode **(required)**
         --append-only                  create an append-only mode repository. Note that this only affects the low level structure of the repository, and running `delete` or `prune` will still be allowed. See :ref:`append_only_mode` in Additional Notes for more details.
@@ -123,8 +123,8 @@ The easiest way to find out about what's fastest is to run ``bork benchmark cpu`
 `repokey` modes: if you want ease-of-use and "passphrase" security is good enough -
 the key will be stored in the repository (in ``repo_dir/config``).
 
-`keyfile` modes: if you rather want "passphrase and having-the-key" security -
-the key will be stored in your home directory (in ``~/.config/bork/keys``).
+`keyfile` modes: if you want "passphrase and having-the-key" security -
+the key will be stored in your home directory (in ``~/.config/borg/keys``).
 
 The following table is roughly sorted in order of preference, the better ones are
 in the upper part of the table, in the lower part is the old and/or unsafe(r) stuff:
@@ -151,17 +151,20 @@ in the upper part of the table, in the lower part is the old and/or unsafe(r) st
 
 .. nanorst: inline-replace
 
-`none` mode uses no encryption and no authentication. You're advised to NOT use this mode
+`none` mode uses no encryption and no authentication. You're advised NOT to use this mode
 as it would expose you to all sorts of issues (DoS, confidentiality, tampering, ...) in
 case of malicious activity in the repository.
 
 If you do **not** want to encrypt the contents of your backups, but still want to detect
 malicious tampering use an `authenticated` mode. It's like `repokey` minus encryption.
+To normally work with ``authenticated`` repos, you will need the passphrase, but
+there is an emergency workaround, see ``BORG_WORKAROUNDS=authenticated_no_key`` docs.
 
 Creating a related repository
 +++++++++++++++++++++++++++++
 
-A related repository uses same secret key material as the other/original repository.
+You can use ``borg rcreate --other-repo ORIG_REPO ...`` to create a related repository
+that uses the same secret key material as the given other/original repository.
 
 By default, only the ID key and chunker secret will be the same (these are important
 for deduplication) and the AE crypto keys will be newly generated random keys.

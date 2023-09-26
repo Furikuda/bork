@@ -2,7 +2,7 @@ from struct import Struct
 
 from .constants import REQUIRED_ITEM_KEYS, CH_BUZHASH
 from .compress import ZLIB, ZLIB_legacy, ObfuscateSize
-from .helpers import HardLinkManager
+from .helpers import HardLinkManager, join_cmd
 from .item import Item
 from .logger import create_logger
 
@@ -26,14 +26,14 @@ class UpgraderNoOp:
         new_metadata = {}
         # keep all metadata except archive version and stats.
         for attr in (
-            "cmdline",
+            "command_line",
             "hostname",
             "username",
             "time",
             "time_end",
             "comment",
             "chunker_params",
-            "recreate_cmdline",
+            "recreate_command_line",
         ):
             if hasattr(metadata, attr):
                 new_metadata[attr] = getattr(metadata, attr)
@@ -41,6 +41,8 @@ class UpgraderNoOp:
 
 
 class UpgraderFrom12To20:
+    borg1_header_fmt = Struct(">I")
+
     def __init__(self, *, cache):
         self.cache = cache
 
@@ -52,7 +54,6 @@ class UpgraderFrom12To20:
         """upgrade item as needed, get rid of legacy crap"""
         ITEM_KEY_WHITELIST = {
             "path",
-            "source",
             "rdev",
             "chunks",
             "chunks_healthy",
@@ -73,7 +74,6 @@ class UpgraderFrom12To20:
             "acl_access",
             "acl_default",
             "acl_extended",
-            "part",
         }
 
         if self.hlm.bork1_hardlink_master(item):
@@ -92,8 +92,13 @@ class UpgraderFrom12To20:
         # make sure we only have desired stuff in the new item. specifically, make sure to get rid of:
         # - 'acl' remnants of bug in attic <= 0.13
         # - 'hardlink_master' (superseded by hlid)
-        new_item_dict = {key: value for key, value in item.as_dict().items() if key in ITEM_KEY_WHITELIST}
-        # remove some pointless entries older bork put in there:
+        item_dict = item.as_dict()
+        new_item_dict = {key: value for key, value in item_dict.items() if key in ITEM_KEY_WHITELIST}
+        # symlink targets were .source for borg1, but borg2 uses .target:
+        if "source" in item_dict:
+            new_item_dict["target"] = item_dict["source"]
+        assert "source" not in new_item_dict
+        # remove some pointless entries older borg put in there:
         for key in "user", "group":
             if key in new_item_dict and new_item_dict[key] is None:
                 del new_item_dict[key]
@@ -121,11 +126,10 @@ class UpgraderFrom12To20:
         level = 0xFF  # means unknown compression level
 
         if ctype == ObfuscateSize.ID:
-            # in older bork, we used unusual byte order
-            bork1_header_fmt = Struct(">I")
-            hlen = bork1_header_fmt.size
+            # in older borg, we used unusual byte order
+            hlen = self.borg1_header_fmt.size
             csize_bytes = data[2 : 2 + hlen]
-            csize = bork1_header_fmt.unpack(csize_bytes)
+            csize = self.borg1_header_fmt.unpack(csize_bytes)[0]
             compressed = data[2 + hlen : 2 + hlen + csize]
             meta, compressed = upgrade_zlib_and_level(meta, compressed)
             meta["psize"] = csize
@@ -140,7 +144,7 @@ class UpgraderFrom12To20:
         new_metadata = {}
         # keep all metadata except archive version and stats. also do not keep
         # recreate_source_id, recreate_args, recreate_partial_chunks which were used only in 1.1.0b1 .. b2.
-        for attr in ("cmdline", "hostname", "username", "comment", "chunker_params", "recreate_cmdline"):
+        for attr in ("hostname", "username", "comment", "chunker_params"):
             if hasattr(metadata, attr):
                 new_metadata[attr] = getattr(metadata, attr)
         if chunker_params := new_metadata.get("chunker_params"):
@@ -151,4 +155,10 @@ class UpgraderFrom12To20:
         for attr in ("time", "time_end"):
             if hasattr(metadata, attr):
                 new_metadata[attr] = getattr(metadata, attr) + "+00:00"
+        # borg 1: cmdline, recreate_cmdline: a copy of sys.argv
+        # borg 2: command_line, recreate_command_line: a single string
+        if hasattr(metadata, "cmdline"):
+            new_metadata["command_line"] = join_cmd(getattr(metadata, "cmdline"))
+        if hasattr(metadata, "recreate_cmdline"):
+            new_metadata["recreate_command_line"] = join_cmd(getattr(metadata, "recreate_cmdline"))
         return new_metadata

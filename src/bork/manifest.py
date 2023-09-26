@@ -1,11 +1,9 @@
 import enum
-import os
-import os.path
 import re
 from collections import abc, namedtuple
 from datetime import datetime, timedelta, timezone
 from operator import attrgetter
-from typing import Sequence, FrozenSet
+from collections.abc import Sequence
 
 from .logger import create_logger
 
@@ -14,7 +12,7 @@ logger = create_logger()
 from .constants import *  # NOQA
 from .helpers.datastruct import StableDict
 from .helpers.parseformat import bin_to_hex
-from .helpers.time import parse_timestamp
+from .helpers.time import parse_timestamp, calculate_relative_offset, archive_ts_now
 from .helpers.errors import Error
 from .patterns import get_regex_from_pattern
 from .repoobj import RepoObj
@@ -32,6 +30,35 @@ ArchiveInfo = namedtuple("ArchiveInfo", "name id ts")
 
 AI_HUMAN_SORT_KEYS = ["timestamp"] + list(ArchiveInfo._fields)
 AI_HUMAN_SORT_KEYS.remove("ts")
+
+
+def filter_archives_by_date(archives, older=None, newer=None, oldest=None, newest=None):
+    def get_first_and_last_archive_ts(archives_list):
+        timestamps = [x.ts for x in archives_list]
+        return min(timestamps), max(timestamps)
+
+    if not archives:
+        return archives
+
+    now = archive_ts_now()
+    earliest_ts, latest_ts = get_first_and_last_archive_ts(archives)
+
+    until_ts = calculate_relative_offset(older, now, earlier=True) if older is not None else latest_ts
+    from_ts = calculate_relative_offset(newer, now, earlier=True) if newer is not None else earliest_ts
+    archives = [x for x in archives if from_ts <= x.ts <= until_ts]
+
+    if not archives:
+        return archives
+
+    earliest_ts, latest_ts = get_first_and_last_archive_ts(archives)
+    if oldest:
+        until_ts = calculate_relative_offset(oldest, earliest_ts, earlier=False)
+        archives = [x for x in archives if x.ts <= until_ts]
+    if newest:
+        from_ts = calculate_relative_offset(newest, latest_ts, earlier=True)
+        archives = [x for x in archives if x.ts >= from_ts]
+
+    return archives
 
 
 class Archives(abc.MutableMapping):
@@ -76,21 +103,30 @@ class Archives(abc.MutableMapping):
     def list(
         self,
         *,
+        consider_checkpoints=True,
         match=None,
         match_end=r"\Z",
         sort_by=(),
-        consider_checkpoints=True,
+        reverse=False,
         first=None,
         last=None,
-        reverse=False
+        older=None,
+        newer=None,
+        oldest=None,
+        newest=None,
     ):
         """
         Return list of ArchiveInfo instances according to the parameters.
 
-        First match *match* (considering *match_end*), then *sort_by*.
+        First match *match* (considering *match_end*), then filter by timestamp considering *older* and *newer*.
+        Second, follow with a filter considering *oldest* and *newest*, then sort by the given *sort_by* argument.
+
         Apply *first* and *last* filters, and then possibly *reverse* the list.
 
         *sort_by* is a list of sort keys applied in reverse order.
+        *newer* and *older* are relative time markers that indicate offset from now.
+        *newest* and *oldest* are relative time markers that indicate offset from newest/oldest archive's timestamp.
+
 
         Note: for better robustness, all filtering / limiting parameters must default to
               "not limit / not filter", so a FULL archive list is produced by a simple .list().
@@ -98,9 +134,14 @@ class Archives(abc.MutableMapping):
         """
         if isinstance(sort_by, (str, bytes)):
             raise TypeError("sort_by must be a sequence of str")
+
+        archives = self.values()
         regex = get_regex_from_pattern(match or "re:.*")
         regex = re.compile(regex + match_end)
-        archives = [x for x in self.values() if regex.match(x.name) is not None]
+        archives = [x for x in archives if regex.match(x.name) is not None]
+
+        if any([oldest, newest, older, newer]):
+            archives = filter_archives_by_date(archives, oldest=oldest, newest=newest, newer=newer, older=older)
         if not consider_checkpoints:
             archives = [x for x in archives if ".checkpoint" not in x.name]
         for sortkey in reversed(sort_by):
@@ -121,14 +162,19 @@ class Archives(abc.MutableMapping):
         consider_checkpoints = getattr(args, "consider_checkpoints", None)
         if name is not None:
             raise Error(
-                "Giving a specific name is incompatible with options --first, --last, -a / --match-archives, and --consider-checkpoints."
+                "Giving a specific name is incompatible with options --first, --last, "
+                "-a / --match-archives, and --consider-checkpoints."
             )
         return self.list(
             sort_by=args.sort_by.split(","),
             consider_checkpoints=consider_checkpoints,
             match=args.match_archives,
-            first=args.first,
-            last=args.last,
+            first=getattr(args, "first", None),
+            last=getattr(args, "last", None),
+            older=getattr(args, "older", None),
+            newer=getattr(args, "newer", None),
+            oldest=getattr(args, "oldest", None),
+            newest=getattr(args, "newest", None),
         )
 
     def set_raw_dict(self, d):
@@ -148,11 +194,11 @@ class Manifest:
     class Operation(enum.Enum):
         # The comments here only roughly describe the scope of each feature. In the end, additions need to be
         # based on potential problems older clients could produce when accessing newer repositories and the
-        # tradeofs of locking version out or still allowing access. As all older versions and their exact
+        # trade-offs of locking version out or still allowing access. As all older versions and their exact
         # behaviours are known when introducing new features sometimes this might not match the general descriptions
         # below.
 
-        # The READ operation describes which features are needed to safely list and extract the archives in the
+        # The READ operation describes which features are needed to list and extract the archives safely in the
         # repository.
         READ = "read"
         # The CHECK operation is for all operations that need either to understand every detail
@@ -170,7 +216,7 @@ class Manifest:
 
     NO_OPERATION_CHECK: Sequence[Operation] = tuple()
 
-    SUPPORTED_REPO_FEATURES: FrozenSet[str] = frozenset([])
+    SUPPORTED_REPO_FEATURES: frozenset[str] = frozenset([])
 
     MANIFEST_ID = b"\0" * 32
 
@@ -181,7 +227,6 @@ class Manifest:
         self.repo_objs = ro_cls(key)
         self.repository = repository
         self.item_keys = frozenset(item_keys) if item_keys is not None else ITEM_KEYS
-        self.tam_verified = False
         self.timestamp = None
 
     @property
@@ -193,9 +238,9 @@ class Manifest:
         return parse_timestamp(self.timestamp)
 
     @classmethod
-    def load(cls, repository, operations, key=None, force_tam_not_required=False, *, ro_cls=RepoObj):
+    def load(cls, repository, operations, key=None, *, ro_cls=RepoObj):
         from .item import ManifestItem
-        from .crypto.key import key_factory, tam_required_file, tam_required
+        from .crypto.key import key_factory
         from .repository import Repository
 
         try:
@@ -206,9 +251,7 @@ class Manifest:
             key = key_factory(repository, cdata, ro_cls=ro_cls)
         manifest = cls(key, repository, ro_cls=ro_cls)
         _, data = manifest.repo_objs.parse(cls.MANIFEST_ID, cdata)
-        manifest_dict, manifest.tam_verified = key.unpack_and_verify_manifest(
-            data, force_tam_not_required=force_tam_not_required
-        )
+        manifest_dict = key.unpack_and_verify_manifest(data)
         m = ManifestItem(internal_dict=manifest_dict)
         manifest.id = manifest.repo_objs.id_hash(data)
         if m.get("version") not in (1, 2):
@@ -217,18 +260,9 @@ class Manifest:
         manifest.timestamp = m.get("timestamp")
         manifest.config = m.config
         # valid item keys are whatever is known in the repo or every key we know
-        manifest.item_keys = ITEM_KEYS | frozenset(m.get("item_keys", []))
-
-        if manifest.tam_verified:
-            manifest_required = manifest.config.get("tam_required", False)
-            security_required = tam_required(repository)
-            if manifest_required and not security_required:
-                logger.debug("Manifest is TAM verified and says TAM is required, updating security database...")
-                file = tam_required_file(repository)
-                open(file, "w").close()
-            if not manifest_required and security_required:
-                logger.debug("Manifest is TAM verified and says TAM is *not* required, updating security database...")
-                os.unlink(tam_required_file(repository))
+        manifest.item_keys = ITEM_KEYS
+        manifest.item_keys |= frozenset(m.config.get("item_keys", []))  # new location of item_keys since borg2
+        manifest.item_keys |= frozenset(m.get("item_keys", []))  # legacy: borg 1.x: item_keys not in config yet
         manifest.check_repository_compatibility(operations)
         return manifest
 
@@ -260,8 +294,6 @@ class Manifest:
     def write(self):
         from .item import ManifestItem
 
-        if self.key.tam_required:
-            self.config["tam_required"] = True
         # self.timestamp needs to be strictly monotonically increasing. Clocks often are not set correctly
         if self.timestamp is None:
             self.timestamp = datetime.now(tz=timezone.utc).isoformat(timespec="microseconds")
@@ -274,14 +306,13 @@ class Manifest:
         assert len(self.archives) <= MAX_ARCHIVES
         assert all(len(name) <= 255 for name in self.archives)
         assert len(self.item_keys) <= 100
+        self.config["item_keys"] = tuple(sorted(self.item_keys))
         manifest = ManifestItem(
-            version=1,
+            version=2,
             archives=StableDict(self.archives.get_raw_dict()),
             timestamp=self.timestamp,
             config=StableDict(self.config),
-            item_keys=tuple(sorted(self.item_keys)),
         )
-        self.tam_verified = True
         data = self.key.pack_and_authenticate_metadata(manifest.as_dict())
         self.id = self.repo_objs.id_hash(data)
         self.repository.put(self.MANIFEST_ID, self.repo_objs.format(self.MANIFEST_ID, {}, data))

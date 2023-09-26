@@ -1,3 +1,4 @@
+import errno
 import sys
 import argparse
 import logging
@@ -5,7 +6,6 @@ import os
 import stat
 import subprocess
 import time
-from datetime import datetime
 from io import TextIOWrapper
 
 from ._common import with_repository, Highlander
@@ -16,21 +16,22 @@ from ..archive import FilesystemObjectProcessors, MetadataCollector, ChunksProce
 from ..cache import Cache
 from ..constants import *  # NOQA
 from ..compress import CompressionSpec
-from ..helpers import ChunkerParams
-from ..helpers import NameSpec, FilesCacheMode
+from ..helpers import comment_validator, ChunkerParams
+from ..helpers import archivename_validator, FilesCacheMode
 from ..helpers import eval_escapes
-from ..helpers import timestamp
+from ..helpers import timestamp, archive_ts_now
 from ..helpers import get_cache_dir, os_stat
 from ..helpers import dir_is_tagged
 from ..helpers import log_multi
 from ..helpers import basic_json_data, json_print
-from ..helpers import flags_root, flags_dir, flags_special_follow, flags_special
+from ..helpers import flags_dir, flags_special_follow, flags_special
 from ..helpers import sig_int, ignore_sigint
 from ..helpers import iter_separated
+from ..helpers import MakePathSafeAction
 from ..manifest import Manifest
 from ..patterns import PatternMatcher
+from ..platform import is_win32
 from ..platform import get_flags
-from ..platform import uid2user, gid2group
 
 from ..logger import create_logger
 
@@ -69,7 +70,9 @@ class CreateMixIn:
                 if not dry_run:
                     try:
                         try:
-                            proc = subprocess.Popen(args.paths, stdout=subprocess.PIPE, preexec_fn=ignore_sigint)
+                            proc = subprocess.Popen(
+                                args.paths, stdout=subprocess.PIPE, preexec_fn=None if is_win32 else ignore_sigint
+                            )
                         except (FileNotFoundError, PermissionError) as e:
                             self.print_error("Failed to execute command: %s", e)
                             return self.exit_code
@@ -84,13 +87,15 @@ class CreateMixIn:
                         self.print_error("%s: %s", path, e)
                         return self.exit_code
                 else:
-                    status = "-"
+                    status = "+"  # included
                 self.print_file_status(status, path)
             elif args.paths_from_command or args.paths_from_stdin:
                 paths_sep = eval_escapes(args.paths_delimiter) if args.paths_delimiter is not None else "\n"
                 if args.paths_from_command:
                     try:
-                        proc = subprocess.Popen(args.paths, stdout=subprocess.PIPE, preexec_fn=ignore_sigint)
+                        proc = subprocess.Popen(
+                            args.paths, stdout=subprocess.PIPE, preexec_fn=None if is_win32 else ignore_sigint
+                        )
                     except (FileNotFoundError, PermissionError) as e:
                         self.print_error("Failed to execute command: %s", e)
                         return self.exit_code
@@ -119,7 +124,8 @@ class CreateMixIn:
                     if status == "C":
                         self.print_warning("%s: file changed while we backed it up", path)
                     self.print_file_status(status, path)
-                    fso.stats.files_stats[status] += 1
+                    if not dry_run and status is not None:
+                        fso.stats.files_stats[status] += 1
                 if args.paths_from_command:
                     rc = proc.wait()
                     if rc != 0:
@@ -127,6 +133,9 @@ class CreateMixIn:
                         return self.exit_code
             else:
                 for path in args.paths:
+                    if path == "":  # issue #5637
+                        self.print_warning("An empty string was given as PATH, ignoring.")
+                        continue
                     if path == "-":  # stdin
                         path = args.stdin_name
                         mode = args.stdin_mode
@@ -141,46 +150,36 @@ class CreateMixIn:
                                 status = "E"
                                 self.print_warning("%s: %s", path, e)
                         else:
-                            status = "-"
+                            status = "+"  # included
                         self.print_file_status(status, path)
-                        fso.stats.files_stats[status] += 1
+                        if not dry_run and status is not None:
+                            fso.stats.files_stats[status] += 1
                         continue
                     path = os.path.normpath(path)
-                    parent_dir = os.path.dirname(path) or "."
-                    name = os.path.basename(path)
                     try:
-                        # note: for path == '/':  name == '' and parent_dir == '/'.
-                        # the empty name will trigger a fall-back to path-based processing in os_stat and os_open.
-                        with OsOpen(path=parent_dir, flags=flags_root, noatime=True, op="open_root") as parent_fd:
-                            try:
-                                st = os_stat(path=path, parent_fd=parent_fd, name=name, follow_symlinks=False)
-                            except OSError as e:
-                                self.print_warning("%s: %s", path, e)
-                                continue
-                            if args.one_file_system:
-                                restrict_dev = st.st_dev
-                            else:
-                                restrict_dev = None
-                            self._rec_walk(
-                                path=path,
-                                parent_fd=parent_fd,
-                                name=name,
-                                fso=fso,
-                                cache=cache,
-                                matcher=matcher,
-                                exclude_caches=args.exclude_caches,
-                                exclude_if_present=args.exclude_if_present,
-                                keep_exclude_tags=args.keep_exclude_tags,
-                                skip_inodes=skip_inodes,
-                                restrict_dev=restrict_dev,
-                                read_special=args.read_special,
-                                dry_run=dry_run,
-                            )
-                            # if we get back here, we've finished recursing into <path>,
-                            # we do not ever want to get back in there (even if path is given twice as recursion root)
-                            skip_inodes.add((st.st_ino, st.st_dev))
+                        with backup_io("stat"):
+                            st = os_stat(path=path, parent_fd=None, name=None, follow_symlinks=False)
+                        restrict_dev = st.st_dev if args.one_file_system else None
+                        self._rec_walk(
+                            path=path,
+                            parent_fd=None,
+                            name=None,
+                            fso=fso,
+                            cache=cache,
+                            matcher=matcher,
+                            exclude_caches=args.exclude_caches,
+                            exclude_if_present=args.exclude_if_present,
+                            keep_exclude_tags=args.keep_exclude_tags,
+                            skip_inodes=skip_inodes,
+                            restrict_dev=restrict_dev,
+                            read_special=args.read_special,
+                            dry_run=dry_run,
+                        )
+                        # if we get back here, we've finished recursing into <path>,
+                        # we do not ever want to get back in there (even if path is given twice as recursion root)
+                        skip_inodes.add((st.st_ino, st.st_dev))
                     except (BackupOSError, BackupError) as e:
-                        # this comes from OsOpen, self._rec_walk has own exception handler
+                        # this comes from os.stat, self._rec_walk has own exception handler
                         self.print_warning("%s: %s", path, e)
                         continue
             if not dry_run:
@@ -209,7 +208,7 @@ class CreateMixIn:
         self.noxattrs = args.noxattrs
         self.exclude_nodump = args.exclude_nodump
         dry_run = args.dry_run
-        t0 = datetime.now().astimezone()  # local time with local timezone
+        t0 = archive_ts_now()
         t0_monotonic = time.monotonic()
         logger.info('Creating archive at "%s"' % args.location.processed)
         if not dry_run:
@@ -227,7 +226,6 @@ class CreateMixIn:
                     args.name,
                     cache=cache,
                     create=True,
-                    checkpoint_interval=args.checkpoint_interval,
                     numeric_ids=args.numeric_ids,
                     noatime=not args.atime,
                     noctime=args.noctime,
@@ -251,8 +249,10 @@ class CreateMixIn:
                     cache=cache,
                     key=key,
                     add_item=archive.add_item,
+                    prepare_checkpoint=archive.prepare_checkpoint,
                     write_checkpoint=archive.write_checkpoint,
                     checkpoint_interval=args.checkpoint_interval,
+                    checkpoint_volume=args.checkpoint_volume,
                     rechunkify=False,
                 )
                 fso = FilesystemObjectProcessors(
@@ -279,60 +279,110 @@ class CreateMixIn:
         """
 
         if dry_run:
-            return "-"
-        elif stat.S_ISREG(st.st_mode):
-            return fso.process_file(path=path, parent_fd=parent_fd, name=name, st=st, cache=cache)
-        elif stat.S_ISDIR(st.st_mode):
-            return fso.process_dir(path=path, parent_fd=parent_fd, name=name, st=st)
-        elif stat.S_ISLNK(st.st_mode):
-            if not read_special:
-                return fso.process_symlink(path=path, parent_fd=parent_fd, name=name, st=st)
-            else:
-                try:
-                    st_target = os_stat(path=path, parent_fd=parent_fd, name=name, follow_symlinks=True)
-                except OSError:
-                    special = False
-                else:
-                    special = is_special(st_target.st_mode)
-                if special:
+            return "+"  # included
+        MAX_RETRIES = 10  # count includes the initial try (initial try == "retry 0")
+        for retry in range(MAX_RETRIES):
+            last_try = retry == MAX_RETRIES - 1
+            try:
+                if stat.S_ISREG(st.st_mode):
                     return fso.process_file(
-                        path=path, parent_fd=parent_fd, name=name, st=st_target, cache=cache, flags=flags_special_follow
+                        path=path, parent_fd=parent_fd, name=name, st=st, cache=cache, last_try=last_try
+                    )
+                elif stat.S_ISDIR(st.st_mode):
+                    return fso.process_dir(path=path, parent_fd=parent_fd, name=name, st=st)
+                elif stat.S_ISLNK(st.st_mode):
+                    if not read_special:
+                        return fso.process_symlink(path=path, parent_fd=parent_fd, name=name, st=st)
+                    else:
+                        try:
+                            st_target = os_stat(path=path, parent_fd=parent_fd, name=name, follow_symlinks=True)
+                        except OSError:
+                            special = False
+                        else:
+                            special = is_special(st_target.st_mode)
+                        if special:
+                            return fso.process_file(
+                                path=path,
+                                parent_fd=parent_fd,
+                                name=name,
+                                st=st_target,
+                                cache=cache,
+                                flags=flags_special_follow,
+                                last_try=last_try,
+                            )
+                        else:
+                            return fso.process_symlink(path=path, parent_fd=parent_fd, name=name, st=st)
+                elif stat.S_ISFIFO(st.st_mode):
+                    if not read_special:
+                        return fso.process_fifo(path=path, parent_fd=parent_fd, name=name, st=st)
+                    else:
+                        return fso.process_file(
+                            path=path,
+                            parent_fd=parent_fd,
+                            name=name,
+                            st=st,
+                            cache=cache,
+                            flags=flags_special,
+                            last_try=last_try,
+                        )
+                elif stat.S_ISCHR(st.st_mode):
+                    if not read_special:
+                        return fso.process_dev(path=path, parent_fd=parent_fd, name=name, st=st, dev_type="c")
+                    else:
+                        return fso.process_file(
+                            path=path,
+                            parent_fd=parent_fd,
+                            name=name,
+                            st=st,
+                            cache=cache,
+                            flags=flags_special,
+                            last_try=last_try,
+                        )
+                elif stat.S_ISBLK(st.st_mode):
+                    if not read_special:
+                        return fso.process_dev(path=path, parent_fd=parent_fd, name=name, st=st, dev_type="b")
+                    else:
+                        return fso.process_file(
+                            path=path,
+                            parent_fd=parent_fd,
+                            name=name,
+                            st=st,
+                            cache=cache,
+                            flags=flags_special,
+                            last_try=last_try,
+                        )
+                elif stat.S_ISSOCK(st.st_mode):
+                    # Ignore unix sockets
+                    return
+                elif stat.S_ISDOOR(st.st_mode):
+                    # Ignore Solaris doors
+                    return
+                elif stat.S_ISPORT(st.st_mode):
+                    # Ignore Solaris event ports
+                    return
+                else:
+                    self.print_warning("Unknown file type: %s", path)
+                    return
+            except (BackupError, BackupOSError) as err:
+                if isinstance(err, BackupOSError):
+                    if err.errno in (errno.EPERM, errno.EACCES):
+                        # Do not try again, such errors can not be fixed by retrying.
+                        raise
+                # sleep a bit, so temporary problems might go away...
+                sleep_s = 1000.0 / 1e6 * 10 ** (retry / 2)  # retry 0: 1ms, retry 6: 1s, ...
+                time.sleep(sleep_s)
+                if retry < MAX_RETRIES - 1:
+                    logger.warning(
+                        f"{path}: {err}, slept {sleep_s:.3f}s, next: retry: {retry + 1} of {MAX_RETRIES - 1}..."
                     )
                 else:
-                    return fso.process_symlink(path=path, parent_fd=parent_fd, name=name, st=st)
-        elif stat.S_ISFIFO(st.st_mode):
-            if not read_special:
-                return fso.process_fifo(path=path, parent_fd=parent_fd, name=name, st=st)
-            else:
-                return fso.process_file(
-                    path=path, parent_fd=parent_fd, name=name, st=st, cache=cache, flags=flags_special
-                )
-        elif stat.S_ISCHR(st.st_mode):
-            if not read_special:
-                return fso.process_dev(path=path, parent_fd=parent_fd, name=name, st=st, dev_type="c")
-            else:
-                return fso.process_file(
-                    path=path, parent_fd=parent_fd, name=name, st=st, cache=cache, flags=flags_special
-                )
-        elif stat.S_ISBLK(st.st_mode):
-            if not read_special:
-                return fso.process_dev(path=path, parent_fd=parent_fd, name=name, st=st, dev_type="b")
-            else:
-                return fso.process_file(
-                    path=path, parent_fd=parent_fd, name=name, st=st, cache=cache, flags=flags_special
-                )
-        elif stat.S_ISSOCK(st.st_mode):
-            # Ignore unix sockets
-            return
-        elif stat.S_ISDOOR(st.st_mode):
-            # Ignore Solaris doors
-            return
-        elif stat.S_ISPORT(st.st_mode):
-            # Ignore Solaris event ports
-            return
-        else:
-            self.print_warning("Unknown file type: %s", path)
-            return
+                    # giving up with retries, error will be dealt with (logged) by upper error handler
+                    raise
+                # we better do a fresh stat on the file, just to make sure to get the current file
+                # mode right (which could have changed due to a race condition and is important for
+                # dispatching) and also to get current inode number of that file.
+                with backup_io("stat"):
+                    st = os_stat(path=path, parent_fd=parent_fd, name=name, follow_symlinks=False)
 
     def _rec_walk(
         self,
@@ -367,7 +417,7 @@ class CreateMixIn:
                 with backup_io("stat"):
                     st = os_stat(path=path, parent_fd=parent_fd, name=name, follow_symlinks=False)
             else:
-                self.print_file_status("x", path)
+                self.print_file_status("-", path)  # excluded
                 # get out here as quickly as possible:
                 # we only need to continue if we shall recurse into an excluded directory.
                 # if we shall not recurse, then do not even touch (stat()) the item, it
@@ -391,7 +441,7 @@ class CreateMixIn:
                 # Ignore if nodump flag is set
                 with backup_io("flags"):
                     if get_flags(path=path, st=st) & stat.UF_NODUMP:
-                        self.print_file_status("x", path)
+                        self.print_file_status("-", path)  # excluded
                         return
 
             if not stat.S_ISDIR(st.st_mode):
@@ -441,10 +491,13 @@ class CreateMixIn:
                                             read_special=read_special,
                                             dry_run=dry_run,
                                         )
-                                self.print_file_status("x", path)
+                                self.print_file_status("-", path)  # excluded
                             return
-                    if not recurse_excluded_dir and not dry_run:
-                        status = fso.process_dir_with_fd(path=path, fd=child_fd, st=st)
+                    if not recurse_excluded_dir:
+                        if not dry_run:
+                            status = fso.process_dir_with_fd(path=path, fd=child_fd, st=st)
+                        else:
+                            status = "+"  # included (dir)
                     if recurse:
                         with backup_io("scandir"):
                             entries = helpers.scandir_inorder(path=path, fd=child_fd)
@@ -473,7 +526,7 @@ class CreateMixIn:
             self.print_warning("%s: file changed while we backed it up", path)
         if not recurse_excluded_dir:
             self.print_file_status(status, path)
-            if status is not None:
+            if not dry_run and status is not None:
                 fso.stats.files_stats[status] += 1
 
     def build_parser_create(self, subparsers, common_parser, mid_common_parser):
@@ -543,9 +596,9 @@ class CreateMixIn:
         is used to determine changed files quickly uses absolute filenames.
         If this is not possible, consider creating a bind mount to a stable location.
 
-        The ``--progress`` option shows (from left to right) Original, Compressed and Deduplicated
-        (O, C and D, respectively), then the Number of files (N) processed so far, followed by
-        the currently processed path.
+        The ``--progress`` option shows (from left to right) Original and (uncompressed)
+        deduplicated size (O and U respectively), then the Number of files (N) processed so far,
+        followed by the currently processed path.
 
         When using ``--stats``, you will get some statistics about how much data was
         added - the "This Archive" deduplicated size there is most interesting as that is
@@ -575,13 +628,13 @@ class CreateMixIn:
         The ``-x`` or ``--one-file-system`` option excludes directories, that are mountpoints (and everything in them).
         It detects mountpoints by comparing the device number from the output of ``stat()`` of the directory and its
         parent directory. Specifically, it excludes directories for which ``stat()`` reports a device number different
-        from the device number of their parent. Be aware that in Linux (and possibly elsewhere) there are directories
-        with device number different from their parent, which the kernel does not consider a mountpoint and also the
-        other way around. Examples are bind mounts (possibly same device number, but always a mountpoint) and ALL
-        subvolumes of a btrfs (different device number from parent but not necessarily a mountpoint). Therefore when
-        using ``--one-file-system``, one should make doubly sure that the backup works as intended especially when using
-        btrfs. This is even more important, if the btrfs layout was created by someone else, e.g. a distribution
-        installer.
+        from the device number of their parent.
+        In general: be aware that there are directories with device number different from their parent, which the kernel
+        does not consider a mountpoint and also the other way around.
+        Linux examples for this are bind mounts (possibly same device number, but always a mountpoint) and ALL
+        subvolumes of a btrfs (different device number from parent but not necessarily a mountpoint).
+        macOS examples are the apfs mounts of a typical macOS installation.
+        Therefore, when using ``--one-file-system``, you should double-check that the backup works as intended.
 
 
         .. _list_item_flags:
@@ -621,9 +674,9 @@ class CreateMixIn:
 
         Other flags used include:
 
+        - '+' = included, item would be backed up (if not in dry-run mode)
+        - '-' = excluded, item would not be / was not backed up
         - 'i' = backup data was read from standard input (stdin)
-        - '-' = dry run, item was *not* backed up
-        - 'x' = excluded, item was *not* backed up
         - '?' = missing status code (if you see this, please file a bug report!)
 
         Reading from stdin
@@ -703,21 +756,24 @@ class CreateMixIn:
             metavar="NAME",
             dest="stdin_name",
             default="stdin",
+            action=MakePathSafeAction,
             help="use NAME in archive for stdin data (default: %(default)r)",
         )
         subparser.add_argument(
             "--stdin-user",
             metavar="USER",
             dest="stdin_user",
-            default=uid2user(0),
-            help="set user USER in archive for stdin data (default: %(default)r)",
+            default=None,
+            action=Highlander,
+            help="set user USER in archive for stdin data (default: do not store user/uid)",
         )
         subparser.add_argument(
             "--stdin-group",
             metavar="GROUP",
             dest="stdin_group",
-            default=gid2group(0),
-            help="set group GROUP in archive for stdin data (default: %(default)r)",
+            default=None,
+            action=Highlander,
+            help="set group GROUP in archive for stdin data (default: do not store group/gid)",
         )
         subparser.add_argument(
             "--stdin-mode",
@@ -725,6 +781,7 @@ class CreateMixIn:
             dest="stdin_mode",
             type=lambda s: int(s, 8),
             default=STDIN_MODE_DEFAULT,
+            action=Highlander,
             help="set mode to M in archive for stdin data (default: %(default)04o)",
         )
         subparser.add_argument(
@@ -735,7 +792,8 @@ class CreateMixIn:
         subparser.add_argument(
             "--paths-from-stdin",
             action="store_true",
-            help="read DELIM-separated list of paths to backup from stdin. Will not " "recurse into directories.",
+            help="read DELIM-separated list of paths to back up from stdin. All control is external: it will back"
+            " up all files given - no more, no less.",
         )
         subparser.add_argument(
             "--paths-from-command",
@@ -744,8 +802,9 @@ class CreateMixIn:
         )
         subparser.add_argument(
             "--paths-delimiter",
+            action=Highlander,
             metavar="DELIM",
-            help="set path delimiter for ``--paths-from-stdin`` and ``--paths-from-command`` (default: \\n) ",
+            help="set path delimiter for ``--paths-from-stdin`` and ``--paths-from-command`` (default: ``\\n``) ",
         )
 
         exclude_group = define_exclusion_group(subparser, tag_files=True)
@@ -759,7 +818,8 @@ class CreateMixIn:
             "--one-file-system",
             dest="one_file_system",
             action="store_true",
-            help="stay in the same file system and do not store mount points of other file systems.  This might behave different from your expectations, see the docs.",
+            help="stay in the same file system and do not store mount points of other file systems - "
+            "this might behave different from your expectations, see the description below.",
         )
         fs_group.add_argument(
             "--numeric-ids",
@@ -812,7 +872,13 @@ class CreateMixIn:
 
         archive_group = subparser.add_argument_group("Archive options")
         archive_group.add_argument(
-            "--comment", dest="comment", metavar="COMMENT", default="", help="add a comment text to the archive"
+            "--comment",
+            metavar="COMMENT",
+            dest="comment",
+            type=comment_validator,
+            default="",
+            action=Highlander,
+            help="add a comment text to the archive",
         )
         archive_group.add_argument(
             "--timestamp",
@@ -820,6 +886,7 @@ class CreateMixIn:
             dest="timestamp",
             type=timestamp,
             default=None,
+            action=Highlander,
             help="manually specify the archive creation date/time (yyyy-mm-ddThh:mm:ss[(+|-)HH:MM] format, "
             "(+|-)HH:MM is the UTC offset, default: local time zone). Alternatively, give a reference file/directory.",
         )
@@ -830,7 +897,17 @@ class CreateMixIn:
             dest="checkpoint_interval",
             type=int,
             default=1800,
+            action=Highlander,
             help="write checkpoint every SECONDS seconds (Default: 1800)",
+        )
+        archive_group.add_argument(
+            "--checkpoint-volume",
+            metavar="BYTES",
+            dest="checkpoint_volume",
+            type=int,
+            default=0,
+            action=Highlander,
+            help="write checkpoint every BYTES bytes (Default: 0, meaning no volume based checkpointing)",
         )
         archive_group.add_argument(
             "--chunker-params",
@@ -849,8 +926,9 @@ class CreateMixIn:
             dest="compression",
             type=CompressionSpec,
             default=CompressionSpec("lz4"),
-            help="select compression algorithm, see the output of the " '"bork help compression" command for details.',
+            action=Highlander,
+            help="select compression algorithm, see the output of the " '"borg help compression" command for details.',
         )
 
-        subparser.add_argument("name", metavar="NAME", type=NameSpec, help="specify the archive name")
-        subparser.add_argument("paths", metavar="PATH", nargs="*", type=str, help="paths to archive")
+        subparser.add_argument("name", metavar="NAME", type=archivename_validator, help="specify the archive name")
+        subparser.add_argument("paths", metavar="PATH", nargs="*", type=str, action="extend", help="paths to archive")

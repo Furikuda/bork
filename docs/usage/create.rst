@@ -36,9 +36,8 @@ Examples
     $ fusermount -u sshfs-mount
 
     # Make a big effort in fine granular deduplication (big chunk management
-    # overhead, needs a lot of RAM and disk space, see formula in internals
-    # docs - same parameters as bork < 1.0):
-    $ bork create --chunker-params buzhash,10,23,16,4095 small /smallstuff
+    # overhead, needs a lot of RAM and disk space, see formula in internals docs):
+    $ borg create --chunker-params buzhash,10,23,16,4095 small /smallstuff
 
     # Backup a raw device (must not be active/in use/mounted at that time)
     $ bork create --read-special --chunker-params fixed,4194304 my-sdx /dev/sdX
@@ -74,10 +73,10 @@ Examples
     $ bork create 'daily-projectA-{now:%Y-%m-%d}' projectA
 
     # Use external command to determine files to archive
-    # Use --paths-from-stdin with find to only backup files less than 1MB in size
-    $ find ~ -size -1000k | bork create --paths-from-stdin small-files-only
-    # Use --paths-from-command with find to only backup files from a given user
-    $ bork create --paths-from-command joes-files -- find /srv/samba/shared -user joe
+    # Use --paths-from-stdin with find to back up only files less than 1MB in size
+    $ find ~ -size -1000k | borg create --paths-from-stdin small-files-only
+    # Use --paths-from-command with find to back up files from only a given user
+    $ borg create --paths-from-command joes-files -- find /srv/samba/shared -user joe
     # Use --paths-from-stdin with --paths-delimiter (for example, for filenames with newlines in them)
     $ find ~ -size -1000k -print0 | bork create \
         --paths-from-stdin \

@@ -16,7 +16,7 @@ on:
     - 'requirements.d/*'
     - '!docs/**'
   pull_request:
-    branches: [ master, borg2 ]
+    branches: [ master ]
     paths:
     - '**.py'
     - '**.pyx'
@@ -31,61 +31,56 @@ on:
 jobs:
   lint:
 
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ubuntu-22.04
+    timeout-minutes: 2
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.9
-    - name: Lint with flake8
-      run: |
-        pip install flake8
-        flake8 src scripts conftest.py
+    - uses: actions/checkout@v3
+    - uses: chartboost/ruff-action@v1
 
-  tox:
+  linux:
 
     needs: lint
     strategy:
+      fail-fast: true
       matrix:
         include:
-            - os: ubuntu-20.04
+            - os: ubuntu-22.04
               python-version: '3.9'
               toxenv: mypy
-            - os: ubuntu-20.04
+            - os: ubuntu-22.04
+              python-version: '3.11'
+              toxenv: docs
+            - os: ubuntu-22.04
               python-version: '3.9'
               toxenv: py39-fuse2
-            - os: ubuntu-20.04
+            - os: ubuntu-22.04
               python-version: '3.10'
               toxenv: py310-fuse3
-            - os: ubuntu-20.04
+            - os: ubuntu-22.04
               python-version: '3.11'
               toxenv: py311-fuse3
-            - os: macos-12
-              python-version: '3.9'
-              toxenv: py39-none  # note: no fuse testing, due to #6099, see also #6196.
+            - os: ubuntu-22.04
+              python-version: '3.12-dev'
+              toxenv: py312-fuse3
 
     env:
-      # Configure pkg-config to use OpenSSL from Homebrew
-      PKG_CONFIG_PATH: /usr/local/opt/openssl@1.1/lib/pkgconfig
       TOXENV: ${{ matrix.toxenv }}
 
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 40
+    timeout-minutes: 60
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         # just fetching 1 commit is not enough for setuptools-scm, so we fetch all
         fetch-depth: 0
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Cache pip
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('requirements.d/development.txt') }}
@@ -94,7 +89,6 @@ jobs:
             ${{ runner.os }}-
 
     - name: Install Linux packages
-      if: ${{ runner.os == 'Linux' }}
       run: |
         sudo apt-get update
         sudo apt-get install -y pkg-config build-essential
@@ -102,8 +96,68 @@ jobs:
         sudo apt-get install -y libfuse-dev fuse || true  # Required for Python llfuse module
         sudo apt-get install -y libfuse3-dev fuse3 || true  # Required for Python pyfuse3 module
 
+    - name: Install Python requirements
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install -r requirements.d/development.txt
+    - name: Install borgbackup
+      run: |
+        # pip install -e .
+        python setup.py -v develop
+    - name: run tox env
+      env:
+        XDISTN: "4"
+      run: |
+        # do not use fakeroot, but run as root. avoids the dreaded EISDIR sporadic failures. see #2482.
+        #sudo -E bash -c "tox -e py"
+        tox --skip-missing-interpreters
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      env:
+        OS: ${{ runner.os }}
+        python: ${{ matrix.python-version }}
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        env_vars: OS, python
+
+  macOS:
+
+    needs: linux
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+            - os: macos-12
+              python-version: '3.11'
+              toxenv: py311-none  # note: no fuse testing, due to #6099, see also #6196.
+
+    env:
+      # Configure pkg-config to use OpenSSL from Homebrew
+      PKG_CONFIG_PATH: "/usr/local/opt/openssl@1.1/lib/pkgconfig:$PKG_CONFIG_PATH"
+      TOXENV: ${{ matrix.toxenv }}
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        # just fetching 1 commit is not enough for setuptools-scm, so we fetch all
+        fetch-depth: 0
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.d/development.txt') }}
+        restore-keys: |
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+
     - name: Install macOS packages
-      if: ${{ runner.os == 'macOS' }}
       run: |
         brew install pkg-config || brew upgrade pkg-config
         brew install zstd || brew upgrade zstd
@@ -116,19 +170,65 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         pip install -r requirements.d/development.txt
     - name: Install borgbackup
+      env:
+        # we already have that in the global env, but something is broken and overwrites that.
+        # so, set it here, again.
+        PKG_CONFIG_PATH: "/usr/local/opt/openssl@1.1/lib/pkgconfig:$PKG_CONFIG_PATH"
       run: |
         # pip install -e .
         python setup.py -v develop
     - name: run tox env
+      env:
+        # we already have that in the global env, but something is broken and overwrites that.
+        # so, set it here, again.
+        PKG_CONFIG_PATH: "/usr/local/opt/openssl@1.1/lib/pkgconfig:$PKG_CONFIG_PATH"
+        XDISTN: "6"
       run: |
         # do not use fakeroot, but run as root. avoids the dreaded EISDIR sporadic failures. see #2482.
         #sudo -E bash -c "tox -e py"
         tox --skip-missing-interpreters
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v3
       env:
         OS: ${{ runner.os }}
         python: ${{ matrix.python-version }}
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         env_vars: OS, python
+
+  windows:
+
+    runs-on: windows-latest
+    timeout-minutes: 60
+    needs: linux
+
+    env:
+      SETUPTOOLS_USE_DISTUTILS: stdlib # Needed for pip to work - https://www.msys2.org/docs/python/#known-issues
+      PY_COLORS: 1
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+      - name: Install dependencies
+        run: ./scripts/msys2-install-deps development
+      - name: Build
+        run: |
+          pip install -e .
+          pyinstaller -y scripts/borg.exe.spec
+      - uses: actions/upload-artifact@v3
+        with:
+          name: borg-windows
+          path: dist/borg.exe
+      - name: Run tests
+        run: |
+          ./dist/borg.exe -V
+          pytest -n4 --benchmark-skip -vv -rs -k "not remote"

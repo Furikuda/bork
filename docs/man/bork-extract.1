@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORG-EXTRACT" 1 "2022-10-02" "" "bork backup tool"
+.TH "BORG-EXTRACT" 1 "2023-09-14" "" "borg backup tool"
 .SH NAME
 bork-extract \- Extract archive contents
 .SH SYNOPSIS
@@ -72,7 +72,7 @@ specify the archive name
 .B PATH
 paths to extract; patterns are supported
 .UNINDENT
-.SS optional arguments
+.SS options
 .INDENT 0.0
 .TP
 .B  \-\-list
@@ -98,8 +98,11 @@ write all extracted data to stdout
 .TP
 .B  \-\-sparse
 create holes in output sparse file from all\-zero chunks
+.TP
+.B  \-\-continue
+continue a previously interrupted extraction of same archive
 .UNINDENT
-.SS Exclusion options
+.SS Include/Exclude options
 .INDENT 0.0
 .TP
 .BI \-e \ PATTERN\fR,\fB \ \-\-exclude \ PATTERN

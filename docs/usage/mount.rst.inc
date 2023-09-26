@@ -19,7 +19,7 @@ bork mount
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
     |                                                                             | ``PATH``                                     | paths to extract; patterns are supported                                                                  |
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
-    | **optional arguments**                                                                                                                                                                                                                 |
+    | **options**                                                                                                                                                                                                                            |
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
     |                                                                             | ``--consider-checkpoints``                   | Show checkpoint archives in the repository contents list (default: hidden).                               |
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
@@ -43,7 +43,15 @@ bork mount
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
     |                                                                             | ``--last N``                                 | consider last N archives after other filters were applied                                                 |
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
-    | **Exclusion options**                                                                                                                                                                                                                  |
+    |                                                                             | ``--oldest TIMESPAN``                        | consider archives between the oldest archive's timestamp and (oldest + TIMESPAN), e.g. 7d or 12m.         |
+    +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+    |                                                                             | ``--newest TIMESPAN``                        | consider archives between the newest archive's timestamp and (newest - TIMESPAN), e.g. 7d or 12m.         |
+    +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+    |                                                                             | ``--older TIMESPAN``                         | consider archives older than (now - TIMESPAN), e.g. 7d oder 12m.                                          |
+    +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+    |                                                                             | ``--newer TIMESPAN``                         | consider archives newer than (now - TIMESPAN), e.g. 7d or 12m.                                            |
+    +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+    | **Include/Exclude options**                                                                                                                                                                                                            |
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
     |                                                                             | ``-e PATTERN``, ``--exclude PATTERN``        | exclude paths matching PATTERN                                                                            |
     +-----------------------------------------------------------------------------+----------------------------------------------+-----------------------------------------------------------------------------------------------------------+
@@ -72,7 +80,7 @@ bork mount
         paths to extract; patterns are supported
 
 
-    optional arguments
+    options
         --consider-checkpoints    Show checkpoint archives in the repository contents list (default: hidden).
         -f, --foreground    stay in foreground, do not daemonize
         -o     Extra mount options
@@ -87,9 +95,13 @@ bork mount
         --sort-by KEYS                           Comma-separated list of sorting keys; valid keys are: timestamp, name, id; default is: timestamp
         --first N                                consider first N archives after other filters were applied
         --last N                                 consider last N archives after other filters were applied
+        --oldest TIMESPAN                        consider archives between the oldest archive's timestamp and (oldest + TIMESPAN), e.g. 7d or 12m.
+        --newest TIMESPAN                        consider archives between the newest archive's timestamp and (newest - TIMESPAN), e.g. 7d or 12m.
+        --older TIMESPAN                         consider archives older than (now - TIMESPAN), e.g. 7d oder 12m.
+        --newer TIMESPAN                         consider archives newer than (now - TIMESPAN), e.g. 7d or 12m.
 
 
-    Exclusion options
+    Include/Exclude options
         -e PATTERN, --exclude PATTERN     exclude paths matching PATTERN
         --exclude-from EXCLUDEFILE        read exclude patterns from EXCLUDEFILE, one per line
         --pattern PATTERN                 include/exclude paths matching PATTERN
@@ -136,14 +148,14 @@ manually. Unlike the ``uid`` and ``gid`` mount options which affect all files,
 
 Additional mount options supported by bork:
 
-- versions: when used with a repository mount, this gives a merged, versioned
+- ``versions``: when used with a repository mount, this gives a merged, versioned
   view of the files in the archives. EXPERIMENTAL, layout may change in future.
-- allow_damaged_files: by default damaged files (where missing chunks were
-  replaced with runs of zeros by bork check ``--repair``) are not readable and
+- ``allow_damaged_files``: by default damaged files (where missing chunks were
+  replaced with runs of zeros by ``borg check --repair``) are not readable and
   return EIO (I/O error). Set this option to read such files.
-- ignore_permissions: for security reasons the "default_permissions" mount
-  option is internally enforced by bork. "ignore_permissions" can be given to
-  not enforce "default_permissions".
+- ``ignore_permissions``: for security reasons the ``default_permissions`` mount
+  option is internally enforced by borg. ``ignore_permissions`` can be given to
+  not enforce ``default_permissions``.
 
 The BORG_MOUNT_DATA_CACHE_ENTRIES environment variable is meant for advanced users
 to tweak the performance. It sets the number of cached data chunks; additional
@@ -152,7 +164,7 @@ of CPU cores.
 
 When the daemonized process receives a signal or crashes, it does not unmount.
 Unmounting in these cases could cause an active rsync or similar process
-to unintentionally delete data.
+to delete data unintentionally.
 
 When running in the foreground ^C/SIGINT unmounts cleanly, but other
 signals or crashes do not.

@@ -1,4 +1,5 @@
 import json
+import os
 from collections import OrderedDict
 from datetime import datetime, timezone
 from io import StringIO
@@ -6,14 +7,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from . import BaseTestCase
+from . import rejected_dotdot_paths
 from ..crypto.key import PlaintextKey
 from ..archive import Archive, CacheChunkBuffer, RobustUnpacker, valid_msgpacked_dict, ITEM_KEYS, Statistics
 from ..archive import BackupOSError, backup_io, backup_io_iter, get_item_uid_gid
 from ..helpers import msgpack
 from ..item import Item, ArchiveItem
 from ..manifest import Manifest
-from ..platform import uid2user, gid2group
+from ..platform import uid2user, gid2group, is_win32
 
 
 @pytest.fixture()
@@ -32,23 +33,23 @@ def test_stats_basic(stats):
     assert stats.usize == 20
 
 
-def tests_stats_progress(stats, monkeypatch, columns=80):
+@pytest.mark.parametrize(
+    "item_path, update_size, expected_output",
+    [
+        ("", 0, "20 B O 20 B U 1 N "),  # test unchanged 'stats' fixture
+        ("foo", 10**3, "1.02 kB O 20 B U 1 N foo"),  # test updated original size and set item path
+        # test long item path which exceeds 80 characters
+        ("foo" * 40, 10**3, "1.02 kB O 20 B U 1 N foofoofoofoofoofoofoofoofo...foofoofoofoofoofoofoofoofoofoo"),
+    ],
+)
+def test_stats_progress(item_path, update_size, expected_output, stats, monkeypatch, columns=80):
     monkeypatch.setenv("COLUMNS", str(columns))
     out = StringIO()
-    stats.show_progress(stream=out)
-    s = "20 B O 20 B U 1 N "
-    buf = " " * (columns - len(s))
-    assert out.getvalue() == s + buf + "\r"
+    item = Item(path=item_path) if item_path else None
+    s = expected_output
 
-    out = StringIO()
-    stats.update(10**3, unique=False)
-    stats.show_progress(item=Item(path="foo"), final=False, stream=out)
-    s = "1.02 kB O 20 B U 1 N foo"
-    buf = " " * (columns - len(s))
-    assert out.getvalue() == s + buf + "\r"
-    out = StringIO()
-    stats.show_progress(item=Item(path="foo" * 40), final=False, stream=out)
-    s = "1.02 kB O 20 B U 1 N foofoofoofoofoofoofoofoofo...foofoofoofoofoofoofoofoofoofoo"
+    stats.update(update_size, unique=False)
+    stats.show_progress(item=item, stream=out)
     buf = " " * (columns - len(s))
     assert out.getvalue() == s + buf + "\r"
 
@@ -66,6 +67,7 @@ Added files: 0
 Unchanged files: 0
 Modified files: 0
 Error files: 0
+Files changed while reading: 0
 Bytes read from remote: 0
 Bytes sent to remote: 0
 """
@@ -100,6 +102,22 @@ def test_stats_progress_json(stats):
     assert "nfiles" not in result
 
 
+@pytest.mark.parametrize(
+    "isoformat, expected",
+    [
+        ("1970-01-01T00:00:01.000001", datetime(1970, 1, 1, 0, 0, 1, 1, timezone.utc)),  # test with microseconds
+        ("1970-01-01T00:00:01", datetime(1970, 1, 1, 0, 0, 1, 0, timezone.utc)),  # test without microseconds
+    ],
+)
+def test_timestamp_parsing(monkeypatch, isoformat, expected):
+    repository = Mock()
+    key = PlaintextKey(repository)
+    manifest = Manifest(key, repository)
+    a = Archive(manifest, "test", create=True)
+    a.metadata = ArchiveItem(time=isoformat)
+    assert a.ts == expected
+
+
 class MockCache:
     class MockRepo:
         def async_response(self, wait=True):
@@ -114,113 +132,98 @@ class MockCache:
         return id, len(data)
 
 
-class ArchiveTimestampTestCase(BaseTestCase):
-    def _test_timestamp_parsing(self, isoformat, expected):
-        repository = Mock()
-        key = PlaintextKey(repository)
-        manifest = Manifest(key, repository)
-        a = Archive(manifest, "test", create=True)
-        a.metadata = ArchiveItem(time=isoformat)
-        self.assert_equal(a.ts, expected)
-
-    def test_with_microseconds(self):
-        self._test_timestamp_parsing("1970-01-01T00:00:01.000001", datetime(1970, 1, 1, 0, 0, 1, 1, timezone.utc))
-
-    def test_without_microseconds(self):
-        self._test_timestamp_parsing("1970-01-01T00:00:01", datetime(1970, 1, 1, 0, 0, 1, 0, timezone.utc))
-
-
-class ChunkBufferTestCase(BaseTestCase):
-    def test(self):
-        data = [Item(path="p1"), Item(path="p2")]
-        cache = MockCache()
-        key = PlaintextKey(None)
-        chunks = CacheChunkBuffer(cache, key, None)
-        for d in data:
-            chunks.add(d)
-            chunks.flush()
-        chunks.flush(flush=True)
-        self.assert_equal(len(chunks.chunks), 2)
-        unpacker = msgpack.Unpacker()
-        for id in chunks.chunks:
-            unpacker.feed(cache.objects[id])
-        self.assert_equal(data, [Item(internal_dict=d) for d in unpacker])
-
-    def test_partial(self):
-        big = "0123456789abcdefghijklmnopqrstuvwxyz" * 25000
-        data = [Item(path="full", source=big), Item(path="partial", source=big)]
-        cache = MockCache()
-        key = PlaintextKey(None)
-        chunks = CacheChunkBuffer(cache, key, None)
-        for d in data:
-            chunks.add(d)
-        chunks.flush(flush=False)
-        # the code is expected to leave the last partial chunk in the buffer
-        self.assert_equal(len(chunks.chunks), 3)
-        assert chunks.buffer.tell() > 0
-        # now really flush
-        chunks.flush(flush=True)
-        self.assert_equal(len(chunks.chunks), 4)
-        assert chunks.buffer.tell() == 0
-        unpacker = msgpack.Unpacker()
-        for id in chunks.chunks:
-            unpacker.feed(cache.objects[id])
-        self.assert_equal(data, [Item(internal_dict=d) for d in unpacker])
+def test_cache_chunk_buffer():
+    data = [Item(path="p1"), Item(path="p2")]
+    cache = MockCache()
+    key = PlaintextKey(None)
+    chunks = CacheChunkBuffer(cache, key, None)
+    for d in data:
+        chunks.add(d)
+        chunks.flush()
+    chunks.flush(flush=True)
+    assert len(chunks.chunks) == 2
+    unpacker = msgpack.Unpacker()
+    for id in chunks.chunks:
+        unpacker.feed(cache.objects[id])
+    assert data == [Item(internal_dict=d) for d in unpacker]
 
 
-class RobustUnpackerTestCase(BaseTestCase):
-    def make_chunks(self, items):
-        return b"".join(msgpack.packb({"path": item}) for item in items)
+def test_partial_cache_chunk_buffer():
+    big = "0123456789abcdefghijklmnopqrstuvwxyz" * 25000
+    data = [Item(path="full", target=big), Item(path="partial", target=big)]
+    cache = MockCache()
+    key = PlaintextKey(None)
+    chunks = CacheChunkBuffer(cache, key, None)
+    for d in data:
+        chunks.add(d)
+    chunks.flush(flush=False)
+    # the code is expected to leave the last partial chunk in the buffer
+    assert len(chunks.chunks) == 3
+    assert chunks.buffer.tell() > 0
+    # now really flush
+    chunks.flush(flush=True)
+    assert len(chunks.chunks) == 4
+    assert chunks.buffer.tell() == 0
+    unpacker = msgpack.Unpacker()
+    for id in chunks.chunks:
+        unpacker.feed(cache.objects[id])
+    assert data == [Item(internal_dict=d) for d in unpacker]
 
-    def _validator(self, value):
-        return isinstance(value, dict) and value.get("path") in ("foo", "bar", "boo", "baz")
 
-    def process(self, input):
-        unpacker = RobustUnpacker(validator=self._validator, item_keys=ITEM_KEYS)
-        result = []
-        for should_sync, chunks in input:
-            if should_sync:
-                unpacker.resync()
-            for data in chunks:
-                unpacker.feed(data)
-                for item in unpacker:
-                    result.append(item)
-        return result
+def make_chunks(items):
+    return b"".join(msgpack.packb({"path": item}) for item in items)
 
-    def test_extra_garbage_no_sync(self):
-        chunks = [
-            (False, [self.make_chunks(["foo", "bar"])]),
-            (False, [b"garbage"] + [self.make_chunks(["boo", "baz"])]),
-        ]
-        result = self.process(chunks)
-        self.assert_equal(
-            result, [{"path": "foo"}, {"path": "bar"}, 103, 97, 114, 98, 97, 103, 101, {"path": "boo"}, {"path": "baz"}]
-        )
 
-    def split(self, left, length):
-        parts = []
-        while left:
-            parts.append(left[:length])
-            left = left[length:]
-        return parts
+def _validator(value):
+    return isinstance(value, dict) and value.get("path") in ("foo", "bar", "boo", "baz")
 
-    def test_correct_stream(self):
-        chunks = self.split(self.make_chunks(["foo", "bar", "boo", "baz"]), 2)
-        input = [(False, chunks)]
-        result = self.process(input)
-        self.assert_equal(result, [{"path": "foo"}, {"path": "bar"}, {"path": "boo"}, {"path": "baz"}])
 
-    def test_missing_chunk(self):
-        chunks = self.split(self.make_chunks(["foo", "bar", "boo", "baz"]), 4)
-        input = [(False, chunks[:3]), (True, chunks[4:])]
-        result = self.process(input)
-        self.assert_equal(result, [{"path": "foo"}, {"path": "boo"}, {"path": "baz"}])
+def process(input):
+    unpacker = RobustUnpacker(validator=_validator, item_keys=ITEM_KEYS)
+    result = []
+    for should_sync, chunks in input:
+        if should_sync:
+            unpacker.resync()
+        for data in chunks:
+            unpacker.feed(data)
+            for item in unpacker:
+                result.append(item)
+    return result
 
-    def test_corrupt_chunk(self):
-        chunks = self.split(self.make_chunks(["foo", "bar", "boo", "baz"]), 4)
-        input = [(False, chunks[:3]), (True, [b"gar", b"bage"] + chunks[3:])]
-        result = self.process(input)
-        self.assert_equal(result, [{"path": "foo"}, {"path": "boo"}, {"path": "baz"}])
+
+def test_extra_garbage_no_sync():
+    chunks = [(False, [make_chunks(["foo", "bar"])]), (False, [b"garbage"] + [make_chunks(["boo", "baz"])])]
+    res = process(chunks)
+    assert res == [{"path": "foo"}, {"path": "bar"}, 103, 97, 114, 98, 97, 103, 101, {"path": "boo"}, {"path": "baz"}]
+
+
+def split(left, length):
+    parts = []
+    while left:
+        parts.append(left[:length])
+        left = left[length:]
+    return parts
+
+
+def test_correct_stream():
+    chunks = split(make_chunks(["foo", "bar", "boo", "baz"]), 2)
+    input = [(False, chunks)]
+    result = process(input)
+    assert result == [{"path": "foo"}, {"path": "bar"}, {"path": "boo"}, {"path": "baz"}]
+
+
+def test_missing_chunk():
+    chunks = split(make_chunks(["foo", "bar", "boo", "baz"]), 4)
+    input = [(False, chunks[:3]), (True, chunks[4:])]
+    result = process(input)
+    assert result == [{"path": "foo"}, {"path": "boo"}, {"path": "baz"}]
+
+
+def test_corrupt_chunk():
+    chunks = split(make_chunks(["foo", "bar", "boo", "baz"]), 4)
+    input = [(False, chunks[:3]), (True, [b"gar", b"bage"] + chunks[3:])]
+    result = process(input)
+    assert result == [{"path": "foo"}, {"path": "boo"}, {"path": "baz"}]
 
 
 @pytest.fixture
@@ -257,6 +260,7 @@ IK = sorted(list(ITEM_KEYS))
             OrderedDict((k, b"x" * 1000) for k in IK),  # as big (key count and volume) as it gets
         ]
     ],
+    ids=["minimal", "empty-values", "long-values"],
 )
 def test_valid_msgpacked_items(packed, item_keys_serialized):
     assert valid_msgpacked_dict(packed, item_keys_serialized)
@@ -295,18 +299,22 @@ def test_backup_io_iter():
 
 def test_get_item_uid_gid():
     # test requires that:
-    # - a name for user 0 and group 0 exists, usually root:root or root:wheel.
+    # - a user/group name for the current process' real uid/gid exists.
     # - a system user/group udoesnotexist:gdoesnotexist does NOT exist.
 
-    user0, group0 = uid2user(0), gid2group(0)
+    try:
+        puid, pgid = os.getuid(), os.getgid()  # UNIX only
+    except AttributeError:
+        puid, pgid = 0, 0
+    puser, pgroup = uid2user(puid), gid2group(pgid)
 
     # this is intentionally a "strange" item, with not matching ids/names.
-    item = Item(path="filename", uid=1, gid=2, user=user0, group=group0)
+    item = Item(path="filename", uid=1, gid=2, user=puser, group=pgroup)
 
     uid, gid = get_item_uid_gid(item, numeric=False)
     # these are found via a name-to-id lookup
-    assert uid == 0
-    assert gid == 0
+    assert uid == puid
+    assert gid == pgid
 
     uid, gid = get_item_uid_gid(item, numeric=True)
     # these are directly taken from the item.uid and .gid
@@ -319,7 +327,7 @@ def test_get_item_uid_gid():
     assert gid == 4
 
     # item metadata broken, has negative ids.
-    item = Item(path="filename", uid=-1, gid=-2, user=user0, group=group0)
+    item = Item(path="filename", uid=-1, gid=-2, user=puser, group=pgroup)
 
     uid, gid = get_item_uid_gid(item, numeric=True)
     # use the uid/gid defaults (which both default to 0).
@@ -344,15 +352,52 @@ def test_get_item_uid_gid():
     assert uid == 7
     assert gid == 8
 
-    # item metadata has valid uid/gid, but non-existing user/group names.
-    item = Item(path="filename", uid=9, gid=10, user="udoesnotexist", group="gdoesnotexist")
+    if not is_win32:
+        # due to the hack in borg.platform.windows user2uid / group2gid, these always return 0
+        # (no matter which username we ask for) and they never raise a KeyError (like e.g. for
+        # a non-existing user/group name). Thus, these tests can currently not succeed on win32.
+
+        # item metadata has valid uid/gid, but non-existing user/group names.
+        item = Item(path="filename", uid=9, gid=10, user="udoesnotexist", group="gdoesnotexist")
+
+        uid, gid = get_item_uid_gid(item, numeric=False)
+        # because user/group name does not exist here, use valid numeric ids from item metadata.
+        assert uid == 9
+        assert gid == 10
+
+        uid, gid = get_item_uid_gid(item, numeric=False, uid_default=11, gid_default=12)
+        # because item uid/gid seems valid, do not use the given uid/gid defaults
+        assert uid == 9
+        assert gid == 10
+
+    # item metadata only has uid/gid, but no user/group.
+    item = Item(path="filename", uid=13, gid=14)
 
     uid, gid = get_item_uid_gid(item, numeric=False)
-    # because user/group name does not exist here, use valid numeric ids from item metadata.
-    assert uid == 9
-    assert gid == 10
+    # it'll check user/group first, but as there is nothing in the item, falls back to uid/gid.
+    assert uid == 13
+    assert gid == 14
 
-    uid, gid = get_item_uid_gid(item, numeric=False, uid_default=11, gid_default=12)
-    # because item uid/gid seems valid, do not use the given uid/gid defaults
-    assert uid == 9
-    assert gid == 10
+    uid, gid = get_item_uid_gid(item, numeric=True)
+    # does not check user/group, directly returns uid/gid.
+    assert uid == 13
+    assert gid == 14
+
+    # item metadata has no uid/gid/user/group.
+    item = Item(path="filename")
+
+    uid, gid = get_item_uid_gid(item, numeric=False, uid_default=15)
+    # as there is nothing, it'll fall back to uid_default/gid_default.
+    assert uid == 15
+    assert gid == 0
+
+    uid, gid = get_item_uid_gid(item, numeric=True, gid_default=16)
+    # as there is nothing, it'll fall back to uid_default/gid_default.
+    assert uid == 0
+    assert gid == 16
+
+
+def test_reject_non_sanitized_item():
+    for path in rejected_dotdot_paths:
+        with pytest.raises(ValueError, match="unexpected '..' element in path"):
+            Item(path=path, user="root", group="root")

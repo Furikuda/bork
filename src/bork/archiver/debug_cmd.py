@@ -1,24 +1,24 @@
 import argparse
 from binascii import unhexlify, hexlify
 import functools
-import hashlib
 import json
 import textwrap
 
 from ..archive import Archive
+from ..compress import CompressionSpec
 from ..constants import *  # NOQA
 from ..helpers import msgpack
 from ..helpers import sysinfo
 from ..helpers import bin_to_hex, prepare_dump_dict
 from ..helpers import dash_open
 from ..helpers import StableDict
-from ..helpers import positive_int_validator, NameSpec
+from ..helpers import positive_int_validator, archivename_validator
 from ..manifest import Manifest
 from ..platform import get_process_id
 from ..repository import Repository, LIST_SCAN_LIMIT, TAG_PUT, TAG_DELETE, TAG_COMMIT
 from ..repoobj import RepoObj
 
-from ._common import with_repository
+from ._common import with_repository, Highlander
 from ._common import process_epilog
 
 
@@ -33,7 +33,7 @@ class DebugMixIn:
     def do_debug_dump_archive_items(self, args, repository, manifest):
         """dump (decrypted, decompressed) archive items metadata (not: data)"""
         repo_objs = manifest.repo_objs
-        archive = Archive(manifest, args.name, consider_part_files=args.consider_part_files)
+        archive = Archive(manifest, args.name)
         for i, item_id in enumerate(archive.metadata.items):
             _, data = repo_objs.parse(item_id, repository.get(item_id))
             filename = "%06d_%s.items" % (i, bin_to_hex(item_id))
@@ -241,28 +241,101 @@ class DebugMixIn:
         hex_id = args.id
         try:
             id = unhexlify(hex_id)
-        except ValueError:
-            print("object id %s is invalid." % hex_id)
-        else:
-            try:
-                data = repository.get(id)
-            except Repository.ObjectNotFound:
-                print("object %s not found." % hex_id)
-            else:
-                with open(args.path, "wb") as f:
-                    f.write(data)
-                print("object %s fetched." % hex_id)
+            if len(id) != 32:  # 256bit
+                raise ValueError("id must be 256bits or 64 hex digits")
+        except ValueError as err:
+            print(f"object id {hex_id} is invalid [{str(err)}].")
+            return EXIT_ERROR
+        try:
+            data = repository.get(id)
+        except Repository.ObjectNotFound:
+            print("object %s not found." % hex_id)
+            return EXIT_ERROR
+        with open(args.path, "wb") as f:
+            f.write(data)
+        print("object %s fetched." % hex_id)
+        return EXIT_SUCCESS
+
+    @with_repository(compatibility=Manifest.NO_OPERATION_CHECK)
+    def do_debug_id_hash(self, args, repository, manifest):
+        """compute id-hash for file contents"""
+        with open(args.path, "rb") as f:
+            data = f.read()
+        key = manifest.key
+        id = key.id_hash(data)
+        print(id.hex())
+        return EXIT_SUCCESS
+
+    @with_repository(compatibility=Manifest.NO_OPERATION_CHECK)
+    def do_debug_parse_obj(self, args, repository, manifest):
+        """parse borg object file into meta dict and data (decrypting, decompressing)"""
+
+        # get the object from id
+        hex_id = args.id
+        try:
+            id = unhexlify(hex_id)
+            if len(id) != 32:  # 256bit
+                raise ValueError("id must be 256bits or 64 hex digits")
+        except ValueError as err:
+            print(f"object id {hex_id} is invalid [{str(err)}].")
+            return EXIT_ERROR
+
+        with open(args.object_path, "rb") as f:
+            cdata = f.read()
+
+        repo_objs = manifest.repo_objs
+        meta, data = repo_objs.parse(id=id, cdata=cdata)
+
+        with open(args.json_path, "w") as f:
+            json.dump(meta, f)
+
+        with open(args.binary_path, "wb") as f:
+            f.write(data)
+
+        return EXIT_SUCCESS
+
+    @with_repository(compatibility=Manifest.NO_OPERATION_CHECK)
+    def do_debug_format_obj(self, args, repository, manifest):
+        """format file and metadata into borg object file"""
+
+        # get the object from id
+        hex_id = args.id
+        try:
+            id = unhexlify(hex_id)
+            if len(id) != 32:  # 256bit
+                raise ValueError("id must be 256bits or 64 hex digits")
+        except ValueError as err:
+            print(f"object id {hex_id} is invalid [{str(err)}].")
+            return EXIT_ERROR
+
+        with open(args.binary_path, "rb") as f:
+            data = f.read()
+
+        with open(args.json_path) as f:
+            meta = json.load(f)
+
+        repo_objs = manifest.repo_objs
+        data_encrypted = repo_objs.format(id=id, meta=meta, data=data)
+
+        with open(args.object_path, "wb") as f:
+            f.write(data_encrypted)
         return EXIT_SUCCESS
 
     @with_repository(manifest=False, exclusive=True)
     def do_debug_put_obj(self, args, repository):
-        """put file(s) contents into the repository"""
-        for path in args.paths:
-            with open(path, "rb") as f:
-                data = f.read()
-            h = hashlib.sha256(data)  # XXX hardcoded
-            repository.put(h.digest(), data)
-            print("object %s put." % h.hexdigest())
+        """put file contents into the repository"""
+        with open(args.path, "rb") as f:
+            data = f.read()
+        hex_id = args.id
+        try:
+            id = unhexlify(hex_id)
+            if len(id) != 32:  # 256bit
+                raise ValueError("id must be 256bits or 64 hex digits")
+        except ValueError as err:
+            print(f"object id {hex_id} is invalid [{str(err)}].")
+            return EXIT_ERROR
+        repository.put(id, data)
+        print("object %s put." % hex_id)
         repository.commit(compact=False)
         return EXIT_SUCCESS
 
@@ -330,7 +403,6 @@ class DebugMixIn:
         return EXIT_SUCCESS
 
     def build_parser_debug(self, subparsers, common_parser, mid_common_parser):
-
         debug_epilog = process_epilog(
             """
         These commands are not intended for normal use and potentially very
@@ -387,7 +459,7 @@ class DebugMixIn:
             help="dump archive items (metadata) (debug)",
         )
         subparser.set_defaults(func=self.do_debug_dump_archive_items)
-        subparser.add_argument("name", metavar="NAME", type=NameSpec, help="specify the archive name")
+        subparser.add_argument("name", metavar="NAME", type=archivename_validator, help="specify the archive name")
 
         debug_dump_archive_epilog = process_epilog(
             """
@@ -404,7 +476,7 @@ class DebugMixIn:
             help="dump decoded archive metadata (debug)",
         )
         subparser.set_defaults(func=self.do_debug_dump_archive)
-        subparser.add_argument("name", metavar="NAME", type=NameSpec, help="specify the archive name")
+        subparser.add_argument("name", metavar="NAME", type=archivename_validator, help="specify the archive name")
         subparser.add_argument("path", metavar="PATH", type=str, help="file to dump data into")
 
         debug_dump_manifest_epilog = process_epilog(
@@ -449,16 +521,18 @@ class DebugMixIn:
             "--segment",
             metavar="SEG",
             dest="segment",
-            default=None,
             type=positive_int_validator,
+            default=None,
+            action=Highlander,
             help="used together with --ghost: limit processing to given segment.",
         )
         subparser.add_argument(
             "--offset",
             metavar="OFFS",
             dest="offset",
-            default=None,
             type=positive_int_validator,
+            default=None,
+            action=Highlander,
             help="used together with --ghost: limit processing to given offset.",
         )
 
@@ -481,7 +555,93 @@ class DebugMixIn:
             "wanted",
             metavar="WANTED",
             type=str,
+            action=Highlander,
             help="term to search the repo for, either 0x1234abcd hex term or a string",
+        )
+        debug_id_hash_epilog = process_epilog(
+            """
+                This command computes the id-hash for some file content.
+                """
+        )
+        subparser = debug_parsers.add_parser(
+            "id-hash",
+            parents=[common_parser],
+            add_help=False,
+            description=self.do_debug_id_hash.__doc__,
+            epilog=debug_id_hash_epilog,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            help="compute id-hash for some file content (debug)",
+        )
+        subparser.set_defaults(func=self.do_debug_id_hash)
+        subparser.add_argument(
+            "path", metavar="PATH", type=str, help="content for which the id-hash shall get computed"
+        )
+
+        # parse_obj
+        debug_parse_obj_epilog = process_epilog(
+            """
+                This command parses the object file into metadata (as json) and uncompressed data.
+                """
+        )
+        subparser = debug_parsers.add_parser(
+            "parse-obj",
+            parents=[common_parser],
+            add_help=False,
+            description=self.do_debug_parse_obj.__doc__,
+            epilog=debug_parse_obj_epilog,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            help="parse borg object file into meta dict and data",
+        )
+        subparser.set_defaults(func=self.do_debug_parse_obj)
+        subparser.add_argument("id", metavar="ID", type=str, help="hex object ID to get from the repo")
+        subparser.add_argument(
+            "object_path", metavar="OBJECT_PATH", type=str, help="path of the object file to parse data from"
+        )
+        subparser.add_argument(
+            "binary_path", metavar="BINARY_PATH", type=str, help="path of the file to write uncompressed data into"
+        )
+        subparser.add_argument(
+            "json_path", metavar="JSON_PATH", type=str, help="path of the json file to write metadata into"
+        )
+
+        # format_obj
+        debug_format_obj_epilog = process_epilog(
+            """
+                This command formats the file and metadata into objectfile.
+                """
+        )
+        subparser = debug_parsers.add_parser(
+            "format-obj",
+            parents=[common_parser],
+            add_help=False,
+            description=self.do_debug_format_obj.__doc__,
+            epilog=debug_format_obj_epilog,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            help="format file and metadata into borg objectfile",
+        )
+        subparser.set_defaults(func=self.do_debug_format_obj)
+        subparser.add_argument("id", metavar="ID", type=str, help="hex object ID to get from the repo")
+        subparser.add_argument(
+            "binary_path", metavar="BINARY_PATH", type=str, help="path of the file to convert into objectfile"
+        )
+        subparser.add_argument(
+            "json_path", metavar="JSON_PATH", type=str, help="path of the json file to read metadata from"
+        )
+        subparser.add_argument(
+            "-C",
+            "--compression",
+            metavar="COMPRESSION",
+            dest="compression",
+            type=CompressionSpec,
+            default=CompressionSpec("lz4"),
+            action=Highlander,
+            help="select compression algorithm, see the output of the " '"borg help compression" command for details.',
+        )
+        subparser.add_argument(
+            "object_path",
+            metavar="OBJECT_PATH",
+            type=str,
+            help="path of the objectfile to write compressed encrypted data into",
         )
 
         debug_get_obj_epilog = process_epilog(
@@ -504,7 +664,7 @@ class DebugMixIn:
 
         debug_put_obj_epilog = process_epilog(
             """
-        This command puts objects into the repository.
+        This command puts an object into the repository.
         """
         )
         subparser = debug_parsers.add_parser(
@@ -517,9 +677,8 @@ class DebugMixIn:
             help="put object to repository (debug)",
         )
         subparser.set_defaults(func=self.do_debug_put_obj)
-        subparser.add_argument(
-            "paths", metavar="PATH", nargs="+", type=str, help="file(s) to read and create object(s) from"
-        )
+        subparser.add_argument("id", metavar="ID", type=str, help="hex object ID to put into the repo")
+        subparser.add_argument("path", metavar="PATH", type=str, help="file to read and create object from")
 
         debug_delete_obj_epilog = process_epilog(
             """

@@ -33,14 +33,14 @@ General:
         When set, use the value to answer the passphrase question when a **new** passphrase is asked for.
         This variable is checked first. If it is not set, BORG_PASSPHRASE and BORG_PASSCOMMAND will also
         be checked.
-        Main usecase for this is to fully automate ``bork change-passphrase``.
+        Main usecase for this is to automate fully ``borg change-passphrase``.
     BORG_DISPLAY_PASSPHRASE
         When set, use the value to answer the "display the passphrase for verification" question when defining a new passphrase for encrypted repositories.
     BORG_HOST_ID
         Bork usually computes a host id from the FQDN plus the results of ``uuid.getnode()`` (which usually returns
         a unique id based on the MAC address of the network interface. Except if that MAC happens to be all-zero - in
         that case it returns a random value, which is not what we want (because it kills automatic stale lock removal).
-        So, if you have a all-zero MAC address or other reasons to better externally control the host id, just set this
+        So, if you have a all-zero MAC address or other reasons to control better externally the host id, just set this
         environment variable to a unique value. If all your FQDNs are unique, you can just use the FQDN. If not,
         use fqdn@uniqueid.
     BORG_LOCK_WAIT
@@ -62,7 +62,7 @@ General:
         cache entries for backup sources other than the current sources.
     BORG_FILES_CACHE_TTL
         When set to a numeric value, this determines the maximum "time to live" for the files cache
-        entries (default: 20). The files cache is used to quickly determine whether a file is unchanged.
+        entries (default: 20). The files cache is used to determine quickly whether a file is unchanged.
         The FAQ explains this more detailed in: :ref:`always_chunking`
     BORG_SHOW_SYSINFO
         When set to no (default: yes), system information (like OS, Python version, ...) in
@@ -104,6 +104,30 @@ General:
             caused EROFS. You will need this to make archives from volume shadow copies
             in WSL1 (Windows Subsystem for Linux 1).
 
+        authenticated_no_key
+            Work around a lost passphrase or key for an ``authenticated`` mode repository
+            (these are only authenticated, but not encrypted).
+            If the key is missing in the repository config, add ``key = anything`` there.
+
+            This workaround is **only** for emergencies and **only** to extract data
+            from an affected repository (read-only access)::
+
+                BORG_WORKAROUNDS=authenticated_no_key borg extract repo::archive
+
+            After you have extracted all data you need, you MUST delete the repository::
+
+                BORG_WORKAROUNDS=authenticated_no_key borg delete repo
+
+            Now you can init a fresh repo. Make sure you do not use the workaround any more.
+
+Output formatting:
+    BORG_LIST_FORMAT
+        Giving the default value for ``borg list --format=X``.
+    BORG_RLIST_FORMAT
+        Giving the default value for ``borg rlist --format=X``.
+    BORG_PRUNE_FORMAT
+        Giving the default value for ``borg prune --format=X``.
+
 Some automatic "answerers" (if set, they automatically answer confirmation questions):
     BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=no (or =yes)
         For "Warning: Attempting to access a previously unknown unencrypted repository"
@@ -112,7 +136,7 @@ Some automatic "answerers" (if set, they automatically answer confirmation quest
     BORG_CHECK_I_KNOW_WHAT_I_AM_DOING=NO (or =YES)
         For "This is a potentially dangerous function..." (check --repair)
     BORG_DELETE_I_KNOW_WHAT_I_AM_DOING=NO (or =YES)
-        For "You requested to completely DELETE the repository *including* all archives it contains:"
+        For "You requested to DELETE the repository completely *including* all archives it contains:"
 
     Note: answers are case sensitive. setting an invalid answer value might either give the default
     answer or ask you interactively, depending on whether retries are allowed (they by default are
@@ -133,19 +157,36 @@ Directories and files:
         of space for dealing with big repositories. Make sure you're aware of the associated
         security aspects of the cache location: :ref:`cache_security`
     BORG_CONFIG_DIR
-        Defaults to ``$BORG_BASE_DIR/.config/bork``. If ``BORG_BASE_DIR`` is not explicitly set while
-        `XDG env var`_ ``XDG_CONFIG_HOME`` is set, then ``$XDG_CONFIG_HOME/bork`` is being used instead.
-        This directory contains all bork configuration directories, see the FAQ
-        for a security advisory about the data in this directory: :ref:`home_config_bork`
+        Defaults to ``$BORG_BASE_DIR/.config/borg``. If ``BORG_BASE_DIR`` is not explicitly set while
+        `XDG env var`_ ``XDG_CONFIG_HOME`` is set, then ``$XDG_CONFIG_HOME/borg`` is being used instead.
+        This directory contains all borg configuration directories, see the FAQ
+        for a security advisory about the data in this directory: :ref:`home_config_borg`
+    BORG_DATA_DIR
+        Defaults to ``$BORG_BASE_DIR/.local/share/borg``. If ``BORG_BASE_DIR`` is not explicitly set while
+        `XDG env var`_ ``XDG_DATA_HOME`` is set, then ``$XDG_DATA_HOME/borg`` is being used instead.
+        This directory contains all borg data directories, see the FAQ
+        for a security advisory about the data in this directory: :ref:`home_data_borg`
+    BORG_RUNTIME_DIR
+        Defaults to ``$BORG_BASE_DIR/.cache/borg``. If ``BORG_BASE_DIR`` is not explicitly set while
+        `XDG env var`_ ``XDG_RUNTIME_DIR`` is set, then ``$XDG_RUNTIME_DIR/borg`` is being used instead.
+        This directory contains borg runtime files, like e.g. the socket file.
     BORG_SECURITY_DIR
-        Defaults to ``$BORG_CONFIG_DIR/security``.
-        This directory contains information bork uses to track its usage of NONCES ("numbers used
-        once" - usually in encryption context) and other security relevant data.
+        Defaults to ``$BORG_DATA_DIR/security``.
+        This directory contains security relevant data.
     BORG_KEYS_DIR
         Defaults to ``$BORG_CONFIG_DIR/keys``.
         This directory contains keys for encrypted repositories.
     BORG_KEY_FILE
-        When set, use the given filename as repository key file.
+        When set, use the given path as repository key file. Please note that this is only
+        for rather special applications that externally fully manage the key files:
+
+        - this setting only applies to the keyfile modes (not to the repokey modes).
+        - using a full, absolute path to the key file is recommended.
+        - all directories in the given path must exist.
+        - this setting forces borg to use the key file at the given location.
+        - the key file must either exist (for most commands) or will be created (``borg rcreate``).
+        - you need to give a different path for different repositories.
+        - you need to point to the correct key file matching the repository the command will operate on.
     TMPDIR
         This is where temporary files are stored (might need a lot of temporary space for some
         operations), see tempfile_ for details.
@@ -156,9 +197,6 @@ Building:
     BORG_LIBLZ4_PREFIX
         Adds given prefix directory to the default locations. If a 'include/lz4.h' is found Bork
         will be linked against the system liblz4 instead of a bundled implementation. (setup.py)
-    BORG_LIBB2_PREFIX
-        Adds given prefix directory to the default locations. If a 'include/blake2.h' is found Bork
-        will be linked against the system libb2 instead of a bundled implementation. (setup.py)
     BORG_LIBZSTD_PREFIX
         Adds given prefix directory to the default locations. If a 'include/zstd.h' is found Bork
         will be linked against the system libzstd instead of a bundled implementation. (setup.py)

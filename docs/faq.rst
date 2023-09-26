@@ -24,8 +24,8 @@ SSHFS, the Bork client only can do file system operations and has no agent
 running on the remote side, so *every* operation needs to go over the network,
 which is slower.
 
-Can I backup from multiple servers into a single repository?
-------------------------------------------------------------
+Can I back up from multiple servers into a single repository?
+-------------------------------------------------------------
 
 In order for the deduplication used by Bork to work, it
 needs to keep a local cache containing checksums of all file
@@ -86,7 +86,7 @@ run into this by yourself by restoring an older copy of your repository.
 "attack": maybe an attacker has replaced your repo by an older copy, trying to
 trick you into AES counter reuse, trying to break your repo encryption.
 
-If you'ld decide to ignore this and accept unsafe operation for this repository,
+If you decide to ignore this and accept unsafe operation for this repository,
 you could delete the manifest-timestamp and the local cache:
 
 ::
@@ -115,9 +115,9 @@ Which file types, attributes, etc. are *not* preserved?
 Are there other known limitations?
 ----------------------------------
 
-- bork extract only supports restoring into an empty destination. After that,
-  the destination will exactly have the contents of the extracted archive.
-  If you extract into a non-empty destination, bork will (for example) not
+- borg extract supports restoring only into an empty destination. After extraction,
+  the destination will have exactly the contents of the extracted archive.
+  If you extract into a non-empty destination, borg will (for example) not
   remove files which are in the destination, but not in the archive.
   See :issue:`4598` for a workaround and more details.
 
@@ -128,14 +128,14 @@ If a backup stops mid-way, does the already-backed-up data stay there?
 
 Yes, Bork supports resuming backups.
 
-During a backup a special checkpoint archive named ``<archive-name>.checkpoint``
-is saved every checkpoint interval (the default value for this is 30
+During a backup, a special checkpoint archive named ``<archive-name>.checkpoint``
+is saved at every checkpoint interval (the default value for this is 30
 minutes) containing all the data backed-up until that point.
 
-This checkpoint archive is a valid archive,
-but it is only a partial backup (not all files that you wanted to backup are
-contained in it). Having it in the repo until a successful, full backup is
-completed is useful because it references all the transmitted chunks up
+This checkpoint archive is a valid archive, but it is only a partial backup
+(not all files that you wanted to back up are contained in it and the last file
+in it might be a partial file). Having it in the repo until a successful, full
+backup is completed is useful because it references all the transmitted chunks up
 to the checkpoint. This means that in case of an interruption, you only need to
 retransfer the data since the last checkpoint.
 
@@ -154,27 +154,23 @@ Once your backup has finished successfully, you can delete all
 ``<archive-name>.checkpoint`` archives. If you run ``bork prune``, it will
 also care for deleting unneeded checkpoints.
 
-Note: the checkpointing mechanism creates hidden, partial files in an archive,
-so that checkpoints even work while a big file is being processed.
-They are named ``<filename>.bork_part_<N>`` and all operations usually ignore
-these files, but you can make them considered by giving the option
-``--consider-part-files``. You usually only need that option if you are
-really desperate (e.g. if you have no completed backup of that file and you'ld
-rather get a partial file extracted than nothing). You do **not** want to give
-that option under any normal circumstances.
+Note: the checkpointing mechanism may create a partial (truncated) last file
+in a checkpoint archive named ``<filename>.borg_part``. Such partial files
+won't be contained in the final archive.
+This is done so that checkpoints work cleanly and promptly while a big
+file is being processed.
 
-How can I backup huge file(s) over a unstable connection?
----------------------------------------------------------
+
+How can I back up huge file(s) over a unstable connection?
+----------------------------------------------------------
 
 Yes. For more details, see :ref:`checkpoints_parts`.
 
 How can I restore huge file(s) over an unstable connection?
 -----------------------------------------------------------
 
-If you cannot manage to extract the whole big file in one go, you can extract
-all the part files and manually concatenate them together.
-
-For more details, see :ref:`checkpoints_parts`.
+Try using ``borg mount`` and ``rsync`` (or a similar tool that supports
+resuming a partial file copy from what's already copied).
 
 How can I switch append-only mode on and off?
 -----------------------------------------------------------------------------------------------------------------------------------
@@ -334,7 +330,7 @@ Assuming that all your chunks have a size of :math:`2^{21}` bytes (approximately
 and we have a "perfect" hash algorithm, we can think that the probability of collision
 would be of :math:`p^2/2^{n+1}` then, using SHA-256 (:math:`n=256`) and for example
 we have 1000 million chunks (:math:`p=10^9`) (1000 million chunks would be about 2100TB).
-The probability would be around to 0.0000000000000000000000000000000000000000000000000000000000043.
+The probability would be around 0.0000000000000000000000000000000000000000000000000000000000043.
 
 A mass-murderer space rock happens about once every 30 million years on average.
 This leads to a probability of such an event occurring in the next second to about :math:`10^{-15}`.
@@ -342,9 +338,9 @@ That's **45** orders of magnitude more probable than the SHA-256 collision. Brie
 if you find SHA-256 collisions scary then your priorities are wrong. This example was grabbed from
 `this SO answer <https://stackoverflow.com/a/4014407/13359375>`_, it's great honestly.
 
-Still, the real question is if Bork tries to not make this happen?
+Still, the real question is whether Borg tries not to make this happen?
 
-Well... it used to not check anything but there was a feature added which saves the size
+Well... previously it did not check anything until there was a feature added which saves the size
 of the chunks too, so the size of the chunks is compared to the size that you got with the
 hash and if the check says there is a mismatch it will raise an exception instead of corrupting
 the file. This doesn't save us from everything but reduces the chances of corruption.
@@ -364,7 +360,7 @@ How do I configure different prune policies for different directories?
 ----------------------------------------------------------------------
 
 Say you want to prune ``/var/log`` faster than the rest of
-``/``. How do we implement that? The answer is to backup to different
+``/``. How do we implement that? The answer is to back up to different
 archive *names* and then implement different prune policies for
 different prefixes. For example, you could have a script that does::
 
@@ -373,8 +369,8 @@ different prefixes. For example, you could have a script that does::
 
 Then you would have two different prune calls with different policies::
 
-    bork prune --verbose --list -d 30 -a 'main-*'
-    bork prune --verbose --list -d 7  -a 'logs-*'
+    borg prune --verbose --list -d 30 -a 'sh:main-*'
+    borg prune --verbose --list -d 7  -a 'sh:logs-*'
 
 This will keep 7 days of logs and 30 days of everything else.
 
@@ -414,13 +410,6 @@ How important is the $HOME/.config/bork directory?
 
 The Bork config directory has content that you should take care of:
 
-``security`` subdirectory
-  Each directory here represents one Bork repository by its ID and contains the last known status.
-  If a repository's status is different from this information at the beginning of BorkBackup
-  operation, Bork outputs warning messages and asks for confirmation, so make sure you do not lose
-  or manipulate these files. However, apart from those warnings, a loss of these files can be
-  recovered.
-
 ``keys`` subdirectory
   All your bork keyfile keys are stored in this directory. Please note that
   bork repokey keys are stored inside the repository. You MUST make sure to have an
@@ -429,6 +418,22 @@ The Bork config directory has content that you should take care of:
   the corresponding keyfile (and the key passphrase) can extract it.
 
 Make sure that only you have access to the Bork config directory.
+
+.. _home_data_borg:
+
+How important is the $HOME/.local/share/borg directory?
+-------------------------------------------------------
+
+The Borg data directory has content that you should take care of:
+
+``security`` subdirectory
+  Each directory here represents one Borg repository by its ID and contains the last known status.
+  If a repository's status is different from this information at the beginning of BorgBackup
+  operation, Borg outputs warning messages and asks for confirmation, so make sure you do not lose
+  or manipulate these files. However, apart from those warnings, a loss of these files can be
+  recovered.
+
+Make sure that only you have access to the Borg data directory.
 
 .. _cache_security:
 
@@ -467,7 +472,7 @@ Setting ``BORG_PASSPHRASE``
           user
           <https://security.stackexchange.com/questions/14000/environment-variable-accessibility-in-linux/14009#14009>`_.
 
-Using ``BORG_PASSCOMMAND`` with a properly permissioned file
+Using ``BORG_PASSCOMMAND`` with a file of proper permissions
   Another option is to create a file with a password in it in your home
   directory and use permissions to keep anyone else from reading it. For
   example, first create a key::
@@ -489,7 +494,7 @@ Using keyfile-based encryption with a blank passphrase
 Using ``BORG_PASSCOMMAND`` with macOS Keychain
   macOS has a native manager for secrets (such as passphrases) which is safer
   than just using a file as it is encrypted at rest and unlocked manually
-  (fortunately, the login keyring automatically unlocks when you login). With
+  (fortunately, the login keyring automatically unlocks when you log in). With
   the built-in ``security`` command, you can access it from the command line,
   making it useful for ``BORG_PASSCOMMAND``.
 
@@ -524,7 +529,7 @@ Using ``BORG_PASSCOMMAND`` with GNOME Keyring
 
     export BORG_PASSCOMMAND="secret-tool lookup bork-repository repo-name"
 
-  .. note:: For this to automatically unlock the keychain it must be run
+  .. note:: For this to unlock the keychain automatically it must be run
     in the ``dbus`` session of an unlocked terminal; for example, running a backup
     script as a ``cron`` job might not work unless you also ``export DISPLAY=:0``
     so ``secret-tool`` can pick up your open session. `It gets even more complicated`__
@@ -567,13 +572,13 @@ otherwise make unavailable) all your backups.
 How can I protect against a hacked backup client?
 -------------------------------------------------
 
-Assume you backup your backup client machine C to the backup server S and
-C gets hacked. In a simple push setup, the attacker could then use bork on
+Assume you back up your backup client machine C to the backup server S and
+C gets hacked. In a simple push setup, the attacker could then use borg on
 C to delete all backups residing on S.
 
 These are your options to protect against that:
 
-- Do not allow to permanently delete data from the repo, see :ref:`append_only_mode`.
+- Do not allow to delete data permanently from the repo, see :ref:`append_only_mode`.
 - Use a pull-mode setup using ``ssh -R``, see :ref:`pull_backup` for more information.
 - Mount C's filesystem on another machine and then create a backup of it.
 - Do not give C filesystem-level access to S.
@@ -738,13 +743,13 @@ This has some pros and cons, though:
 
 The long term plan to improve this is called "borkception", see :issue:`474`.
 
-Can I backup my root partition (/) with Bork?
----------------------------------------------
+Can I back up my root partition (/) with Borg?
+----------------------------------------------
 
 Backing up your entire root partition works just fine, but remember to
-exclude directories that make no sense to backup, such as /dev, /proc,
+exclude directories that make no sense to back up, such as /dev, /proc,
 /sys, /tmp and /run, and to use ``--one-file-system`` if you only want to
-backup the root partition (and not any mounted devices e.g.).
+back up the root partition (and not any mounted devices e.g.).
 
 If it crashes with a UnicodeError, what can I do?
 -------------------------------------------------
@@ -752,6 +757,12 @@ If it crashes with a UnicodeError, what can I do?
 Check if your encoding is set correctly. For most POSIX-like systems, try::
 
   export LANG=en_US.UTF-8  # or similar, important is correct charset
+
+If that does not help:
+
+- check for typos, check if you really used ``export``.
+- check if you have set ``LC_ALL`` - if so, try not setting it.
+- check if you generated the respective locale via ``locale-gen``.
 
 I can't extract non-ascii filenames by giving them on the commandline!?
 -----------------------------------------------------------------------
@@ -853,7 +864,7 @@ Then you do the backup and look at the log output:
   The metadata values used in this comparison are determined by the ``--files-cache`` option
   and could be e.g. size, ctime and inode number (see the ``bork create`` docs for more
   details and potential issues).
-  You can use the ``stat`` command on files to manually look at fs metadata to debug if
+  You can use the ``stat`` command on files to look at fs metadata manually to debug if
   there is any unexpected change triggering the ``M`` status.
   Also, the ``--debug-topic=files_cache`` option of ``bork create`` provides a lot of debug
   output helping to analyse why the files cache does not give its expected high performance.
@@ -955,8 +966,8 @@ Another possible reason is that files don't always have the same path, for
 example if you mount a filesystem without stable mount points for each backup
 or if you are running the backup from a filesystem snapshot whose name is not
 stable. If the directory where you mount a filesystem is different every time,
-Bork assumes they are different files. This is true even if you backup these
-files with relative pathnames - bork uses full pathnames in files cache regardless.
+Borg assumes they are different files. This is true even if you back up these
+files with relative pathnames - borg uses full pathnames in files cache regardless.
 
 It is possible for some filesystems, such as ``mergerfs`` or network filesystems,
 to return inconsistent inode numbers across runs, causing bork to consider them changed.
@@ -1006,7 +1017,7 @@ How can I avoid unwanted base directories getting stored into archives?
 
 Possible use cases:
 
-- Another file system is mounted and you want to backup it with original paths.
+- Another file system is mounted and you want to back it up with original paths.
 - You have created a BTRFS snapshot in a ``/.snapshots`` directory for backup.
 
 To achieve this, run ``bork create`` within the mountpoint/snapshot directory:
@@ -1155,8 +1166,8 @@ conditions, but generally this should be avoided. If your backup disk is already
 full when Bork starts a write command like `bork create`, it will abort
 immediately and the repository will stay as-is.
 
-If you run a backup that stops due to a disk running full, Bork will roll back,
-delete the new new segment file and thus freeing disk space automatically. There
+If you run a backup that stops due to a disk running full, Borg will roll back,
+delete the new segment file and thus freeing disk space automatically. There
 may be a checkpoint archive left that has been saved before the disk got full.
 You can keep it to speed up the next backup or delete it to get back more disk
 space.
@@ -1164,7 +1175,17 @@ space.
 Miscellaneous
 #############
 
-Requirements for the bork single-file binary, esp. (g)libc?
+macOS: borg mounts not shown in Finder's side bar
+-------------------------------------------------
+
+https://github.com/osxfuse/osxfuse/wiki/Mount-options#local
+
+Read the above first and use this on your own risk::
+
+    borg mount -olocal REPO MOUNTPOINT
+
+
+Requirements for the borg single-file binary, esp. (g)libc?
 -----------------------------------------------------------
 
 We try to build the binary on old, but still supported systems - to keep the

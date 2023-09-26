@@ -24,8 +24,12 @@ class MountMixIn:
             self.print_error("bork mount not available: no FUSE support, BORG_FUSE_IMPL=%s." % BORG_FUSE_IMPL)
             return self.exit_code
 
-        if not os.path.isdir(args.mountpoint) or not os.access(args.mountpoint, os.R_OK | os.W_OK | os.X_OK):
-            self.print_error("%s: Mountpoint must be a writable directory" % args.mountpoint)
+        if not os.path.isdir(args.mountpoint):
+            self.print_error(f"{args.mountpoint}: Mountpoint must be an **existing directory**")
+            return self.exit_code
+
+        if not os.access(args.mountpoint, os.R_OK | os.W_OK | os.X_OK):
+            self.print_error(f"{args.mountpoint}: Mountpoint must be a **writable** directory")
             return self.exit_code
 
         return self._do_mount(args)
@@ -89,14 +93,14 @@ class MountMixIn:
 
         Additional mount options supported by bork:
 
-        - versions: when used with a repository mount, this gives a merged, versioned
+        - ``versions``: when used with a repository mount, this gives a merged, versioned
           view of the files in the archives. EXPERIMENTAL, layout may change in future.
-        - allow_damaged_files: by default damaged files (where missing chunks were
-          replaced with runs of zeros by bork check ``--repair``) are not readable and
+        - ``allow_damaged_files``: by default damaged files (where missing chunks were
+          replaced with runs of zeros by ``borg check --repair``) are not readable and
           return EIO (I/O error). Set this option to read such files.
-        - ignore_permissions: for security reasons the "default_permissions" mount
-          option is internally enforced by bork. "ignore_permissions" can be given to
-          not enforce "default_permissions".
+        - ``ignore_permissions``: for security reasons the ``default_permissions`` mount
+          option is internally enforced by borg. ``ignore_permissions`` can be given to
+          not enforce ``default_permissions``.
 
         The BORG_MOUNT_DATA_CACHE_ENTRIES environment variable is meant for advanced users
         to tweak the performance. It sets the number of cached data chunks; additional
@@ -105,7 +109,7 @@ class MountMixIn:
 
         When the daemonized process receives a signal or crashes, it does not unmount.
         Unmounting in these cases could cause an active rsync or similar process
-        to unintentionally delete data.
+        to delete data unintentionally.
 
         When running in the foreground ^C/SIGINT unmounts cleanly, but other
         signals or crashes do not.

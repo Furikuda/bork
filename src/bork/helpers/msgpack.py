@@ -84,7 +84,7 @@ class Packer(mp_Packer):
         use_single_float=False,
         autoreset=True,
         use_bin_type=USE_BIN_TYPE,
-        strict_types=False
+        strict_types=False,
     ):
         assert unicode_errors == UNICODE_ERRORS
         super().__init__(
@@ -133,7 +133,7 @@ class Unpacker(mp_Unpacker):
         unicode_errors=UNICODE_ERRORS,
         max_buffer_size=0,
         ext_hook=ExtType,
-        strict_map_key=False
+        strict_map_key=False,
     ):
         assert raw == RAW
         assert unicode_errors == UNICODE_ERRORS
@@ -204,14 +204,12 @@ def is_slow_msgpack():
 
 
 def is_supported_msgpack():
-    # DO NOT CHANGE OR REMOVE! See also requirements and comments in setup.py.
+    # DO NOT CHANGE OR REMOVE! See also requirements and comments in setup.cfg.
     import msgpack
 
-    return (1, 0, 3) <= msgpack.version <= (
-        1,
-        0,
-        4,
-    ) and msgpack.version not in []  # < add bad releases here to deny list
+    if msgpack.version in []:  # < add bad releases here to deny list
+        return False
+    return (1, 0, 3) <= msgpack.version <= (1, 0, 6)
 
 
 def get_limited_unpacker(kind):
@@ -221,10 +219,10 @@ def get_limited_unpacker(kind):
     args = dict(use_list=False, max_buffer_size=3 * max(BUFSIZE, MAX_OBJECT_SIZE))  # return tuples, not lists
     if kind in ("server", "client"):
         pass  # nothing special
-    elif kind in ("manifest", "key"):
+    elif kind in ("manifest", "archive", "key"):
         args.update(dict(use_list=True, object_hook=StableDict))  # default value
     else:
-        raise ValueError('kind must be "server", "client", "manifest" or "key"')
+        raise ValueError('kind must be "server", "client", "manifest", "archive" or "key"')
     return Unpacker(**args)
 
 

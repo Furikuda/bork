@@ -1,5 +1,6 @@
 import os
-from datetime import datetime, timezone
+import re
+from datetime import datetime, timezone, timedelta
 
 
 def parse_timestamp(timestamp, tzinfo=timezone.utc):
@@ -83,7 +84,7 @@ def safe_ns(ts):
 
 def safe_timestamp(item_timestamp_ns):
     t_ns = safe_ns(item_timestamp_ns)
-    return datetime.fromtimestamp(t_ns / 1e9)
+    return datetime.fromtimestamp(t_ns / 1e9, timezone.utc)  # return tz-aware utc datetime obj
 
 
 def format_time(ts: datetime, format_spec=""):
@@ -109,17 +110,68 @@ def format_timedelta(td):
     return txt
 
 
+def calculate_relative_offset(format_string, from_ts, earlier=False):
+    """
+    Calculates offset based on a relative marker. 7d (7 days), 8m (8 months)
+    earlier: whether offset should be calculated to an earlier time.
+    """
+    if from_ts is None:
+        from_ts = archive_ts_now()
+
+    if format_string is not None:
+        offset_regex = re.compile(r"(?P<offset>\d+)(?P<unit>[md])")
+        match = offset_regex.search(format_string)
+
+        if match:
+            unit = match.group("unit")
+            offset = int(match.group("offset"))
+            offset *= -1 if earlier else 1
+
+            if unit == "d":
+                return from_ts + timedelta(days=offset)
+            elif unit == "m":
+                return offset_n_months(from_ts, offset)
+
+    raise ValueError(f"Invalid relative ts offset format: {format_string}")
+
+
+def offset_n_months(from_ts, n_months):
+    def get_month_and_year_from_total(total_completed_months):
+        month = (total_completed_months % 12) + 1
+        year = total_completed_months // 12
+        return month, year
+
+    # Calculate target month and year by getting completed total_months until target_month
+    total_months = (from_ts.year * 12) + from_ts.month + n_months - 1
+    target_month, target_year = get_month_and_year_from_total(total_months)
+
+    # calculate the max days of the target month by subtracting a day from the next month
+    following_month, year_of_following_month = get_month_and_year_from_total(total_months + 1)
+    max_days_in_month = (datetime(year_of_following_month, following_month, 1) - timedelta(1)).day
+
+    return datetime(day=min(from_ts.day, max_days_in_month), month=target_month, year=target_year).replace(
+        tzinfo=from_ts.tzinfo
+    )
+
+
 class OutputTimestamp:
     def __init__(self, ts: datetime):
         self.ts = ts
 
     def __format__(self, format_spec):
-        return format_time(self.ts, format_spec=format_spec)
+        # we want to output a timestamp in the user's local timezone
+        return format_time(self.ts.astimezone(), format_spec=format_spec)
 
     def __str__(self):
         return f"{self}"
 
     def isoformat(self):
-        return self.ts.isoformat(timespec="microseconds")
+        # we want to output a timestamp in the user's local timezone
+        return self.ts.astimezone().isoformat(timespec="microseconds")
 
     to_json = isoformat
+
+
+def archive_ts_now():
+    """return tz-aware datetime obj for current time for usage as archive timestamp"""
+    return datetime.now(timezone.utc)  # utc time / utc timezone

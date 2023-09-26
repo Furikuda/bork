@@ -21,12 +21,13 @@ try:
 
     logger = create_logger()
 
+    from ._common import Highlander
     from .. import __version__
     from ..constants import *  # NOQA
     from ..helpers import EXIT_SUCCESS, EXIT_WARNING, EXIT_ERROR, EXIT_SIGNAL_BASE
     from ..helpers import Error, set_ec
     from ..helpers import format_file_size
-    from ..helpers import remove_surrogates
+    from ..helpers import remove_surrogates, text_to_json
     from ..helpers import DatetimeWrapper, replace_placeholders
     from ..helpers import check_python, check_extension_modules
     from ..helpers import is_slow_msgpack, is_supported_msgpack, sysinfo
@@ -139,10 +140,9 @@ class Archiver(
         # if we get called with status == None, the final file status was already printed
         if self.output_list and status is not None and (self.output_filter is None or status in self.output_filter):
             if self.log_json:
-                print(
-                    json.dumps({"type": "file_status", "status": status, "path": remove_surrogates(path)}),
-                    file=sys.stderr,
-                )
+                json_data = {"type": "file_status", "status": status}
+                json_data.update(text_to_json("path", path))
+                print(json.dumps(json_data), file=sys.stderr)
             else:
                 logging.getLogger("bork.output.list").info("%1s %s", status, remove_surrogates(path))
 
@@ -220,7 +220,15 @@ class Archiver(
             def add_argument(*args, **kwargs):
                 if "dest" in kwargs:
                     kwargs.setdefault("action", "store")
-                    assert kwargs["action"] in ("help", "store_const", "store_true", "store_false", "store", "append")
+                    assert kwargs["action"] in (
+                        Highlander,
+                        "help",
+                        "store_const",
+                        "store_true",
+                        "store_false",
+                        "store",
+                        "append",
+                    )
                     is_append = kwargs["action"] == "append"
                     if is_append:
                         self.append_options.add(kwargs["dest"])
@@ -383,7 +391,9 @@ class Archiver(
         parser.common_options.resolve(args)
         func = get_func(args)
         if func == self.do_create and args.paths and args.paths_from_stdin:
-            parser.error("Must not pass PATH with ``--paths-from-stdin``.")
+            parser.error("Must not pass PATH with --paths-from-stdin.")
+        if args.progress and getattr(args, "output_list", False) and not args.log_json:
+            parser.error("Options --progress and --list do not play nicely together.")
         if func == self.do_create and not args.paths:
             if args.content_from_command or args.paths_from_command:
                 parser.error("No command given.")
@@ -431,15 +441,18 @@ class Archiver(
         """turn on INFO level logging for args that imply that they will produce output"""
         # map of option name to name of logger for that option
         option_logger = {
-            "output_list": "bork.output.list",
-            "show_version": "bork.output.show-version",
-            "show_rc": "bork.output.show-rc",
-            "stats": "bork.output.stats",
-            "progress": "bork.output.progress",
+            "show_version": "borg.output.show-version",
+            "show_rc": "borg.output.show-rc",
+            "stats": "borg.output.stats",
+            "progress": "borg.output.progress",
         }
         for option, logger_name in option_logger.items():
             option_set = args.get(option, False)
             logging.getLogger(logger_name).setLevel("INFO" if option_set else "WARN")
+
+        # special-case --list / --list-kept / --list-pruned as they all work on same logger
+        options = [args.get(name, False) for name in ("output_list", "list_kept", "list_pruned")]
+        logging.getLogger("borg.output.list").setLevel("INFO" if any(options) else "WARN")
 
     def _setup_topic_debugging(self, args):
         """Turn on DEBUG level logging for specified --debug-topics."""
@@ -469,8 +482,9 @@ class Archiver(
         func = get_func(args)
         # do not use loggers before this!
         is_serve = func == self.do_serve
-        setup_logging(level=args.log_level, is_serve=is_serve, json=args.log_json)
-        self.log_json = args.log_json
+        self.log_json = args.log_json and not is_serve
+        func_name = getattr(func, "__name__", "none")
+        setup_logging(level=args.log_level, is_serve=is_serve, log_json=self.log_json, func=func_name)
         args.progress |= is_serve
         self._setup_implied_logging(vars(args))
         self._setup_topic_debugging(args)
@@ -551,6 +565,29 @@ def sig_trace_handler(sig_no, stack):  # pragma: no cover
     faulthandler.dump_traceback()
 
 
+def format_tb(exc):
+    qualname = type(exc).__qualname__
+    remote = isinstance(exc, RemoteRepository.RPCError)
+    if remote:
+        prefix = "Borg server: "
+        trace_back = "\n".join(prefix + line for line in exc.exception_full.splitlines())
+        sys_info = "\n".join(prefix + line for line in exc.sysinfo.splitlines())
+    else:
+        trace_back = traceback.format_exc()
+        sys_info = sysinfo()
+    result = f"""
+Error:
+
+{qualname}: {exc}
+
+If reporting bugs, please include the following:
+
+{trace_back}
+{sys_info}
+"""
+    return result
+
+
 def main():  # pragma: no cover
     # Make sure stdout and stderr have errors='replace' to avoid unicode
     # issues when print()-ing unicode file names
@@ -581,12 +618,11 @@ def main():  # pragma: no cover
         try:
             args = archiver.get_args(sys.argv, os.environ.get("SSH_ORIGINAL_COMMAND"))
         except Error as e:
-            msg = e.get_message()
-            tb_log_level = logging.ERROR if e.traceback else logging.DEBUG
-            tb = f"{traceback.format_exc()}\n{sysinfo()}"
             # we might not have logging setup yet, so get out quickly
+            msg = e.get_message()
             print(msg, file=sys.stderr)
-            if tb_log_level == logging.ERROR:
+            if e.traceback:
+                tb = format_tb(e)
                 print(tb, file=sys.stderr)
             sys.exit(e.exit_code)
         try:
@@ -596,39 +632,37 @@ def main():  # pragma: no cover
             msg = e.get_message()
             msgid = type(e).__qualname__
             tb_log_level = logging.ERROR if e.traceback else logging.DEBUG
-            tb = f"{traceback.format_exc()}\n{sysinfo()}"
+            tb = format_tb(e)
             exit_code = e.exit_code
         except RemoteRepository.RPCError as e:
             important = e.exception_class not in ("LockTimeout",) and e.traceback
+            msg = e.exception_full if important else e.get_message()
             msgid = e.exception_class
             tb_log_level = logging.ERROR if important else logging.DEBUG
-            if important:
-                msg = e.exception_full
-            else:
-                msg = e.get_message()
-            tb = "\n".join("Bork server: " + l for l in e.sysinfo.splitlines())
-            tb += "\n" + sysinfo()
+            tb = format_tb(e)
             exit_code = EXIT_ERROR
-        except Exception:
+        except Exception as e:
             msg = "Local Exception"
             msgid = "Exception"
             tb_log_level = logging.ERROR
-            tb = f"{traceback.format_exc()}\n{sysinfo()}"
+            tb = format_tb(e)
             exit_code = EXIT_ERROR
-        except KeyboardInterrupt:
+        except KeyboardInterrupt as e:
             msg = "Keyboard interrupt"
             tb_log_level = logging.DEBUG
-            tb = f"{traceback.format_exc()}\n{sysinfo()}"
+            tb = format_tb(e)
             exit_code = EXIT_SIGNAL_BASE + 2
-        except SigTerm:
+        except SigTerm as e:
             msg = "Received SIGTERM"
             msgid = "Signal.SIGTERM"
             tb_log_level = logging.DEBUG
-            tb = f"{traceback.format_exc()}\n{sysinfo()}"
+            tb = format_tb(e)
             exit_code = EXIT_SIGNAL_BASE + 15
-        except SigHup:
+        except SigHup as e:
             msg = "Received SIGHUP."
             msgid = "Signal.SIGHUP"
+            tb_log_level = logging.DEBUG
+            tb = format_tb(e)
             exit_code = EXIT_SIGNAL_BASE + 1
         if msg:
             logger.error(msg, msgid=msgid)

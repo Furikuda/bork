@@ -1,12 +1,13 @@
 import argparse
+import os
 import textwrap
 import sys
 
-from ._common import with_repository, build_matcher
+from ._common import with_repository, build_matcher, Highlander
 from ..archive import Archive
 from ..cache import Cache
 from ..constants import *  # NOQA
-from ..helpers import ItemFormatter, BaseFormatter, NameSpec
+from ..helpers import ItemFormatter, BaseFormatter, archivename_validator
 from ..manifest import Manifest
 
 from ..logger import create_logger
@@ -24,14 +25,13 @@ class ListMixIn:
         elif args.short:
             format = "{path}{NL}"
         else:
-            format = "{mode} {user:6} {group:6} {size:8} {mtime} {path}{extra}{NL}"
+            format = os.environ.get("BORG_LIST_FORMAT", "{mode} {user:6} {group:6} {size:8} {mtime} {path}{extra}{NL}")
 
         def _list_inner(cache):
-            archive = Archive(manifest, args.name, cache=cache, consider_part_files=args.consider_part_files)
-
-            formatter = ItemFormatter(archive, format, json_lines=args.json_lines)
+            archive = Archive(manifest, args.name, cache=cache)
+            formatter = ItemFormatter(archive, format)
             for item in archive.iter_items(lambda item: matcher.match(item.path)):
-                sys.stdout.write(formatter.format_item(item))
+                sys.stdout.write(formatter.format_item(item, args.json_lines, sort=True))
 
         # Only load the cache if it will be used
         if ItemFormatter.format_needs_cache(format):
@@ -105,6 +105,7 @@ class ListMixIn:
             "--format",
             metavar="FORMAT",
             dest="format",
+            action=Highlander,
             help="specify format for file listing "
             '(default: "{mode} {user:6} {group:6} {size:8} {mtime} {path}{extra}{NL}")',
         )
@@ -114,10 +115,9 @@ class ListMixIn:
             help="Format output as JSON Lines. "
             "The form of ``--format`` is ignored, "
             "but keys used in it are added to the JSON output. "
-            "Some keys are always present. Note: JSON can only represent text. "
-            'A "bpath" key is therefore not available.',
+            "Some keys are always present. Note: JSON can only represent text.",
         )
-        subparser.add_argument("name", metavar="NAME", type=NameSpec, help="specify the archive name")
+        subparser.add_argument("name", metavar="NAME", type=archivename_validator, help="specify the archive name")
         subparser.add_argument(
             "paths", metavar="PATH", nargs="*", type=str, help="paths to list; patterns are supported"
         )

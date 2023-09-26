@@ -1,8 +1,8 @@
-1. Before a backup can be made a repository has to be initialized::
+1. Before a backup can be made, a repository has to be initialized::
 
     $ bork -r /path/to/repo rcreate --encryption=repokey-aes-ocb
 
-2. Backup the ``~/src`` and ``~/Documents`` directories into an archive called
+2. Back up the ``~/src`` and ``~/Documents`` directories into an archive called
    *Monday*::
 
     $ bork -r /path/to/repo create Monday ~/src ~/Documents
@@ -11,8 +11,8 @@
 
     $ bork -r /path/to/repo create --stats Tuesday ~/src ~/Documents
 
-   This backup will be a lot quicker and a lot smaller since only new never
-   before seen data is stored. The ``--stats`` option causes Bork to
+   This backup will be a lot quicker and a lot smaller since only new, never
+   before seen data is stored. The ``--stats`` option causes Borg to
    output statistics about the newly created archive such as the deduplicated
    size (the amount of unique data not shared with other archives)::
 
@@ -48,8 +48,8 @@
 
     $ bork -r /path/to/repo delete -a Monday
 
-   Please note the ``-a`` option here (short for ``--glob-archives``) which enables you
-   to give a globbing pattern to delete multiple archives, like ``-a 'oldcrap-*'``.
+   Please note the ``-a`` option here (short for ``--match-archives``) which enables you
+   to give a pattern to delete multiple archives, like ``-a 'sh:oldcrap-*'``.
    You can also combine this with ``--first``, ``--last`` and ``--sort-by``.
    Be careful, always first use with ``--dry-run`` and ``--list``!
 
@@ -58,7 +58,7 @@
     $ bork -r /path/to/repo compact
 
 .. Note::
-    Bork is quiet by default (it works on WARNING log level).
+    Borg is quiet by default (it defaults to WARNING log level).
     You can use options like ``--progress`` or ``--list`` to get specific
     reports during command execution.  You can also add the ``-v`` (or
     ``--verbose`` or ``--info``) option to adjust the log level to INFO to

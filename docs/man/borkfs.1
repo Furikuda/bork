@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "BORGFS" 1 "2022-10-02" "" "bork backup tool"
+.TH "BORGFS" 1 "2023-09-14" "" "borg backup tool"
 .SH NAME
 borkfs \- Mount archive or an entire repository as a FUSE filesystem
 .SH SYNOPSIS
@@ -48,7 +48,7 @@ where to mount filesystem
 .B PATH
 paths to extract; patterns are supported
 .UNINDENT
-.SS optional arguments
+.SS options
 .INDENT 0.0
 .TP
 .B  \-V\fP,\fB  \-\-version
@@ -80,8 +80,20 @@ consider first N archives after other filters were applied
 .TP
 .BI \-\-last \ N
 consider last N archives after other filters were applied
+.TP
+.BI \-\-oldest \ TIMESPAN
+consider archives between the oldest archive\(aqs timestamp and (oldest + TIMESPAN), e.g. 7d or 12m.
+.TP
+.BI \-\-newest \ TIMESPAN
+consider archives between the newest archive\(aqs timestamp and (newest \- TIMESPAN), e.g. 7d or 12m.
+.TP
+.BI \-\-older \ TIMESPAN
+consider archives older than (now \- TIMESPAN), e.g. 7d oder 12m.
+.TP
+.BI \-\-newer \ TIMESPAN
+consider archives newer than (now \- TIMESPAN), e.g. 7d or 12m.
 .UNINDENT
-.SS Exclusion options
+.SS Include/Exclude options
 .INDENT 0.0
 .TP
 .BI \-e \ PATTERN\fR,\fB \ \-\-exclude \ PATTERN

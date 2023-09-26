@@ -157,11 +157,11 @@ An object (the payload part of a segment file log entry) must be like:
 
   - compressed data (with an optional all-zero-bytes obfuscation trailer)
 
-This new, more complex repo v2 object format was implemented to be able to efficiently
-query the metadata without having to read, transfer and decrypt the (usually much bigger)
+This new, more complex repo v2 object format was implemented to be able to query the
+metadata efficiently without having to read, transfer and decrypt the (usually much bigger)
 data part.
 
-The metadata is encrypted to not disclose potentially sensitive information that could be
+The metadata is encrypted not to disclose potentially sensitive information that could be
 used for e.g. fingerprinting attacks.
 
 The compression `ctype` and `clevel` is explained in :ref:`data-compression`.
@@ -384,8 +384,7 @@ The *tam* key is part of the :ref:`tertiary authentication mechanism <tam_descri
 the manifest, since an ID check is not possible.
 
 *config* is a general-purpose location for additional metadata. All versions
-of Bork preserve its contents (it may have been a better place for *item_keys*,
-which is not preserved by unaware Bork versions, releases predating 1.0.4).
+of Borg preserve its contents.
 
 Feature flags
 +++++++++++++
@@ -542,7 +541,7 @@ The archive object itself further contains some metadata:
   in the manifest, but leaves the *name* field of the archives as it was.
 * *item_ptrs*, a list of "pointer chunk" IDs.
   Each "pointer chunk" contains a list of chunk IDs of item metadata.
-* *cmdline*, the command line which was used to create the archive
+* *command_line*, the command line which was used to create the archive
 * *hostname*
 * *username*
 * *time* and *time_end* are the start and end timestamps, respectively
@@ -688,7 +687,7 @@ To determine whether a file has not changed, cached values are looked up via
 the key in the mapping and compared to the current file attribute values.
 
 If the file's size, timestamp and inode number is still the same, it is
-considered to not have changed. In that case, we check that all file content
+considered not to have changed. In that case, we check that all file content
 chunks are (still) present in the repository (we check that via the chunks
 cache).
 
@@ -793,7 +792,7 @@ For small hash tables, we start with a growth factor of 2, which comes down to
 
 E.g. backing up a total count of 1 Mi (IEC binary prefix i.e. 2^20) files with a total size of 1TiB.
 
-a) with ``create --chunker-params buzhash,10,23,16,4095`` (custom, like bork < 1.0):
+a) with ``create --chunker-params buzhash,10,23,16,4095`` (custom):
 
   mem_usage  =  2.8GiB
 
@@ -818,7 +817,7 @@ bucket is reached.
 This particular mode of operation is open addressing with linear probing.
 
 When the hash table is filled to 75%, its size is grown. When it's
-emptied to 25%, its size is shrinked. Operations on it have a variable
+emptied to 25%, its size is shrunken. Operations on it have a variable
 complexity between constant and linear with low factor, and memory overhead
 varies between 33% and 300%.
 
@@ -1013,7 +1012,7 @@ while doing no compression at all (none) is a operation that takes no time, it
 likely will need to store more data to the storage compared to using lz4.
 The time needed to transfer and store the additional data might be much more
 than if you had used lz4 (which is super fast, but still might compress your
-data about 2:1). This is assuming your data is compressible (if you backup
+data about 2:1). This is assuming your data is compressible (if you back up
 already compressed data, trying to compress them at backup time is usually
 pointless).
 

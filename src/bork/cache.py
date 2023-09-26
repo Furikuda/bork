@@ -62,7 +62,7 @@ class SecurityManager:
 
     def __init__(self, repository):
         self.repository = repository
-        self.dir = get_security_dir(repository.id_str)
+        self.dir = get_security_dir(repository.id_str, legacy=(repository.version == 1))
         self.cache_dir = cache_dir(repository)
         self.key_type_file = os.path.join(self.dir, "key-type")
         self.location_file = os.path.join(self.dir, "location")
@@ -71,7 +71,7 @@ class SecurityManager:
     @staticmethod
     def destroy(repository, path=None):
         """destroy the security dir for ``repository`` or at ``path``"""
-        path = path or get_security_dir(repository.id_str)
+        path = path or get_security_dir(repository.id_str, legacy=(repository.version == 1))
         if os.path.exists(path):
             shutil.rmtree(path)
 
@@ -262,6 +262,7 @@ class CacheConfig:
     def __init__(self, repository, path=None, lock_wait=None):
         self.repository = repository
         self.path = cache_dir(repository, path)
+        logger.debug("Using %s as cache", self.path)
         self.config_path = os.path.join(self.path, "config")
         self.lock = None
         self.lock_wait = lock_wait
@@ -404,7 +405,6 @@ class Cache:
         lock_wait=None,
         permit_adhoc_cache=False,
         cache_mode=FILES_CACHE_MODE_DISABLED,
-        consider_part_files=False,
         iec=False,
     ):
         def local():
@@ -417,11 +417,10 @@ class Cache:
                 iec=iec,
                 lock_wait=lock_wait,
                 cache_mode=cache_mode,
-                consider_part_files=consider_part_files,
             )
 
         def adhoc():
-            return AdHocCache(manifest=manifest, lock_wait=lock_wait, iec=iec, consider_part_files=consider_part_files)
+            return AdHocCache(manifest=manifest, lock_wait=lock_wait, iec=iec)
 
         if not permit_adhoc_cache:
             return local()
@@ -464,14 +463,11 @@ Total chunks: {0.total_chunks}
 
         # XXX: this should really be moved down to `hashindex.pyx`
         total_size, unique_size, total_unique_chunks, total_chunks = self.chunks.summarize()
-        # the above values have the problem that they do not consider part files,
-        # thus the total_size might be too high (chunks referenced
-        # by the part files AND by the complete file).
-        # since bork 1.2 we have new archive metadata telling the total size per archive,
+        # since borg 1.2 we have new archive metadata telling the total size per archive,
         # so we can just sum up all archives to get the "all archives" stats:
         total_size = 0
         for archive_name in self.manifest.archives:
-            archive = Archive(self.manifest, archive_name, consider_part_files=self.consider_part_files)
+            archive = Archive(self.manifest, archive_name)
             stats = archive.calc_stats(self, want_unique=False)
             total_size += stats.osize
         stats = self.Summary(total_size, unique_size, total_unique_chunks, total_chunks)._asdict()
@@ -498,7 +494,6 @@ class LocalCache(CacheStatsMixin):
         progress=False,
         lock_wait=None,
         cache_mode=FILES_CACHE_MODE_DISABLED,
-        consider_part_files=False,
         iec=False,
     ):
         """
@@ -515,7 +510,6 @@ class LocalCache(CacheStatsMixin):
         self.repo_objs = manifest.repo_objs
         self.progress = progress
         self.cache_mode = cache_mode
-        self.consider_part_files = consider_part_files
         self.timestamp = None
         self.txn_active = False
 
@@ -540,7 +534,7 @@ class LocalCache(CacheStatsMixin):
             if sync and self.manifest.id != self.cache_config.manifest_id:
                 self.sync()
                 self.commit()
-        except:
+        except:  # noqa
             self.close()
             raise
 
@@ -636,7 +630,7 @@ class LocalCache(CacheStatsMixin):
         except FileNotFoundError:
             with SaveFile(os.path.join(txn_dir, files_cache_name()), binary=True):
                 pass  # empty file
-        os.rename(os.path.join(self.path, "txn.tmp"), os.path.join(self.path, "txn.active"))
+        os.replace(txn_dir, os.path.join(self.path, "txn.active"))
         self.txn_active = True
         pi.finish()
 
@@ -680,7 +674,7 @@ class LocalCache(CacheStatsMixin):
         self.cache_config.integrity["chunks"] = fd.integrity_data
         pi.output("Saving cache config")
         self.cache_config.save(self.manifest, self.key)
-        os.rename(os.path.join(self.path, "txn.active"), os.path.join(self.path, "txn.tmp"))
+        os.replace(os.path.join(self.path, "txn.active"), os.path.join(self.path, "txn.tmp"))
         shutil.rmtree(os.path.join(self.path, "txn.tmp"))
         self.txn_active = False
         pi.finish()
@@ -696,9 +690,10 @@ class LocalCache(CacheStatsMixin):
             shutil.copy(os.path.join(txn_dir, "config"), self.path)
             shutil.copy(os.path.join(txn_dir, "chunks"), self.path)
             shutil.copy(os.path.join(txn_dir, discover_files_cache_name(txn_dir)), self.path)
-            os.rename(txn_dir, os.path.join(self.path, "txn.tmp"))
-            if os.path.exists(os.path.join(self.path, "txn.tmp")):
-                shutil.rmtree(os.path.join(self.path, "txn.tmp"))
+            txn_tmp = os.path.join(self.path, "txn.tmp")
+            os.replace(txn_dir, txn_tmp)
+            if os.path.exists(txn_tmp):
+                shutil.rmtree(txn_tmp)
         self.txn_active = False
         self._do_open()
 
@@ -760,7 +755,8 @@ class LocalCache(CacheStatsMixin):
             nonlocal processed_item_metadata_chunks
             csize, data = decrypted_repository.get(archive_id)
             chunk_idx.add(archive_id, 1, len(data))
-            archive = ArchiveItem(internal_dict=msgpack.unpackb(data))
+            archive, _ = self.key.unpack_and_verify_archive(data)
+            archive = ArchiveItem(internal_dict=archive)
             if archive.version not in (1, 2):  # legacy
                 raise Exception("Unknown archive metadata version")
             if archive.version == 1:
@@ -793,11 +789,11 @@ class LocalCache(CacheStatsMixin):
             except Exception:
                 safe_unlink(fn_tmp)
             else:
-                os.rename(fn_tmp, fn)
+                os.replace(fn_tmp, fn)
 
         def read_archive_index(archive_id, archive_name):
             archive_chunk_idx_path = mkpath(archive_id)
-            logger.info("Reading cached archive chunk index for %s ...", archive_name)
+            logger.info("Reading cached archive chunk index for %s", archive_name)
             try:
                 try:
                     # Attempt to load compact index first
@@ -837,13 +833,12 @@ class LocalCache(CacheStatsMixin):
             return archive_names
 
         def create_master_idx(chunk_idx):
-            logger.info("Synchronizing chunks cache...")
+            logger.debug("Synchronizing chunks index...")
             cached_ids = cached_archives()
             archive_ids = repo_archives()
             logger.info(
-                "Archives: %d, w/ cached Idx: %d, w/ outdated Idx: %d, w/o cached Idx: %d.",
-                len(archive_ids),
-                len(cached_ids),
+                "Cached archive chunk indexes: %d fresh, %d stale, %d need fetching.",
+                len(archive_ids & cached_ids),
                 len(cached_ids - archive_ids),
                 len(archive_ids - cached_ids),
             )
@@ -858,12 +853,12 @@ class LocalCache(CacheStatsMixin):
                 pi = ProgressIndicatorPercent(
                     total=len(archive_ids),
                     step=0.1,
-                    msg="%3.0f%% Syncing chunks cache. Processing archive %s",
+                    msg="%3.0f%% Syncing chunks index. Processing archive %s.",
                     msgid="cache.sync",
                 )
                 archive_ids_to_names = get_archive_ids_to_names(archive_ids)
                 for archive_id, archive_name in archive_ids_to_names.items():
-                    pi.show(info=[remove_surrogates(archive_name)])
+                    pi.show(info=[remove_surrogates(archive_name)])  # legacy. borg2 always has pure unicode arch names.
                     if self.do_cache:
                         if archive_id in cached_ids:
                             archive_chunk_idx = read_archive_index(archive_id, archive_name)
@@ -872,26 +867,26 @@ class LocalCache(CacheStatsMixin):
                         if archive_id not in cached_ids:
                             # Do not make this an else branch; the FileIntegrityError exception handler
                             # above can remove *archive_id* from *cached_ids*.
-                            logger.info("Fetching and building archive index for %s ...", archive_name)
+                            logger.info("Fetching and building archive index for %s.", archive_name)
                             archive_chunk_idx = ChunkIndex()
                             fetch_and_build_idx(archive_id, decrypted_repository, archive_chunk_idx)
-                        logger.info("Merging into master chunks index ...")
+                        logger.debug("Merging into master chunks index.")
                         chunk_idx.merge(archive_chunk_idx)
                     else:
                         chunk_idx = chunk_idx or ChunkIndex(usable=master_index_capacity)
-                        logger.info("Fetching archive index for %s ...", archive_name)
+                        logger.info("Fetching archive index for %s.", archive_name)
                         fetch_and_build_idx(archive_id, decrypted_repository, chunk_idx)
                 pi.finish()
                 logger.debug(
-                    "Cache sync: processed %s (%d chunks) of metadata",
+                    "Chunks index sync: processed %s (%d chunks) of metadata.",
                     format_file_size(processed_item_metadata_bytes),
                     processed_item_metadata_chunks,
                 )
                 logger.debug(
-                    "Cache sync: compact chunks.archive.d storage saved %s bytes",
+                    "Chunks index sync: compact chunks.archive.d storage saved %s bytes.",
                     format_file_size(compact_chunks_archive_saved_space),
                 )
-            logger.info("Done.")
+            logger.debug("Chunks index sync done.")
             return chunk_idx
 
         # The cache can be used by a command that e.g. only checks against Manifest.Operation.WRITE,
@@ -901,8 +896,9 @@ class LocalCache(CacheStatsMixin):
 
         self.begin_txn()
         with cache_if_remote(self.repository, decrypted_cache=self.repo_objs) as decrypted_repository:
-            # TEMPORARY HACK: to avoid archive index caching, create a FILE named ~/.cache/bork/REPOID/chunks.archive.d -
-            # this is only recommended if you have a fast, low latency connection to your repo (e.g. if repo is local disk)
+            # TEMPORARY HACK:
+            # to avoid archive index caching, create a FILE named ~/.cache/borg/REPOID/chunks.archive.d -
+            # this is only recommended if you have a fast, low latency connection to your repo (e.g. if repo is local).
             self.do_cache = os.path.isdir(archive_path)
             self.chunks = create_master_idx(self.chunks)
 
@@ -943,15 +939,13 @@ class LocalCache(CacheStatsMixin):
         self.cache_config.ignored_features.update(repo_features - my_features)
         self.cache_config.mandatory_features.update(repo_features & my_features)
 
-    def add_chunk(
-        self, id, meta, data, *, stats, overwrite=False, wait=True, compress=True, size=None, ctype=None, clevel=None
-    ):
+    def add_chunk(self, id, meta, data, *, stats, wait=True, compress=True, size=None, ctype=None, clevel=None):
         if not self.txn_active:
             self.begin_txn()
         if size is None and compress:
             size = len(data)  # data is still uncompressed
         refcount = self.seen_chunk(id, size)
-        if refcount and not overwrite:
+        if refcount:
             return self.chunk_incref(id, stats)
         if size is None:
             raise ValueError("when giving compressed data for a new chunk, the uncompressed size must be given also")
@@ -971,23 +965,23 @@ class LocalCache(CacheStatsMixin):
             )
         return refcount
 
-    def chunk_incref(self, id, stats, size=None, part=False):
+    def chunk_incref(self, id, stats, size=None):
         if not self.txn_active:
             self.begin_txn()
         count, _size = self.chunks.incref(id)
-        stats.update(_size, False, part=part)
+        stats.update(_size, False)
         return ChunkListEntry(id, _size)
 
-    def chunk_decref(self, id, stats, wait=True, part=False):
+    def chunk_decref(self, id, stats, wait=True):
         if not self.txn_active:
             self.begin_txn()
         count, size = self.chunks.decref(id)
         if count == 0:
             del self.chunks[id]
             self.repository.delete(id, wait=wait)
-            stats.update(-size, True, part=part)
+            stats.update(-size, True)
         else:
-            stats.update(-size, False, part=part)
+            stats.update(-size, False)
 
     def file_known_and_unchanged(self, hashed_path, path_hash, st):
         """
@@ -1055,6 +1049,9 @@ class LocalCache(CacheStatsMixin):
         elif "m" in cache_mode:
             cmtime_type = "mtime"
             cmtime_ns = safe_ns(st.st_mtime_ns)
+        else:  # neither 'c' nor 'm' in cache_mode, avoid UnboundLocalError
+            cmtime_type = "ctime"
+            cmtime_ns = safe_ns(st.st_ctime_ns)
         entry = FileCacheEntry(
             age=0, inode=st.st_ino, size=st.st_size, cmtime=int_to_timestamp(cmtime_ns), chunk_ids=ids
         )
@@ -1084,14 +1081,13 @@ All archives:                unknown              unknown              unknown
                        Unique chunks         Total chunks
 Chunk index:    {0.total_unique_chunks:20d}             unknown"""
 
-    def __init__(self, manifest, warn_if_unencrypted=True, lock_wait=None, consider_part_files=False, iec=False):
+    def __init__(self, manifest, warn_if_unencrypted=True, lock_wait=None, iec=False):
         CacheStatsMixin.__init__(self, iec=iec)
         assert isinstance(manifest, Manifest)
         self.manifest = manifest
         self.repository = manifest.repository
         self.key = manifest.key
         self.repo_objs = manifest.repo_objs
-        self.consider_part_files = consider_part_files
         self._txn_active = False
 
         self.security_manager = SecurityManager(self.repository)
@@ -1117,8 +1113,7 @@ Chunk index:    {0.total_unique_chunks:20d}             unknown"""
     def memorize_file(self, hashed_path, path_hash, st, ids):
         pass
 
-    def add_chunk(self, id, meta, data, *, stats, overwrite=False, wait=True, compress=True, size=None):
-        assert not overwrite, "AdHocCache does not permit overwrites — trying to use it for recreate?"
+    def add_chunk(self, id, meta, data, *, stats, wait=True, compress=True, size=None):
         if not self._txn_active:
             self.begin_txn()
         if size is None and compress:
@@ -1145,7 +1140,7 @@ Chunk index:    {0.total_unique_chunks:20d}             unknown"""
             self.chunks[id] = entry._replace(size=size)
         return entry.refcount
 
-    def chunk_incref(self, id, stats, size=None, part=False):
+    def chunk_incref(self, id, stats, size=None):
         if not self._txn_active:
             self.begin_txn()
         count, _size = self.chunks.incref(id)
@@ -1153,19 +1148,19 @@ Chunk index:    {0.total_unique_chunks:20d}             unknown"""
         # size or add_chunk); we can't add references to those (size=0 is invalid) and generally don't try to.
         size = _size or size
         assert size
-        stats.update(size, False, part=part)
+        stats.update(size, False)
         return ChunkListEntry(id, size)
 
-    def chunk_decref(self, id, stats, wait=True, part=False):
+    def chunk_decref(self, id, stats, wait=True):
         if not self._txn_active:
             self.begin_txn()
         count, size = self.chunks.decref(id)
         if count == 0:
             del self.chunks[id]
             self.repository.delete(id, wait=wait)
-            stats.update(-size, True, part=part)
+            stats.update(-size, True)
         else:
-            stats.update(-size, False, part=part)
+            stats.update(-size, False)
 
     def commit(self):
         if not self._txn_active:
